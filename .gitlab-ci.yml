@@ -1,0 +1,39 @@
+stages:
+  - format
+  - build
+  - test
+
+image: gcc:latest
+
+before_script:
+  - apt-get update -y
+  - apt-get install -y cmake clang-format
+
+format:
+  stage: format
+  script:
+    - echo "Running clang-format check"
+    - clang-format -n $(find src -name "*.cpp" -o -name "*.hpp" -o -name "*.h")
+  only:
+    - branches
+
+build:
+  stage: build
+  script:
+    - mkdir build
+    - cd build
+    - cmake ..
+    - make -j$(nproc)
+  artifacts:
+    paths:
+      - build/
+  only:
+    - branches
+
+test:
+  stage: test
+  script:
+    - cd build
+    - ctest --output-on-failure
+  only:
+    - branches
