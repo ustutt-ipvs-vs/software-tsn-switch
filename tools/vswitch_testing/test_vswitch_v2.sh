@@ -37,9 +37,6 @@ function setup_lab {
     ip netns add $NS2
 
     # 3. Create Veth Pairs (MODIFIED FOR TAPRIO)
-    # >>> CHANGE IS HERE <<<
-    # We now specify 'numtxqueues 4' BEFORE and AFTER the 'peer' keyword.
-    # This forces BOTH ends of the cable to have 4 queues.
     echo "[+] Creating Multi-Queue Virtual Cables (4 queues)"
     
     ip link add $VETH1 numtxqueues 4 numrxqueues 4 type veth peer name $VETH1_BR numtxqueues 4 numrxqueues 4

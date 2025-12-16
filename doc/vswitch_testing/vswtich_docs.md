@@ -93,8 +93,6 @@ sudo tc qdisc replace dev veth-red-ovs root handle 100: taprio \
   * `0x2` (Binary `010`): Gate 1 Open.
   * `0x4` (Binary `100`): Gate 2 Open.
 
----
-
 ## Testing Commands
 
 Use the following commands to verify connectivity, switch status, and hardware capabilities.
