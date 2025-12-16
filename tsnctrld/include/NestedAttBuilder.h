@@ -6,24 +6,24 @@
 
 class NestedAttrBuilder {
 private:
-    struct attr_builder_item {
+    struct attrBuilderItem {
         rtattr* attr{};
-        std::optional<int> parent_id;
-    }
+        std::optional<int> parentID;
+    };
 
-    std::vector<attr_builder_item*> attrs;
-    const int max_payload_length;
-    nlmssghdr* nlh{};
+    std::vector<attrBuilderItem*> attrs;
+    const int maxPayloadLength;
+    nlmsghdr* nlh{};
 
-    void add_attr_length(int attr_builder_id, int length);
-    int insert_attr(attr_builder_item* attr, int type, const void* data, int len);
-    void clear_attr_vector();
+    void addAttrLength(int attrBuilderID, int length);
+    int insertAttr(attrBuilderItem* attr, int type, const void* data, int len);
+    void clearAttrVector();
 
 public:
-    NestedAttrBuilder(int max_payload_length);
-    int add_attribute(int attr_builder_parent_id, int type, const void* data, int len);
-    int add_attribute(nlmssghdr* nlh, int  type, const void* data, int len);
+    NestedAttrBuilder(int maxPayloadLength);
+    int addAttribute(int attrBuilderItemID, int type, const void* data, int len);
+    int addAttribute(nlmsghdr* nlh, int  type, const void* data, int len);
     ~NestedAttrBuilder();
 };
 
-##endif
+#endif

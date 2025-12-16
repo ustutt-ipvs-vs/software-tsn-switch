@@ -1,22 +1,27 @@
-#include "NestedAttrBuilder.h"
-
+#include "NestedAttBuilder.h"
 #include <cstring>
 #include <NetlinkSocket.h>
+#include <linux/rtnetlink.h>
 #include <stdexcept>
 
-NestedAttrBuilder::NestedAttrBuilder(const int max_payload_length) : max_payload_length(max_payload_length) {}
+NestedAttrBuilder::NestedAttrBuilder(const int maxPayloadLength) : maxPayloadLength(maxPayloadLength) {}
 
-void NestedAttrBuilder::add_attr_length(const int attr_builder_id, const int length) {
-    attr_builder_item* item = this->attrs.at(attr_builder_id);
+/**
+ * @brief Add the new length of a given attribute
+ * @param attrBuilderID ID of the attribute in the internal data structure
+ * @param length The new length of the attribute
+ */
+void NestedAttrBuilder::addAttrLength(const int attrBuilderID, const int length) {
+    attrBuilderItem* item = this->attrs.at(attrBuilderID);
 
     item->attr->rta_len += RTA_ALIGN(length);
 
-    if(item->parent_id.has_value()) {
-        this->add_attr_length(item->parent_id.value(), length);
+    if(item->parentID.has_value()) {
+        this->addAttrLength(item->parentID.value(), length);
     } else {
         const int nlh_len = NLMSG_ALIGN(this->nlh->nlmsg_len) + item->attr->rta_len;
 
-        if(nlh_len > this->max_payload_length) {
+        if(nlh_len > this->maxPayloadLength) {
             throw std::runtime_error("Message exceeds maximum length");
         }
 
@@ -24,39 +29,66 @@ void NestedAttrBuilder::add_attr_length(const int attr_builder_id, const int len
     }
 }
 
-int NestedAttrBuilder::add_attribute(nlmsghdr *nlh, const int type, const void *data, const int len) {
-    this->clear_attr_vector();
+/**
+ * @brief Add an attribute to the neadlink message data structure
+ * @param nlh Pointer to the netlink message header data
+ * @param type The type of the attribute that will be added
+ * @param data Pointer to the data of the attribute
+ * @param len The length of the attribute to be added
+ * @return Returns the ID of the added attribute in the internal data structure
+ */
+int NestedAttrBuilder::addAttribute(nlmsghdr *nlh, const int type, const void *data, const int len) {
+    this->clearAttrVector();
 
-    attr* attr = NLMSG_TAIL(nlh);
+    rtattr* attr = NLMSG_TAIL(nlh);
     this->nlh = nlh;
-    return this->insert_attr(new attr_builder_item{.attr = attr}, type, data, len);
+    return this->insertAttr(new attrBuilderItem{.attr = attr}, type, data, len);
 }
 
-int NestedAttrBuilder::add_attribute(const int attr_builder_parent_id, const int type, const void *data, const int len) {
-    attr_builder_item* parent = this->attrs.at(attr_builder_parent_id);
-    attr* attr = (struct attr*)((char*)parent->attr + RTA_ALIGN(parent->attr->rta_len));
-    return this->insert_attr(new attr_builder_item{.attr = attr, .parent_id = attr_builder_parent_id}, type, data, len);
+/**
+ * @brief Add a child attribute to the parent attribute provided through the ID
+ * @param attrBuilderParentID ID of the parent attribute
+ * @param type The type of the attribute that will be added
+ * @param data Pointer to the data of the attribute
+ * @param len The length of the attribute to be added
+ * @return 
+ */
+int NestedAttrBuilder::addAttribute(const int attrBuilderParentID, const int type, const void *data, const int len) {
+    attrBuilderItem* parent = this->attrs.at(attrBuilderParentID);
+    attr* attr = (struct rtattr*)((char*)parent->attr + RTA_ALIGN(parent->attr->rta_len));
+    return this->insertAttr(new attrBuilderItem{.attr = attr, .parentID = attrBuilderParentID}, type, data, len);
 }
 
-int NestedAttrBuilder::insert_attr(attr_builder_item *item, const int type, const void *data, const int len) {
+/**
+ * @brief Insert the attribute to the internal data structure
+ * @param item A pointer to the item
+ * @param type The type of the attribute to be inserted
+ * @param data A pointer to the attribute that will be added
+ * @param len The length of the attribute to be added
+ * @return The ID of the attribute in the internal data structure
+ */
+int NestedAttrBuilder::insertAttr(attrBuilderItem *item, const int type, const void *data, const int len) {
     this->attrs.emplace_back(item);
     const int id = this->attrs.size() - 1;
 
-    this->add_attr_length(id, RTA_LENGTH(len));
+    this->addAttrLength(id, RTA_LENGTH(len));
     item->attr->rta_type = type;
     if(data != nullptr) std::memcpy(RTA_DATA(item->attr), data, len);
 
     return id;
 }
 
-void NestedAttrBuilder::clear_attr_vector() {
-    for(attr_builder_item* item : this->attrs) {
+/**
+ * @brief Clear the internal data structure of all added attributes
+ */
+void NestedAttrBuilder::clearAttrVector() {
+    for(attrBuilderItem* item : this->attrs) {
         std::free(item);
     }
     this->attrs.clear();
 }
 
 NestedAttrBuilder::~NestedAttrBuilder() {
-    this->clear_attr_vector();
+    this->clearAttrVector();
 }
 
