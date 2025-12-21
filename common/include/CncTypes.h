@@ -82,6 +82,15 @@ struct GclConfig_t {
 
 };
 
+struct LldpNeighbor_t{
+    bool hasNeighbor;
+    std::string chassisId;
+    std::string portId;
+    std::string systemName;
+    uint32_t ttl;
+    std::string managementIp;
+};
+
 struct BridgePort_t{
     std::string bridgeName;
     GclConfig_t gateParameterTable;
@@ -90,4 +99,11 @@ struct BridgePort_t{
 struct ietfInterface_t{
     std::string name;
     BridgePort_t bridgePort;
+    LldpNeighbor_t lldpNeighbor;
+};
+
+struct CncNode_t{
+    uint32_t id;
+    std::string hostName;
+    std::vector<ietfInterface_t> interfaces;
 };
