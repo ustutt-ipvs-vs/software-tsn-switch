@@ -6,8 +6,12 @@
                 "${workspaceFolder}/**",
                 "${workspaceFolder}",
                 "/usr/include",
-                "${workspaceFolder}/common/include"
+                "${workspaceFolder}/common/include",
+                "${workspaceFolder}/cnc/include",
+                "${workspaceFolder}/common/include",
+                "${workspaceFolder}/cnc/src"
             ],
+            "compileCommands": "${workspaceFolder}/build/compile_commands.json",
             "defines": [],
             "compilerPath": "/usr/bin/gcc",
             "cStandard": "c17",

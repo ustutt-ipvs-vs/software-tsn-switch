@@ -12,9 +12,11 @@ set(SOURCES
 
 add_executable(cnc_app ${SOURCES})
 
+add_compile_definitions(CNC_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
+
 target_include_directories(cnc_app PRIVATE
-    include                  # cnc/include (JsonImporter.h)
-    ../common/include        # common/include (various common headers)
+    ${CMAKE_CURRENT_SOURCE_DIR}/include                  # cnc/include (JsonImporter.h)
+    ${CMAKE_CURRENT_SOURCE_DIR}/../common/include        # common/include (various common headers)
 )
 
 target_link_libraries(cnc_app PRIVATE nlohmann_json::nlohmann_json)

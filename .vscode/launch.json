@@ -5,14 +5,11 @@
             "name": "Debug CNC App",
             "type": "cppdbg",
             "request": "launch",
-            // Hier sucht er deine Exe. Pfad ggf. anpassen, falls er anders heißt!
-            // CMake Tools legt die Exe meist hier ab:
+            // Cmake Tools extension variable to get the path to the built target
             "program": "${command:cmake.launchTargetPath}",
             "args": [],
             "stopAtEntry": false,
-            
-            // DAS IST DER ENTSCHEIDENDE PUNKT:
-            // Wir setzen das Arbeitsverzeichnis auf den Root deines Repos.
+            // Set the working directory to the workspace root
             "cwd": "${workspaceFolder}",
             
             "environment": [],
