@@ -1,6 +1,6 @@
 #pragma once
 
-#include "common/include/CncTypes.h"
+#include "CncTypes.h"
 #include <vector>
 #include <map>
 #include <string>

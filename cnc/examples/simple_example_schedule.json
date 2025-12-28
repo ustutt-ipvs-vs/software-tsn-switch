@@ -1,0 +1,57 @@
+{
+  "nodes": [
+    {
+      "hostName": "Switch_01",
+      "interfaces": [
+        {
+          "neighbor": "vstsn02",
+          "gcl": {
+            "adminGateStates": 255,
+            "cycleTime": 1000000,
+            "cycleTimeExtension": 500,
+            "baseTimeSeconds": 0,
+            "baseTimeNanoseconds": 0,
+            "entries": [
+              {
+                "index": 0,
+                "timeIntervalValue": 200000,
+                "gateStatesValue": 128,
+                "operationName": "sched:set-gate-states"
+              },
+              {
+                "index": 1,
+                "timeIntervalValue": 800000,
+                "gateStatesValue": 255,
+                "operationName": "sched:set-gate-states"
+              }
+            ]
+          }
+        },
+        {
+          "neighbor": "Kontron_Switch",
+          "gcl": {
+            "adminGateStates": 255,
+            "cycleTime": 1000000,
+            "cycleTimeExtension": 500,
+            "baseTimeSeconds": 0,
+            "baseTimeNanoseconds": 0,
+            "entries": [
+              {
+                "index": 0,
+                "timeIntervalValue": 500000,
+                "gateStatesValue": 15,
+                "operationName": "sched:set-gate-states"
+              },
+              {
+                "index": 1,
+                "timeIntervalValue": 500000,
+                "gateStatesValue": 240,
+                "operationName": "sched:set-gate-states"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
