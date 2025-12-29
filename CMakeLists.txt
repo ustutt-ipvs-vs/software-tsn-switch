@@ -1,74 +1,59 @@
 cmake_minimum_required(VERSION 3.20)
 project(enpro-switch)
 
-# ==============================================================================
-# 1. ROBUST LIBRARY DISCOVERY
-# We manually look for the headers and binaries.
-# This fixes the "Missing .pc file" issue and the "IDE Indexing" issue.
-# ==============================================================================
-
-# --- Find LibYang ---
-# Look for libyang.h in common paths + /usr/local/include
-find_path(LIBYANG_INCLUDE_DIR
-        NAMES libyang/libyang.h
-        PATHS /usr/local/include /usr/include
-        NO_DEFAULT_PATH
-)
-# Look for libyang.so in common paths + /usr/local/lib
-find_library(LIBYANG_LIBRARY
-        NAMES yang libyang
-        PATHS /usr/local/lib /usr/lib
-        NO_DEFAULT_PATH
-)
-
-if (NOT LIBYANG_INCLUDE_DIR OR NOT LIBYANG_LIBRARY)
-    message(FATAL_ERROR "Could not find libyang! Checked /usr/local/include and /usr/local/lib")
-else()
-    message(STATUS "Found libyang headers: ${LIBYANG_INCLUDE_DIR}")
-    message(STATUS "Found libyang library: ${LIBYANG_LIBRARY}")
-endif()
-
-# --- Find Sysrepo ---
-find_path(SYSREPO_INCLUDE_DIR
-        NAMES sysrepo.h
-        PATHS /usr/local/include /usr/include
-        NO_DEFAULT_PATH
-)
-find_library(SYSREPO_LIBRARY
-        NAMES sysrepo libsysrepo
-        PATHS /usr/local/lib /usr/lib
-        NO_DEFAULT_PATH
-)
-
-if (NOT SYSREPO_INCLUDE_DIR OR NOT SYSREPO_LIBRARY)
-    message(FATAL_ERROR "Could not find sysrepo!")
-else()
-    message(STATUS "Found sysrepo headers: ${SYSREPO_INCLUDE_DIR}")
-    message(STATUS "Found sysrepo library: ${SYSREPO_LIBRARY}")
-endif()
+# Sysrepo-cpp requires C++17 or higher
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # ==============================================================================
-# 2. GLOBAL SETTINGS
+# 1. FIX REMOTE ENVIRONMENT
 # ==============================================================================
+# Force CMake to find .pc files on the remote machine
+# Should work now due to full reinstall, manually confirmed the files are present in that folder
+set(ENV{PKG_CONFIG_PATH} "$ENV{PKG_CONFIG_PATH}:/usr/local/lib/pkgconfig:/usr/lib/pkgconfig:/usr/local/lib64/pkgconfig")
 
-# Crucial for CLion: This tells the IDE exactly where the headers are.
-include_directories(${LIBYANG_INCLUDE_DIR} ${SYSREPO_INCLUDE_DIR})
+find_package(PkgConfig REQUIRED)
+
+# Find C++ Bindings
+pkg_check_modules(SYSREPO_CPP REQUIRED sysrepo-cpp IMPORTED_TARGET)
+pkg_check_modules(LIBYANG_CPP REQUIRED libyang-cpp IMPORTED_TARGET)
+pkg_check_modules(LIBNETCONF2_CPP REQUIRED libnetconf2-cpp IMPORTED_TARGET)
+
+# Find C Libraries
+pkg_check_modules(SYSREPO REQUIRED sysrepo IMPORTED_TARGET)
+pkg_check_modules(LIBYANG REQUIRED libyang IMPORTED_TARGET)
+pkg_check_modules(LIBNETCONF2 REQUIRED libnetconf2 IMPORTED_TARGET)
+
+
+
+# ==============================================================================
+# 2. INTERNAL LIBRARIES
+# ==============================================================================
+# Build the internal helper library first
 add_subdirectory(tsnctrld)
 
-# RPATH: Tells the executable to look in /usr/local/lib at runtime
-set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
-set(CMAKE_INSTALL_RPATH "/usr/local/lib")
 
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # ==============================================================================
-# 3. EXECUTABLES
+# 3. GLOBAL SETTINGS
+# ==============================================================================
+set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
+set(CMAKE_INSTALL_RPATH "/usr/local/lib")
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+
+
+# ==============================================================================
+# 4. EXECUTABLES
 # ==============================================================================
 # --- RUNNABLE FILES ---
 
 # --- Yang ---
 add_executable(yang_demo tsnctrld/sysrepo_connection/yang_demo.c)
-target_link_libraries(yang_demo ${SYSREPO_LIBRARY} ${LIBYANG_LIBRARY})
+target_link_libraries(yang_demo PkgConfig::SYSREPO PkgConfig::LIBYANG)
+# --- Yang ---
+add_executable(yang_demo_cpp tsnctrld/sysrepo_connection/yang_demo_cpp.cpp)
+target_link_libraries(yang_demo_cpp PkgConfig::SYSREPO_CPP PkgConfig::LIBYANG_CPP)
 
 # --- Netlink ---
 add_executable(enpro-switch tsnctrld/QdiscManager.cpp)
