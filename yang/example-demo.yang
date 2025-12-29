@@ -1,0 +1,31 @@
+module example-demo {
+    namespace "urn:examples:demo";
+    prefix "ed";
+
+    container data {
+        description "Root container";
+
+        // CONFIG TRUE (Read-Write)
+        // This is stored in the Sysrepo database.
+        list numbers {
+            key "name";
+
+            leaf name {
+                type string;
+                description "Unique name for this entry";
+            }
+
+            leaf value {
+                type int32;
+                description "The number value";
+            }
+        }
+
+        // CONFIG FALSE (Read-Only / Operational)
+        // This is NOT stored in the DB. The app generates it on request.
+        leaf current-time {
+            config false;
+            type string;
+        }
+    }
+}
