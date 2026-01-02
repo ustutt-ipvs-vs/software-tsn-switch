@@ -28,3 +28,7 @@ The repository is organized as a monorepo containing the following components:
 
 * **`cmake/`:**
     Helper modules for the build system (e.g., to locate libraries like libnetconf2).
+
+## Getting Started
+
+In order to compile the code, various libraries are needed, the steps needed are written in [steps_for_installing_updating.txt] (TODO:Cleanup).

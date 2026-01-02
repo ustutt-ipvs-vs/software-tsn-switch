@@ -1,0 +1,136 @@
+# Steps for installing and updating
+# Some steps have prerequisites
+
+
+cd ~/gitrepos; git clone https://github.com/CESNET/libyang.git
+cd ~/gitrepos; git clone https://github.com/CESNET/libnetconf2.git
+cd ~/gitrepos; git clone https://github.com/sysrepo/sysrepo.git
+cd ~/gitrepos; git clone https://github.com/CESNET/netopeer2.git
+
+
+
+
+cd ~/gitrepos/libyang/build; sudo make uninstall
+cd ~/gitrepos/libyang-cpp/build; sudo make uninstall
+cd ~/gitrepos/libnetconf2/build; sudo make uninstall
+cd ~/gitrepos/libnetconf2-cpp/build; sudo make uninstall
+cd ~/gitrepos/sysrepo/build; sudo make uninstall
+cd ~/gitrepos/sysrepo-cpp/build; sudo make uninstall
+
+sudo rm -rf /dev/shm/sr_*
+
+cd ~/gitrepos/libyang; git checkout devel; git pull
+cd ~/gitrepos/libnetconf2; git pull
+cd ~/gitrepos/sysrepo; git pull
+cd ~/gitrepos/netopeer2; git pull
+
+
+
+cd ~/gitrepos/libyang; rm -rf build/; mkdir -p build; cd build; cmake ..; make; sudo make install; sudo ldconfig
+cd ~/gitrepos/libnetconf2; rm -rf build/; mkdir -p build; cd build; cmake ..; make; sudo make install; sudo ldconfig
+cd ~/gitrepos/sysrepo; rm -rf build/; mkdir -p build; cd build; cmake ..; make; sudo make install; sudo ldconfig
+cd ~/gitrepos/netopeer2; rm -rf build/; mkdir -p build; cd build; cmake ..; make; sudo make install; sudo ldconfig
+
+cd ~/gitrepos; git clone https://github.com/CESNET/libyang-cpp.git
+cd ~/gitrepos; git clone https://github.com/CESNET/libnetconf2-cpp.git
+cd ~/gitrepos; git clone https://github.com/sysrepo/sysrepo-cpp.git
+
+cd ~/gitrepos/libyang-cpp; rm -rf build/; mkdir -p build; cd build; cmake -DBUILD_TESTING=off ..; make; sudo make install; sudo ldconfig
+cd ~/gitrepos/libnetconf2-cpp; rm -rf build/; mkdir -p build; cd build; cmake -DBUILD_TESTING=off ..; make; sudo make install; sudo ldconfig
+cd ~/gitrepos/sysrepo-cpp; rm -rf build/; mkdir -p build; cd build; cmake -DBUILD_TESTING=off ..; make; sudo make install; sudo ldconfig
+
+
+
+
+wget https://raw.githubusercontent.com/YangModels/yang/refs/heads/main/standard/ieee/published/802.1/ieee802-dot1q-sched-bridge.yang
+wget https://raw.githubusercontent.com/YangModels/yang/refs/heads/main/standard/ieee/published/802.1/ieee802-dot1q-bridge.yang
+wget https://raw.githubusercontent.com/YangModels/yang/refs/heads/main/standard/ieee/published/802/ieee802-types.yang
+wget https://raw.githubusercontent.com/YangModels/yang/refs/heads/main/standard/iana/iana-if-type%402023-01-26.yang
+wget https://raw.githubusercontent.com/YangModels/yang/refs/heads/main/standard/ieee/published/802.1/ieee802-dot1q-types.yang
+wget https://raw.githubusercontent.com/YangModels/yang/refs/heads/main/standard/ieee/published/802.1/ieee802-dot1q-sched.yang
+wget https://raw.githubusercontent.com/YangModels/yang/refs/heads/main/standard/ieee/published/802.1/ieee802-dot1ab-lldp.yang
+wget https://raw.githubusercontent.com/YangModels/yang/refs/heads/main/standard/ieee/published/802.1/ieee802-dot1ab-types.yang
+wget https://raw.githubusercontent.com/YangModels/yang/refs/heads/main/standard/ietf/RFC/ietf-routing%402018-03-13.yang
+
+
+# Needs the following example-demo.yang from our repo at enpro-switch/yang
+# ```
+# module example-demo {
+#     namespace "urn:examples:demo";
+#     prefix "ed";
+# 
+#     container data {
+#         description "Root container";
+# 
+#         // CONFIG TRUE (Read-Write)
+#         // This is stored in the Sysrepo database.
+#         list numbers {
+#             key "name";
+# 
+#             leaf name {
+#                 type string;
+#                 description "Unique name for this entry";
+#             }
+# 
+#             leaf value {
+#                 type int32;
+#                 description "The number value";
+#             }
+#         }
+# 
+#         // CONFIG FALSE (Read-Only / Operational)
+#         // This is NOT stored in the DB. The app generates it on request.
+#         leaf current-time {
+#             config false;
+#             type string;
+#         }
+#     }
+# }
+# ```
+sudo sysrepoctl -i example-demo.yang -o enpro -g enpro -p 660
+
+sudo sysrepoctl -c ietf-interfaces -o enpro -g enpro -p 660
+
+sudo sysrepoctl -i iana-if-type@2023-01-26.yang -o enpro -g enpro -p 660
+sudo sysrepoctl -i ieee802-types.yang -o enpro -g enpro -p 660
+sudo sysrepoctl -i ieee802-dot1q-types.yang -o enpro -g enpro -p 660
+sudo sysrepoctl -i ieee802-dot1q-bridge.yang -o enpro -g enpro -p 660
+sudo sysrepoctl -i ieee802-dot1q-sched.yang -o enpro -g enpro -p 660
+sudo sysrepoctl -i ieee802-dot1q-sched-bridge.yang -o enpro -g enpro -p 660
+sudo sysrepoctl -i ietf-routing@2018-03-13.yang -o enpro -g enpro -p 660
+sudo sysrepoctl -i ieee802-dot1ab-types.yang -o enpro -g enpro -p 660
+sudo sysrepoctl -i ieee802-dot1ab-lldp.yang -o enpro -g enpro -p 660
+
+
+# In order for us to actually be able to write anything, we need to configure the access control withing netconf.
+# For that, we use the following config, to be imported into the datastore (should be adjusted for production):
+#```
+#<nacm xmlns="urn:ietf:params:xml:ns:yang:ietf-netconf-acm">
+#  <enable-nacm>true</enable-nacm>
+#  <read-default>permit</read-default>
+#  <write-default>deny</write-default>
+#  <groups>
+#    <group>
+#      <name>admin</name>
+#      <user-name>root</user-name>
+#      <user-name>enpro</user-name>
+#    </group>
+#  </groups>
+#  <rule-list>
+#    <name>admin-full-access</name>
+#    <group>admin</group>
+#    <rule>
+#      <name>permit-all</name>
+#      <module-name>*</module-name>
+#      <access-operations>*</access-operations>
+#      <action>permit</action>
+#    </rule>
+#  </rule-list>
+#</nacm>
+#```
+# Import as follows (with nacm_init.xml having the content above):
+sudo sysrepocfg --import=/home/enpro/nacm_init.xml --module ietf-netconf-acm --datastore running
+
+
+# To not lose changes on restart:
+sudo sysrepocfg --copy-from running --datastore startup
