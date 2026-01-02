@@ -19,38 +19,31 @@ cd ~/gitrepos/sysrepo-cpp/build; sudo make uninstall
 
 sudo rm -rf /dev/shm/sr_*
 
-cd ~/gitrepos/libyang; git checkout devel; git pull
-cd ~/gitrepos/libnetconf2; git pull
-cd ~/gitrepos/sysrepo; git pull
-cd ~/gitrepos/netopeer2; git pull
-
-
-
-cd ~/gitrepos/libyang; rm -rf build/; mkdir -p build; cd build; cmake ..; make; sudo make install; sudo ldconfig
-cd ~/gitrepos/libnetconf2; rm -rf build/; mkdir -p build; cd build; cmake ..; make; sudo make install; sudo ldconfig
-cd ~/gitrepos/sysrepo; rm -rf build/; mkdir -p build; cd build; cmake ..; make; sudo make install; sudo ldconfig
-cd ~/gitrepos/netopeer2; rm -rf build/; mkdir -p build; cd build; cmake ..; make; sudo make install; sudo ldconfig
+cd ~/gitrepos/libyang; git checkout 7dcf6b1e0172e79fba1f8275304e03ffafd58b9b; rm -rf build/; mkdir -p build; cd build; cmake ..; make; sudo make install; sudo ldconfig
+cd ~/gitrepos/libnetconf2; git checkout 84c60d815a10a4f9a99f6c003f7232808eb8ac7a; rm -rf build/; mkdir -p build; cd build; cmake ..; make; sudo make install; sudo ldconfig
+cd ~/gitrepos/sysrepo; git checkout 1a9e66c60e53333f8443188a5e5c9d13153f3de2; rm -rf build/; mkdir -p build; cd build; cmake ..; make; sudo make install; sudo ldconfig
+cd ~/gitrepos/netopeer2; git checkout 616ec7b6912c2381a6c33a3a1183d53d4825bb91; rm -rf build/; mkdir -p build; cd build; cmake ..; make; sudo make install; sudo ldconfig
 
 cd ~/gitrepos; git clone https://github.com/CESNET/libyang-cpp.git
 cd ~/gitrepos; git clone https://github.com/CESNET/libnetconf2-cpp.git
 cd ~/gitrepos; git clone https://github.com/sysrepo/sysrepo-cpp.git
 
-cd ~/gitrepos/libyang-cpp; rm -rf build/; mkdir -p build; cd build; cmake -DBUILD_TESTING=off ..; make; sudo make install; sudo ldconfig
-cd ~/gitrepos/libnetconf2-cpp; rm -rf build/; mkdir -p build; cd build; cmake -DBUILD_TESTING=off ..; make; sudo make install; sudo ldconfig
-cd ~/gitrepos/sysrepo-cpp; rm -rf build/; mkdir -p build; cd build; cmake -DBUILD_TESTING=off ..; make; sudo make install; sudo ldconfig
+cd ~/gitrepos/libyang-cpp; git checkout 1fd11bdd1bd02c92477fb07bfd579994721862cf; rm -rf build/; mkdir -p build; cd build; cmake -DBUILD_TESTING=off ..; make; sudo make install; sudo ldconfig
+cd ~/gitrepos/libnetconf2-cpp; git checkout 2d007b7ecbf65adec24a927014771cae9cedb368; rm -rf build/; mkdir -p build; cd build; cmake -DBUILD_TESTING=off ..; make; sudo make install; sudo ldconfig
+cd ~/gitrepos/sysrepo-cpp; git checkout 60d729e4791e5447cf0d969be6da9f8f1878af64; rm -rf build/; mkdir -p build; cd build; cmake -DBUILD_TESTING=off ..; make; sudo make install; sudo ldconfig
 
 
 
 
-wget https://raw.githubusercontent.com/YangModels/yang/refs/heads/main/standard/ieee/published/802.1/ieee802-dot1q-sched-bridge.yang
-wget https://raw.githubusercontent.com/YangModels/yang/refs/heads/main/standard/ieee/published/802.1/ieee802-dot1q-bridge.yang
-wget https://raw.githubusercontent.com/YangModels/yang/refs/heads/main/standard/ieee/published/802/ieee802-types.yang
-wget https://raw.githubusercontent.com/YangModels/yang/refs/heads/main/standard/iana/iana-if-type%402023-01-26.yang
-wget https://raw.githubusercontent.com/YangModels/yang/refs/heads/main/standard/ieee/published/802.1/ieee802-dot1q-types.yang
-wget https://raw.githubusercontent.com/YangModels/yang/refs/heads/main/standard/ieee/published/802.1/ieee802-dot1q-sched.yang
-wget https://raw.githubusercontent.com/YangModels/yang/refs/heads/main/standard/ieee/published/802.1/ieee802-dot1ab-lldp.yang
-wget https://raw.githubusercontent.com/YangModels/yang/refs/heads/main/standard/ieee/published/802.1/ieee802-dot1ab-types.yang
-wget https://raw.githubusercontent.com/YangModels/yang/refs/heads/main/standard/ietf/RFC/ietf-routing%402018-03-13.yang
+wget https://raw.githubusercontent.com/YangModels/yang/559418adbd5f05860c36b1d2ffa590ef8ee0309e/standard/ieee/published/802.1/ieee802-dot1q-sched-bridge.yang
+wget https://raw.githubusercontent.com/YangModels/yang/559418adbd5f05860c36b1d2ffa590ef8ee0309e/standard/ieee/published/802.1/ieee802-dot1q-bridge.yang
+wget https://raw.githubusercontent.com/YangModels/yang/559418adbd5f05860c36b1d2ffa590ef8ee0309e/standard/ieee/published/802/ieee802-types.yang
+wget https://raw.githubusercontent.com/YangModels/yang/559418adbd5f05860c36b1d2ffa590ef8ee0309e/standard/iana/iana-if-type%402023-01-26.yang
+wget https://raw.githubusercontent.com/YangModels/yang/559418adbd5f05860c36b1d2ffa590ef8ee0309e/standard/ieee/published/802.1/ieee802-dot1q-types.yang
+wget https://raw.githubusercontent.com/YangModels/yang/559418adbd5f05860c36b1d2ffa590ef8ee0309e/standard/ieee/published/802.1/ieee802-dot1q-sched.yang
+wget https://raw.githubusercontent.com/YangModels/yang/559418adbd5f05860c36b1d2ffa590ef8ee0309e/standard/ieee/published/802.1/ieee802-dot1ab-lldp.yang
+wget https://raw.githubusercontent.com/YangModels/yang/559418adbd5f05860c36b1d2ffa590ef8ee0309e/standard/ieee/published/802.1/ieee802-dot1ab-types.yang
+wget https://raw.githubusercontent.com/YangModels/yang/559418adbd5f05860c36b1d2ffa590ef8ee0309e/standard/ietf/RFC/ietf-routing%402018-03-13.yang
 
 
 # Needs the following example-demo.yang from our repo at enpro-switch/yang
