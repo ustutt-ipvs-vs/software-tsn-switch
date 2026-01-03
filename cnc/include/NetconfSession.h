@@ -5,7 +5,6 @@
 // Forward declarations
 // Netconf session and RPC structures
 struct nc_session;
-struct nc_rpc;
 
 namespace common {
     class NetconfSession {
@@ -34,6 +33,13 @@ namespace common {
          * @return true if connected, false otherwise.
          */
         bool isConnected() const;
+
+        /**
+         * @brief Retrieves data from the NETCONF server using the specified XPath filter.
+         * @param xpath The XPath filter to apply (default is empty, which retrieves all data).
+         * @return The retrieved data as a string.
+         */
+        std::string getData(const std::string& xpath="");
 
     private:
         // Pointer to the underlying NETCONF session

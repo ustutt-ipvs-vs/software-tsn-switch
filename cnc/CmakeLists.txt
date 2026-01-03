@@ -1,16 +1,25 @@
-cmake_minimum_required(VERSION 3.10)
-project(cnc_application)
-
-set(CMAKE_CXX_STANDARD 17)
-
-include_directories(
-    include
-    ../common/include
+add_library(cnc_lib STATIC
+    src/NetconfSession.cpp
+    # Here will be other cnc files
 )
 
-find_package(nlohmann_json 3.2.0 REQUIRED)
-
-add_executable(cnc_app
-    src/main.cpp
-    src/FipsImporter.cpp
+# Header Paths
+target_include_directories(cnc_lib PUBLIC
+    /usr/local/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
+
+
+target_link_libraries(cnc_lib PUBLIC
+    ${LIBNETCONF2_LIBRARY}
+    ${LIBYANG_LIBRARY}
+    ${LIBSSH_LIBRARY}      # SSH for Netconf
+    common_lib             # if common_lib is needed
+)
+
+# SHH Support
+target_compile_definitions(cnc_lib PRIVATE NC_ENABLED_SSH)
+
+
+# test executable to verify the library builds and links correctly
+add_executable(cnc_test_app src/NetconfSession.cpp) 

@@ -50,7 +50,8 @@ pkg_check_modules(LIBNETCONF2 REQUIRED libnetconf2 IMPORTED_TARGET)
 # ==============================================================================
 # Build the internal helper library first
 add_subdirectory(tsnctrld)
-add_subdirectory(common)
+add_subdirectory(common) # maybe not needed?
+add_subdirectory(cnc)
 
 # Optional CNC module because currently cnc is only available on cnc branch
 if(EXISTS "{CMAKE_CURRENT_SOURCE_DIR}/cnc/CMakeLists.txt")
