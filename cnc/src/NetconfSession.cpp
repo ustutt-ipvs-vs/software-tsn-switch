@@ -1,8 +1,9 @@
 #include "NetconfSession.h"
 
-#ifndef NC_ENABLED_SSH_TlS
+// Not needed anymore since defined in CMakeLists.txt
+/*#ifndef NC_ENABLED_SSH_TlS
 #define NC_ENABLED_SSH_TLS
-#endif
+#endif*/
 
 #include <libnetconf2/session_client.h>
 #include <libnetconf2/session.h>

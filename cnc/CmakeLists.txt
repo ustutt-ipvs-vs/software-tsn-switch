@@ -17,9 +17,12 @@ target_link_libraries(cnc_lib PUBLIC
     common_lib             # if common_lib is needed
 )
 
-# SHH Support
-target_compile_definitions(cnc_lib PRIVATE NC_ENABLED_SSH)
-
+# SSH Support
+target_compile_definitions(cnc_lib PRIVATE NC_ENABLED_SSH_TLS)
 
 # test executable to verify the library builds and links correctly
-add_executable(cnc_test_app src/NetconfSession.cpp) 
+#add_executable(cnc_test_app src/NetconfSession.cpp) 
+
+# executable for testing the wrapper
+add_executable(wrapper_test_run src/netconfWrapperDemo.cpp)
+target_link_libraries(wrapper_test_run PRIVATE cnc_lib)
