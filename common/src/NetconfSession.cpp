@@ -36,7 +36,7 @@ namespace common {
             return false;
         }
 
-        g_current_password = password; // Set the global password for the callback
+        /*g_current_password = password; // Set the global password for the callback
         nc_client_ssh_set_auth_password_clb(password_interactive_clb, nullptr);
 
         nc_client_ssh_set_auth_pref(NC_SSH_AUTH_PUBLICKEY, 100);
@@ -50,7 +50,7 @@ namespace common {
         if (session_ == nullptr) {
             std::cerr << "Failed to connect to " << ip << ":" << port << std::endl;
             return false;
-        }   
+        }   */
 
         std::cout << "Connected to " << ip << ":" << port << std::endl;
         return true;
