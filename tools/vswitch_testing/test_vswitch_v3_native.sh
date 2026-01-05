@@ -7,9 +7,9 @@ NS2="blue"
 IP1="10.0.0.1/24"
 IP2="10.0.0.2/24"
 VETH1="veth-red"
-VETH1_BR="veth-red-on-host"
+VETH1_BR="veth-red-host"
 VETH2="veth-blue"
-VETH2_BR="veth-blue-on-host"
+VETH2_BR="veth-blue-host"
 
 # Check for root
 if [[ $EUID -ne 0 ]]; then
