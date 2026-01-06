@@ -40,10 +40,10 @@ int main() {
     std::cout<< "Netconf Wrapper Demo Application" << std::endl;
 
     // Load configuration
-    auto config = loadConfig("test_config.txt");
+    auto config = loadConfig("../../test_config.txt");
 
     std::string host = config["HOST"];
-    // Fallback to port 830 if not specified
+    // Fallback to port 830 if not specified not that good because if no target is specified connection will fail anyway
     int port = config["PORT"].empty() ? 830 : std::stoi(config["PORT"]);
     std::string user = config["USER"];
     std::string pass = config["PASS"];

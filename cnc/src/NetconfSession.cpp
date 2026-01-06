@@ -121,7 +121,6 @@ namespace common {
             nc_rpc_free(rpc);
             return "";
         }
-        nc_rpc_free(rpc); // RPC object can be freed after sending
 
         struct lyd_node *envp = nullptr; // Envelope (RPC wrapper)
         struct lyd_node *op = nullptr;   // Operation data

@@ -9,12 +9,11 @@ target_include_directories(cnc_lib PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
-
 target_link_libraries(cnc_lib PUBLIC
-    ${LIBNETCONF2_LIBRARY}
-    ${LIBYANG_LIBRARY}
-    ${LIBSSH_LIBRARY}      # SSH for Netconf
-    common_lib             # if common_lib is needed
+    netconf2
+    yang
+    ssh
+    common_lib
 )
 
 # SSH Support
