@@ -31,6 +31,8 @@ pkg_check_modules(LIBNETCONF2 REQUIRED libnetconf2 IMPORTED_TARGET)
 # ==============================================================================
 # Build the internal helper library first
 add_subdirectory(tsnctrld)
+add_subdirectory(common)
+add_subdirectory(cnc)
 
 
 

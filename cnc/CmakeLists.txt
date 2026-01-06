@@ -19,4 +19,7 @@ target_include_directories(cnc_app PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../common/include        # common/include (various common headers)
 )
 
-target_link_libraries(cnc_app PRIVATE nlohmann_json::nlohmann_json)
+target_link_libraries(cnc_app PRIVATE 
+    nlohmann_json::nlohmann_json
+    common_lib    
+)
