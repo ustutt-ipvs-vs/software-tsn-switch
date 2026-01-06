@@ -14,7 +14,7 @@ uint64_t NetconfNetlinkMapper::toNs(const PtpTime_t& time) const {
 
 TaprioConfig NetconfNetlinkMapper::mapToTaprio(const GclConfig_t& gcl) {
     TaprioConfig taprioConf{};
-    taprioConf.numTc = gcl.queueMaxSduCount;
+    taprioConf.numTc = gcl.queueMaxSduTable.size();
 
     for (uint8_t i = 0; i < taprioConf.numTc; ++i) {
         //todo check if this config is valid in regards to the standard
@@ -24,9 +24,9 @@ TaprioConfig NetconfNetlinkMapper::mapToTaprio(const GclConfig_t& gcl) {
     taprioConf.clockid = CLOCK_TAI;
     taprioConf.baseTime = toNs(gcl.adminBaseTime);
     taprioConf.cycleTime = toNs(gcl.adminCycleTime);
-    taprioConf.schedule.reserve(gcl.adminControlListSize);
+    taprioConf.schedule.reserve(gcl.adminControlList.size());
 
-    for (uint32_t i = 0; i < gcl.adminControlListSize; ++i) {
+    for (uint32_t i = 0; i < gcl.adminControlList.size(); ++i) {
         const GclEntry_t& entry = gcl.adminControlList[i];
         TaprioSchedEntry taprioEntry{};
         taprioEntry.command = TC_TAPRIO_CMD_SET_GATES;

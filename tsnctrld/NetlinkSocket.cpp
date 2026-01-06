@@ -140,7 +140,7 @@ void NetlinkSocket::clearResponse() {
 /**
  * @brief Getter for the saved response
  */
-std::vector<nlmsghdr *> NetlinkSocket::getResponse() {
+std::vector<nlmsghdr *> NetlinkSocket::getResponse() const {
     return this->response;
 }
 

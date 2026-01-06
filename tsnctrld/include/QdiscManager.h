@@ -13,6 +13,7 @@ public:
 	static void newQdisc(NetlinkSocket& netlink_socket, const std::string& ifname, TaprioConfig& gclConfig);
 	static void removeQdisc(NetlinkSocket& netlink_socket, const std::string& ifname);
 	void getQdisc(NetlinkSocket& netlink_socket, const std::string& ifname);
+	void printKernelResponse(const NetlinkSocket& sock);
 };
 
 #endif

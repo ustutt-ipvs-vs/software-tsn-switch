@@ -12,6 +12,7 @@
 #include "NestedAttBuilder.h"
 #include "NetconfNetlinkMapper.h"
 #include <ctime>
+#include <iostream>
 
 /**
  * @brief Define a new queueing discipline for a given interface
@@ -128,7 +129,7 @@ void QdiscManager::getQdisc(NetlinkSocket &netlinkSocket, const std::string &ifn
 
 	req.nlh.nlmsg_len = NLMSG_LENGTH(sizeof(struct tcmsg));
 	req.nlh.nlmsg_type = RTM_GETQDISC;
-	req.nlh.nlmsg_flags = NLM_F_REQUEST | NLM_F_ACK;
+	req.nlh.nlmsg_flags = NLM_F_REQUEST | NLM_F_ACK | NLM_F_DUMP;
 	req.nlh.nlmsg_seq = 2;
 	req.nlh.nlmsg_pid = getpid();
 	
@@ -140,18 +141,52 @@ void QdiscManager::getQdisc(NetlinkSocket &netlinkSocket, const std::string &ifn
 	netlinkSocket.sendMessage(&req.nlh, req.nlh.nlmsg_len);
 };
 
+void QdiscManager::printKernelResponse(const NetlinkSocket& sock) {
+	for (nlmsghdr* nlh : sock.getResponse()) {
+		if (nlh->nlmsg_type != RTM_NEWQDISC && nlh->nlmsg_type != RTM_GETQDISC) {
+			continue;
+		}
+
+		tcmsg* tcm = (tcmsg*)NLMSG_DATA(nlh);
+
+		std::cout << "QDISC:\n";
+		std::cout << "  ifindex: " << tcm->tcm_ifindex << "\n";
+		std::cout << "  handle:  " << std::hex << tcm->tcm_handle << std::dec << "\n";
+		std::cout << "  parent:  " << std::hex << tcm->tcm_parent << std::dec << "\n";
+
+		int len = nlh->nlmsg_len - NLMSG_LENGTH(sizeof(*tcm));
+		rtattr* rta = (rtattr*)((char*)tcm + NLMSG_ALIGN(sizeof(tcmsg)));
+
+		for (; RTA_OK(rta, len); rta = RTA_NEXT(rta, len)) {
+			switch (rta->rta_type) {
+				case TCA_KIND:
+					std::cout << "  kind:    "
+							  << (char*)RTA_DATA(rta) << "\n";
+					break;
+
+				case TCA_OPTIONS:
+					std::cout << "  options: <present>\n";
+					break;
+
+				default:
+					break;
+			}
+		}
+
+		std::cout << std::endl;
+	}
+};
+
 int main() {
 	GclConfig_t gclConfig = {};
-	static queueMaxSduEntry_t queueMaxSduTable[2] = {
+	gclConfig.queueMaxSduTable = {
 		{ .trafficClass = 0, .queueMaxSdu = 1500, .transmissionOverrun = 0 },
-		{ .trafficClass = 1, .queueMaxSdu = 1500, .transmissionOverrun = 0 }
+		{ .trafficClass = 1, .queueMaxSdu = 1500, .transmissionOverrun = 0 },
 	};
-	static GclEntry_t adminGcl[2] = {
-		{.index = 0, .gateStatesValue = 0x01, .timeIntervalValue = 500000 },
-		{.index = 1, .gateStatesValue = 0x02, .timeIntervalValue = 500000}
+	gclConfig.adminControlList = {
+		{ .index = 0, .gateStatesValue = 0x01, .timeIntervalValue = 500000 },
+		{ .index = 1, .gateStatesValue = 0x02, .timeIntervalValue = 500000 }
 	};
-	gclConfig.queueMaxSduCount = 8;
-	gclConfig.queueMaxSduTable = queueMaxSduTable;
 	gclConfig.gateEnabled = true;
 	gclConfig.adminGateStates = 0xFF;
 	gclConfig.adminCycleTime = {.numerator = 1'000'000, .denominator = 1'000'000'000};
@@ -159,21 +194,19 @@ int main() {
 	struct timespec ts;
 	clock_gettime(CLOCK_REALTIME, &ts);
 	gclConfig.adminBaseTime = {.seconds = ts.tv_sec, .nanoseconds = ts.tv_nsec};
-	gclConfig.adminControlListSize = 2;
-	gclConfig.adminControlList = adminGcl;
-	gclConfig.operGateStates = 0xFF;
+	gclConfig.operControlList = gclConfig.adminControlList;
+	gclConfig.operGateStates = gclConfig.adminGateStates;
 	gclConfig.operCycleTime = gclConfig.adminCycleTime;
 	gclConfig.operBaseTime = gclConfig.adminBaseTime;
-	gclConfig.operControlListSize = 0;
-	gclConfig.operControlList = nullptr;
 	gclConfig.configChange = true;
 
 	NetlinkSocket sock;
 	QdiscManager qm;
 	NetconfNetlinkMapper mapper;
 	TaprioConfig taprioConf = mapper.mapToTaprio(gclConfig);
-	std::string ifname = "enp2s0f3";
+	std::string ifname = "";
 
-	qm.newQdisc(sock, ifname, taprioConf);
+	qm.getQdisc(sock, ifname);
+	qm.printKernelResponse(sock);
 
 }

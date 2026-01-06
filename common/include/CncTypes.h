@@ -34,8 +34,7 @@ struct queueMaxSduEntry_t{
 // Main Configuration Struct (mapped to sched-parameters)
 struct GclConfig_t {
 
-    uint8_t queueMaxSduCount; //uint8_t since assume less than 256 classes
-    queueMaxSduEntry_t* queueMaxSduTable;
+    std::vector<queueMaxSduEntry_t> queueMaxSduTable;
 
     // 802.1Qbv Admin Parameters
     bool gateEnabled = true;          // Master switch for TSN
@@ -46,9 +45,7 @@ struct GclConfig_t {
     
     PtpTime_t adminBaseTime;            // Start time for the schedule (ConfigChangeTime)
     
-    //std::vector<GclEntry_t> adminControlList; // The actual schedule list
-    uint32_t adminControlListSize;
-    GclEntry_t* adminControlList;
+    std::vector<GclEntry_t> adminControlList; // The actual schedule list
 
     uint8_t operGateStates = 255;    // Initial state (255 = all open)
 
@@ -57,9 +54,7 @@ struct GclConfig_t {
     
     PtpTime_t operBaseTime;            // Start time for the schedule (ConfigChangeTime)
     
-    //std::vector<GclEntry_t> operControlList; // The actual schedule list
-    uint32_t operControlListSize;
-    GclEntry_t* operControlList;
+    std::vector<GclEntry_t> operControlList; // The actual schedule list
 
     bool configChange;                 // RW: Set true to trigger apply
     
