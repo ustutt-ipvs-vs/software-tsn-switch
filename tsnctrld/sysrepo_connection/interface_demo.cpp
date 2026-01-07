@@ -239,6 +239,7 @@ void sync_kernel_to_running(sysrepo::Session& sess) {
 // 3. CONFIGURATION SUBSCRIBER
 // ---------------------------------------------------------
 sysrepo::ErrorCode config_cb(sysrepo::Session session, uint32_t, const std::string&, const std::optional<std::string>&, sysrepo::Event event, uint32_t) {
+    std::cout << "\n[CONFIG] config_cb called with event:" << event << std::endl;
     if (event != sysrepo::Event::Change) return sysrepo::ErrorCode::Ok;
 
     std::cout << "\n[CONFIG] Change Event Detected:" << std::endl;
@@ -279,7 +280,7 @@ int main() {
             config_cb,
             std::nullopt,
             0,
-            sysrepo::SubscribeOptions::Enabled | sysrepo::SubscribeOptions::DoneOnly
+            sysrepo::SubscribeOptions::Enabled //| sysrepo::SubscribeOptions::DoneOnly
         );
 
         std::cout << "Backend running. Press Ctrl+C to exit." << std::endl;
