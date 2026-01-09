@@ -14,6 +14,8 @@ public:
 	static void removeQdisc(NetlinkSocket& netlink_socket, const std::string& ifname);
 	void getQdisc(NetlinkSocket& netlink_socket, const std::string& ifname);
 	void printKernelResponse(const NetlinkSocket& sock);
+	void printTaprioOptions(const rtattr* rta, int len);
+	void printTaprioSchedEntry(const rtattr* rta, int len);
 };
 
 #endif
