@@ -20,7 +20,7 @@ public:
 	NetlinkSocket();
 	static rtattr* addRtaAttribute(struct nlmsghdr *nlh, int maxlen, int type, const void *data, int len);
 	void sendMessage(nlmsghdr *nlh, size_t len);
-	std::vector<nlmsghdr*> getResponse();
+	std::vector<nlmsghdr*> getResponse() const;
 	~NetlinkSocket();
 
 };

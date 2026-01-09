@@ -3,14 +3,19 @@
 #include <NetlinkSocket.h>
 #include <linux/netlink.h>
 #include <linux/rtnetlink.h>
+#include <TaprioModel.h>
+#include <string>
 
 #define BUFFER_SIZE 8192
 
 class QdiscManager {
 public:
-	static void newQdisc(NetlinkSocket& netlink_socket);
-	static void removeQdisc(NetlinkSocket& netlink_socket);
-	nlmsghdr getQdisc(NetlinkSocket& netlink_socket);
+	static void newQdisc(NetlinkSocket& netlink_socket, const std::string& ifname, TaprioConfig& gclConfig);
+	static void removeQdisc(NetlinkSocket& netlink_socket, const std::string& ifname);
+	void getQdisc(NetlinkSocket& netlink_socket, const std::string& ifname);
+	void printKernelResponse(const NetlinkSocket& sock);
+	void printTaprioOptions(const rtattr* rta, int len);
+	void printTaprioSchedEntry(const rtattr* rta, int len);
 };
 
 #endif

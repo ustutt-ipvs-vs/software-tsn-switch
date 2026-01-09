@@ -100,7 +100,7 @@ void NetlinkSocket::saveResponse() {
 
     this->clearResponse();
 
-    while ((len = recv(this->socketFd, buffer, sizeof(buffer), 0)) > 0) {
+    while ((len = recv(this->socketFd, buffer, sizeof(buffer), MSG_DONTWAIT)) > 0) {
         struct nlmsghdr *nlh = (struct nlmsghdr *)buffer;
 
         for (; NLMSG_OK(nlh, len); nlh = NLMSG_NEXT(nlh, len)) {
@@ -110,20 +110,20 @@ void NetlinkSocket::saveResponse() {
 
             if (nlh->nlmsg_type == NLMSG_ERROR) {
                 struct nlmsgerr *error = (struct nlmsgerr *)NLMSG_DATA(nlh);
-
                 if(error->error == 0) {
-                    return;
+                    std::cout << "Netlink Message accepted" << std::endl;
                 } else {
                     std::cerr << "Error in received message with code: " << error->error << std::endl;
-                    exit(-1);
                 }
             }
-
             struct nlmsghdr *nlh_save = (nlmsghdr *)std::malloc(nlh->nlmsg_len);
             std::memcpy(nlh_save, nlh, nlh->nlmsg_len);
-
             this->response.emplace_back(nlh_save);
         }
+    }
+
+    if (len < 0 && errno != EAGAIN && errno != EWOULDBLOCK) {
+        perror("recv failed");
     }
 }
 
@@ -140,7 +140,7 @@ void NetlinkSocket::clearResponse() {
 /**
  * @brief Getter for the saved response
  */
-std::vector<nlmsghdr *> NetlinkSocket::getResponse() {
+std::vector<nlmsghdr *> NetlinkSocket::getResponse() const {
     return this->response;
 }
 
