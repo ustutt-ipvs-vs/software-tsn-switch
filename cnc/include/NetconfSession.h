@@ -41,6 +41,19 @@ namespace common {
          */
         std::string getData(const std::string& xpath="");
 
+        /**
+         * @brief Edits the configuration data on the NETCONF server into the candidate datastore.
+         * @param configXml The configuration data in XML format.
+         * @return true if the edit operation is successful, false otherwise.
+         */
+        bool editData(const std::string& configXml);
+
+        /**
+         * @brief Commits the current configuration from the candidate datastore into the running datastore.
+         * @return true if the commit operation is successful, false otherwise.
+         */
+        bool commit();
+
     private:
         // Pointer to the underlying NETCONF session
         struct nc_session* session_;
