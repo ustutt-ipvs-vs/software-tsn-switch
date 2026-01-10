@@ -5,21 +5,33 @@ set(CMAKE_CXX_STANDARD 17)
 
 find_package(nlohmann_json 3.2.0 REQUIRED)
 
-set(SOURCES
-    src/main.cpp
+add_library(cnc_lib STATIC
+    src/NetconfSession.cpp
     src/JsonImporter.cpp
 )
 
-add_executable(cnc_app ${SOURCES})
-
-add_compile_definitions(CNC_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
-
-target_include_directories(cnc_app PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/include                  # cnc/include (JsonImporter.h)
-    ${CMAKE_CURRENT_SOURCE_DIR}/../common/include        # common/include (various common headers)
+target_compile_definitions(cnc_lib PRIVATE 
+    NC_ENABLED_SSH_TLS
+    CNC_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}"
 )
 
-target_link_libraries(cnc_app PRIVATE 
+target_include_directories(cnc_lib PUBLIC
+    /usr/local/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/../common/include
+)
+
+target_link_libraries(cnc_lib PUBLIC
+    netconf2
+    yang
+    ssh
+    common_lib
     nlohmann_json::nlohmann_json
-    common_lib    
 )
+
+add_executable(cnc_app src/main.cpp)
+
+target_link_libraries(cnc_app PRIVATE cnc_lib)
+
+add_executable(wrapper_test_run src/netconfWrapperDemo.cpp)
+target_link_libraries(wrapper_test_run PRIVATE cnc_lib)

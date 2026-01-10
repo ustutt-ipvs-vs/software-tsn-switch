@@ -5,6 +5,25 @@ project(enpro-switch)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# --- Find LibNetconf2 ---
+find_path(LIBNETCONF2_INCLUDE_DIR
+        NAMES libnetconf2/session_client.h
+        PATHS /usr/local/include /usr/include
+        # NO_DEFAULT_PATH # same as above
+)
+find_library(LIBNETCONF2_LIBRARY
+        NAMES netconf2 libnetconf2
+        PATHS /usr/local/lib /usr/lib
+        # NO_DEFAULT_PATH # same as above
+)
+
+if (NOT LIBNETCONF2_INCLUDE_DIR OR NOT LIBNETCONF2_LIBRARY)
+    message(FATAL_ERROR "Could not find libnetconf2!")
+else()
+    message(STATUS "Found libnetconf2 headers: ${LIBNETCONF2_INCLUDE_DIR}")
+    message(STATUS "Found libnetconf2 library: ${LIBNETCONF2_LIBRARY}")
+endif()
+
 # ==============================================================================
 # 1. FIX REMOTE ENVIRONMENT
 # ==============================================================================
@@ -31,8 +50,13 @@ pkg_check_modules(LIBNETCONF2 REQUIRED libnetconf2 IMPORTED_TARGET)
 # ==============================================================================
 # Build the internal helper library first
 add_subdirectory(tsnctrld)
-add_subdirectory(common)
+add_subdirectory(common) # maybe not needed?
 add_subdirectory(cnc)
+
+# Optional CNC module because currently cnc is only available on cnc branch
+if(EXISTS "{CMAKE_CURRENT_SOURCE_DIR}/cnc/CMakeLists.txt")
+    add_subdirectory(cnc)
+endif()
 
 
 
