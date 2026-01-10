@@ -4,4 +4,4 @@ cmake-build-debug-vstsn01/
 .cache/
 .idea/
 .vscode/
-test_config.txt
+config.txt

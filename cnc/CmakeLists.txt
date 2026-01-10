@@ -10,7 +10,7 @@ add_library(cnc_lib STATIC
     src/JsonImporter.cpp
 )
 
-target_compile_definitions(cnc_lib PRIVATE 
+target_compile_definitions(cnc_lib PUBLIC 
     NC_ENABLED_SSH_TLS
     CNC_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}"
 )
