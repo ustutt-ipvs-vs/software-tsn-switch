@@ -2,6 +2,8 @@
 #include <string>
 #include <fstream>
 #include <map>
+#include <thread> // For sleep (optional)
+#include <chrono> // For sleep (optional)
 
 #include "../include/NetconfSession.h"
 
@@ -40,8 +42,9 @@ int main() {
     std::cout<< "Netconf Wrapper Demo Application" << std::endl;
 
     // Load configuration
-    auto config = loadConfig("../../test_config.txt");
+    auto config = loadConfig("../../config.txt");
 
+    // 1. Load configuration for login
     std::string host = config["HOST"];
     // Fallback to port 830 if not specified not that good because if no target is specified connection will fail anyway
     int port = config["PORT"].empty() ? 830 : std::stoi(config["PORT"]);
@@ -59,14 +62,47 @@ int main() {
     if (session.connect(host, port, user, pass)) {
         std::cout << "SUCCESS: Connected to server!" << std::endl;
         
-        std::string xml_data = session.getData(); 
+        // Read & Print current state
+        std::cout << "\n--- 1. Reading Current State (Running) ---" << std::endl;
+        std::string xpath_filter = "/data:data"; 
+        std::string initial_data = session.getData(xpath_filter);
 
-        if (!xml_data.empty()) {
-            std::cout << "Received (" << xml_data.length() << " Bytes)." << std::endl;
-            // std::cout << xml_data << std::endl; // Uncomment to print the full XML data
+        if (!initial_data.empty()) {
+            std::cout << initial_data << std::endl;
         } else {
-            std::cout << "No data received." << std::endl;
+            std::cout << "[Info] Filter returned no data (or empty). Check XPath." << std::endl;
         }
+
+        // Prepare for edit
+        std::cout << "\n--- 2. Editing Data (Candidate) ---" << std::endl;
+        
+        std::string changeXml = R"(<data xmlns="urn:examples:demo">
+                <numbers>
+                    <name>Test3</name>
+                    <value>1234</value>
+                </numbers>
+            </data>)";
+
+        if (session.editData(changeXml)) {
+            std::cout << "-> Edit OK: Data is now in 'Candidate' datastore." << std::endl;
+        } else {
+            std::cerr << "-> Edit FAILED. Stopping." << std::endl;
+            session.disconnect();
+            return -1;
+        }
+
+        // Commit changes
+        std::cout << "\n--- 3. Committing to 'Running' ---" << std::endl;
+        
+        if (session.commit()) {
+            std::cout << "-> Commit OK: Data is now live." << std::endl;
+        } else {
+            std::cerr << "-> Commit FAILED." << std::endl;
+        }
+
+        // Verify new state
+        std::cout << "\n--- 4. Verifying New State ---" << std::endl;
+        std::cout << session.getData(xpath_filter) << std::endl;
 
         session.disconnect();
     } else {
