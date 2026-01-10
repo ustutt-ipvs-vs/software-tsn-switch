@@ -106,4 +106,5 @@ struct CncNode_t{
     uint32_t id;
     std::string hostName;
     std::vector<ietfInterface_t> interfaces;
+    std::string ipAddress;
 };

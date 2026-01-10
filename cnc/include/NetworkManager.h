@@ -52,6 +52,13 @@ namespace cnc {
              */
             void deployConfigToAll();
 
+            /**
+             * @brief Retrieves the Netconf session for a given node by its hostname.
+             * @param nodeName The hostname of the node.
+             * @return Shared pointer to the NetconfSession if found, nullptr otherwise.
+             */
+            std::shared_ptr<common::NetconfSession> getSession(const std::string& nodeName);
+
         private:
             Topology& topology_;  // Reference to the topology managing network nodes.
 
