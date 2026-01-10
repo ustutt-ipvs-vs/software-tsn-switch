@@ -153,4 +153,106 @@ namespace common {
         
         return result_xml;
     }
+
+    bool NetconfSession::editData(const std::string& configXml) {
+        if (!session_) {
+            std::cerr << "[NetconfSession] Not connected." << std::endl;
+            return false;
+        }
+
+        if (configXml.empty()) {
+            std::cerr << "[NetconfSession] Configuration XML is empty." << std::endl;
+            return false;
+        }
+
+        // 1. Create RPC: <edit-config>
+        struct nc_rpc *rpc = nc_rpc_edit(NC_DATASTORE_CANDIDATE,
+                                        NC_RPC_EDIT_DFLTOP_MERGE,
+                                        NC_RPC_EDIT_TESTOPT_TESTSET,
+                                        NC_RPC_EDIT_ERROPT_STOP,
+                                        configXml.c_str(),
+                                        NC_PARAMTYPE_CONST);
+
+        if (!rpc) {
+            std::cerr << "[NetconfSession] Error: Failed to create edit-config RPC." << std::endl;
+            return false;
+        }
+
+        // 2. Send RPC to server
+        uint64_t msgid;
+        NC_MSG_TYPE status = nc_send_rpc(session_, rpc, 1000, &msgid);
+        if (status == NC_MSG_ERROR || status == NC_MSG_WOULDBLOCK) {
+            std::cerr << "[NetconfSession] Error: Failed to send edit-config RPC." << std::endl;
+            nc_rpc_free(rpc);
+            return false;
+        }
+
+        // 3. Receive reply
+        struct lyd_node *envp = nullptr; // Envelope (RPC wrapper)
+        struct lyd_node *op = nullptr;   // Operation data
+
+        NC_MSG_TYPE msgtype = nc_recv_reply(session_, rpc, msgid, 5000, &envp, &op);
+
+        bool success = false;
+        if (msgtype == NC_MSG_REPLY) {
+            // Edit-config successful
+            success = true;
+            std::cout << "[NetconfSession] edit-config successful." << std::endl;
+        } else if (msgtype == NC_MSG_ERROR) {
+            std::cerr << "[NetconfSession] Server replied with ERROR to edit-config." << std::endl;
+        }
+
+        // Cleanup
+        nc_rpc_free(rpc);
+        if (op) lyd_free_all(op);
+        if (envp) lyd_free_all(envp);
+
+        return success;
+    }
+
+    bool NetconfSession::commit() {
+        if (!session_) {
+            std::cerr << "[NetconfSession] Not connected." << std::endl;
+            return false;
+        }
+
+        // 1. Create RPC: <commit>
+        struct nc_rpc *rpc = nc_rpc_commit(0, 0, nullptr, nullptr, NC_PARAMTYPE_CONST);
+        
+        if (!rpc) {
+            std::cerr << "[NetconfSession] Error: Failed to create commit RPC." << std::endl;
+            return false;
+        }
+
+        // 2. Send RPC to server
+        uint64_t msgid;
+        NC_MSG_TYPE status = nc_send_rpc(session_, rpc, 1000, &msgid);
+        if (status == NC_MSG_ERROR || status == NC_MSG_WOULDBLOCK) {
+            std::cerr << "[NetconfSession] Error: Failed to send commit RPC." << std::endl;
+            nc_rpc_free(rpc);
+            return false;
+        }
+
+        // 3. Receive reply
+        struct lyd_node *envp = nullptr; // Envelope (RPC wrapper)
+        struct lyd_node *op = nullptr;   // Operation data
+
+        NC_MSG_TYPE msgtype = nc_recv_reply(session_, rpc, msgid, 5000, &envp, &op);
+
+        bool success = false;
+        if (msgtype == NC_MSG_REPLY) {
+            // Commit successful
+            success = true;
+            std::cout << "[NetconfSession] commit successful." << std::endl;
+        } else if (msgtype == NC_MSG_ERROR) {
+            std::cerr << "[NetconfSession] Server replied with ERROR to commit." << std::endl;
+        }
+
+        // Cleanup
+        nc_rpc_free(rpc);
+        if (op) lyd_free_all(op);
+        if (envp) lyd_free_all(envp);
+
+        return success;
+    }
 }
