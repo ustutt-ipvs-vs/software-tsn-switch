@@ -1,4 +1,0 @@
-HOST=vstsn01.infra.informatik.uni-stuttgart.de
-PORT=830
-USER=enpro
-PASS=enpro#ENPRO
