@@ -1,4 +1,5 @@
 #include "../include/NetworkManager.h"
+#include "../include/GclXmlBuilder.h"
 #include <iostream>
 #include <sstream> // Needed for XML construction
 
@@ -126,6 +127,6 @@ namespace cnc {
     }
 
     std::string NetworkManager::buildGclXml(const CncNode_t& node) {
-        // TODO: Implement XMl construction based on node's GCL
+        return GclXmlBuilder::buildXmlForNode(node);
     }
 }
