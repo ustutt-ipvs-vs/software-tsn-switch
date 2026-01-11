@@ -1,0 +1,35 @@
+{
+  "nodes": [
+    {
+      "hostName": "vstsn01", 
+      "management_ip": "vstsn01.infra.informatik.uni-stuttgart.de",
+      "interfaces": [
+        {
+          "name": "sw0p1",
+          "neighbor": "vstsn02",
+          "gcl": {
+            "adminGateStates": 255,
+            "cycleTime": 1000000,
+            "cycleTimeExtension": 500,
+            "baseTimeSeconds": 0,
+            "baseTimeNanoseconds": 0,
+            "entries": [
+              {
+                "index": 0,
+                "timeIntervalValue": 200000,
+                "gateStatesValue": 128,
+                "operationName": "sched:set-gate-states"
+              },
+              {
+                "index": 1,
+                "timeIntervalValue": 800000,
+                "gateStatesValue": 255,
+                "operationName": "sched:set-gate-states"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
