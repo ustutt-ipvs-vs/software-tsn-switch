@@ -48,7 +48,7 @@ namespace cnc {
              * @brief Appends the ptpTime to the Xml 
              * @param ss The stringstream to append the XML to.
              * @param time The ptp time.
-             * @param tagName ?
+             * @param tagName The name of the tag to use.
              */
             static void appendPtpTime(std::stringstream& ss, const PtpTime_t time, const std::string& tagName);
     };
