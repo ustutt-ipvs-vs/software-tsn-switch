@@ -3,11 +3,13 @@
 
 namespace cnc {
     // Namespaces from YANG Files
-    // [cite: 2] ietf-interfaces
+    // ietf-interfaces
     const std::string NS_IETF_IF = "urn:ietf:params:xml:ns:yang:ietf-interfaces";
-    // [cite: 165] ieee802-dot1q-bridge
+    // ieee802-dot1q-bridge
     const std::string NS_DOT1Q_BRIDGE = "urn:ieee:std:802.1Q:yang:ieee802-dot1q-bridge";
-    // [cite: 696] ieee802-dot1q-sched
+    // ieee802-dot1q-sched-bridge
+    const std::string NS_DOT1Q_SCHED_BRIDGE = "urn:ieee:std:802.1Q:yang:ieee802-dot1q-sched-bridge";
+    // ieee802-dot1q-sched
     const std::string NS_DOT1Q_SCHED = "urn:ieee:std:802.1Q:yang:ieee802-dot1q-sched";
 
     std::string GclXmlBuilder::buildXmlForNode(const CncNode_t& node) {
@@ -38,7 +40,7 @@ namespace cnc {
         
         // ieee802-dot1q-sched:gate-parameter-table <gate-parameter-table>
         // GCL Configuration
-        ss << "<gate-parameter-table xmlns=\"" << NS_DOT1Q_SCHED << "\">";
+        ss <<     "<gate-parameter-table xmlns=\"" << NS_DOT1Q_SCHED_BRIDGE << "\" xmlns:sched=\"" << NS_DOT1Q_SCHED << "\">";
 
         // Extract GCL configuration
         const GclConfig_t& gclConfig = iface.bridgePort.gateParameterTable;
@@ -89,12 +91,12 @@ namespace cnc {
 
         for (uint32_t i = 0; i < config.adminControlListSize; ++i) {
             const GclEntry_t& entry = config.adminControlList[i];
-            ss << "<gcl-entry>";
+            ss << "<gate-control-entry>";
             ss << "<index>" << entry.index << "</index>";
             ss << "<operation-name>" << entry.operationName << "</operation-name>";
             ss << "<gate-states-value>" << static_cast<uint32_t>(entry.gateStatesValue) << "</gate-states-value>";
             ss << "<time-interval-value>" << entry.timeIntervalValue << "</time-interval-value>";
-            ss << "</gcl-entry>";
+            ss << "</gate-control-entry>";
         }
 
         ss << "</admin-control-list>";

@@ -5,7 +5,7 @@
       "management_ip": "vstsn01.infra.informatik.uni-stuttgart.de",
       "interfaces": [
         {
-          "name": "sw0p1",
+          "name": "enp2s0f2",
           "neighbor": "vstsn02",
           "gcl": {
             "adminGateStates": 255,
