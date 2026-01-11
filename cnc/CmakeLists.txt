@@ -9,7 +9,10 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Dependencies finden
 find_package(nlohmann_json 3.2.0 REQUIRED)
 
-add_subdirectory(../common common_build)
+# Only add common if not already added (by parent CMakeLists.txt)
+if(NOT TARGET common_lib)
+    add_subdirectory(../common common_build)
+endif()
 
 # 2. The Main Library (cnc_lib)
 # ---------------------------------------------------------

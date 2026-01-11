@@ -1,17 +1,21 @@
 #include <iostream>
 #include "JsonImporter.h"
 #include "Topology.h"
+#include <filesystem>
 
 using namespace cnc;
 
 int main() {
     std::cout << "--- JSON Importer Test ---" << std::endl;
 
+    std::cout << "[DEBUG] Current Working Directory: " 
+              << std::filesystem::current_path() << std::endl;
+
     // 1. Create Topology object
     Topology topology;
     
     // 2. Call importer (adjust filename if needed)
-    std::string filename = "test_config.json"; 
+    std::string filename = "../../cnc/examples/simple_example_schedule_v2.json";
     
     // Note: Path must be relative to the execution directory (build/) 
     // If the file is in the root, consider using "../test_config.json" 
