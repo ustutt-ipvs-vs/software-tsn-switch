@@ -1,7 +1,6 @@
 #ifndef QDISCMANAGER_H
 #define QDISCMANAGER_H
 #include <NetlinkSocket.h>
-#include <linux/netlink.h>
 #include <linux/rtnetlink.h>
 #include <TaprioModel.h>
 #include <string>
@@ -10,9 +9,10 @@
 
 class QdiscManager {
 public:
-	static void newQdisc(NetlinkSocket& netlink_socket, const std::string& ifname, TaprioConfig& gclConfig);
+	static void setOperationalQdisc(NetlinkSocket& netlink_socket, const std::string& ifname, TaprioConfig& gclConfig);
 	static void removeQdisc(NetlinkSocket& netlink_socket, const std::string& ifname);
-	void getQdisc(NetlinkSocket& netlink_socket, const std::string& ifname);
+	void getQdiscInfo(NetlinkSocket& netlink_socket, const std::string& ifname);
+	void getAllQdiscInfo(NetlinkSocket& netlink_socket);
 	void printKernelResponse(const NetlinkSocket& sock);
 	void printTaprioOptions(const rtattr* rta, int len);
 	void printTaprioSchedEntry(const rtattr* rta, int len);

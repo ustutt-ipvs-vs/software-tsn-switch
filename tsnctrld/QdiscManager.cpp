@@ -15,10 +15,13 @@
 #include <iostream>
 
 /**
- * @brief Define a new queueing discipline for a given interface
- * @param netlinkSocket The netlink socket
+ * @brief Set or replace the operational TAPRIO qdisc on a network interface
+ *
+ * @param netlinkSocket The NetlinkSocket used to communicate with the kernel
+ * @param ifname Name of the interface on which to install the TAPRIO qdisc
+ * @param gclConfig Configuration object defining traffic classes, priorities, and schedule
  */
-void QdiscManager::newQdisc(NetlinkSocket &netlinkSocket, const std::string& ifname, TaprioConfig &gclConfig) {
+void QdiscManager::setOperationalQdisc(NetlinkSocket &netlinkSocket, const std::string& ifname, TaprioConfig &gclConfig) {
 	struct {
 		struct nlmsghdr nh;
 		struct tcmsg tcm;
@@ -44,7 +47,7 @@ void QdiscManager::newQdisc(NetlinkSocket &netlinkSocket, const std::string& ifn
 
 	netlinkSocket.addRtaAttribute(&req.nh, sizeof(req.attrbuf), TCA_KIND, "taprio", strlen("taprio") + 1);
 
-	int optionsID = builder.addAttribute(&req.nh, TCA_OPTIONS, nullptr, 0);
+	int optionsID = builder.addAttribute(&req.nh, TCA_OPTIONS | NLA_F_NESTED, nullptr, 0);
 
 	tc_mqprio_qopt qopt{};
 	qopt.num_tc = gclConfig.numTc;
@@ -74,10 +77,10 @@ void QdiscManager::newQdisc(NetlinkSocket &netlinkSocket, const std::string& ifn
 
 
     //TAPRIO Schedule Entry List
-    int entryListID = builder.addAttribute(optionsID, TCA_TAPRIO_ATTR_SCHED_ENTRY_LIST, nullptr, 0);
+    int entryListID = builder.addAttribute(optionsID, TCA_TAPRIO_ATTR_SCHED_ENTRY_LIST | NLA_F_NESTED, nullptr, 0);
 
 	for (const auto& entry : gclConfig.schedule) {
-		int entryId = builder.addAttribute(entryListID, TCA_TAPRIO_SCHED_ENTRY, nullptr, 0);
+		int entryId = builder.addAttribute(entryListID, TCA_TAPRIO_SCHED_ENTRY | NLA_F_NESTED, nullptr, 0);
 		builder.addAttribute(entryId, TCA_TAPRIO_SCHED_ENTRY_CMD, &entry.command, sizeof(entry.command));
 		builder.addAttribute(entryId, TCA_TAPRIO_SCHED_ENTRY_GATE_MASK, &entry.gateMask, sizeof(entry.gateMask));
 		builder.addAttribute(entryId, TCA_TAPRIO_SCHED_ENTRY_INTERVAL, &entry.interval, sizeof(entry.interval));
@@ -88,7 +91,9 @@ void QdiscManager::newQdisc(NetlinkSocket &netlinkSocket, const std::string& ifn
 };
 
 /**
- * @brief Deletes the queueing discipline for a given interface
+ * @brief Delete the TAPRIO queueing discipline from a network interface
+ * @param netlinkSocket The NetlinkSocket used to communicate with the kernel
+ * @param ifname Name of the interface from which to remove the TAPRIO qdisc
  */
 void QdiscManager::removeQdisc(NetlinkSocket &netlinkSocket, const std::string &ifname) {
 	struct {
@@ -115,9 +120,38 @@ void QdiscManager::removeQdisc(NetlinkSocket &netlinkSocket, const std::string &
 };
 
 /**
- * @brief Get the current queueing discipline for a given interface
+ * @brief Query the current qdisc configuration for a given interface
+ *
+ * @param netlinkSocket The NetlinkSocket used to communicate with the kernel
+ * @param ifname Name of the interface to query
  */
-void QdiscManager::getQdisc(NetlinkSocket &netlinkSocket, const std::string &ifname) {
+void QdiscManager::getQdiscInfo(NetlinkSocket &netlinkSocket, const std::string &ifname) {
+	struct {
+		struct nlmsghdr nlh;
+		struct tcmsg tcm;
+	} req;
+
+	memset(&req, 0, sizeof(req));
+	int if_index = if_nametoindex(ifname.c_str());
+
+	req.nlh.nlmsg_len = sizeof(req);
+	req.nlh.nlmsg_type = RTM_GETQDISC;
+	req.nlh.nlmsg_flags = NLM_F_REQUEST | NLM_F_ACK;
+
+	req.tcm.tcm_family = AF_UNSPEC;
+	req.tcm.tcm_ifindex = if_index;
+	req.tcm.tcm_handle = 0x10000;
+	req.tcm.tcm_parent = TC_H_ROOT;
+
+	netlinkSocket.sendMessage(&req.nlh, req.nlh.nlmsg_len);
+};
+
+/**
+ * @brief Query all qdisc configurations on the system
+ *
+ * @param netlinkSocket The NetlinkSocket used to communicate with the kernel
+ */
+void QdiscManager::getAllQdiscInfo(NetlinkSocket &netlinkSocket) {
 	struct {
 		struct nlmsghdr nlh;
 		struct tcmsg tcm;
@@ -125,24 +159,23 @@ void QdiscManager::getQdisc(NetlinkSocket &netlinkSocket, const std::string &ifn
 
 	memset(&req, 0, sizeof(req));
 
-	int if_index = if_nametoindex(ifname.c_str());
-
 	req.nlh.nlmsg_len = NLMSG_LENGTH(sizeof(struct tcmsg));
 	req.nlh.nlmsg_type = RTM_GETQDISC;
 	req.nlh.nlmsg_flags = NLM_F_REQUEST | NLM_F_ACK | NLM_F_DUMP;
 	req.nlh.nlmsg_seq = 2;
 	req.nlh.nlmsg_pid = getpid();
-	
+
 	req.tcm.tcm_family = AF_UNSPEC;
-	req.tcm.tcm_ifindex = if_index;
-	req.tcm.tcm_handle = 0;
+	req.tcm.tcm_handle = 0x10000;
 	req.tcm.tcm_parent = TC_H_ROOT;
 
 	netlinkSocket.sendMessage(&req.nlh, req.nlh.nlmsg_len);
-};
+}
 
 /**
- * @param sock The Netlink Socket
+ * @brief Print the kernel response messages for qdisc queries
+ *
+ * @param sock The NetlinkSocket that contains saved kernel responses
  */
 void QdiscManager::printKernelResponse(const NetlinkSocket& sock) {
 	for (const nlmsghdr* nlh : sock.getResponse()) {
@@ -180,6 +213,12 @@ void QdiscManager::printKernelResponse(const NetlinkSocket& sock) {
     }
 };
 
+/**
+ * @brief Print the options of a TAPRIO qdisc
+ *
+ * @param rta Pointer to the first rtattr of TAPRIO options
+ * @param len Length of the rtattr payload
+ */
 void QdiscManager::printTaprioOptions(const rtattr* rta, int len)
 {
 	for (; RTA_OK(rta, len); rta = RTA_NEXT(rta, len)) {
@@ -210,6 +249,12 @@ void QdiscManager::printTaprioOptions(const rtattr* rta, int len)
 	}
 }
 
+/**
+ * @brief Print a single TAPRIO schedule entry
+ *
+ * @param rta Pointer to the rtattr containing the schedule entry
+ * @param len Length of the rtattr payload
+ */
 void QdiscManager::printTaprioSchedEntry(const rtattr* rta, int len)
 {
 	uint8_t  cmd = 0;
@@ -234,4 +279,36 @@ void QdiscManager::printTaprioSchedEntry(const rtattr* rta, int len)
 }
 
 int main() {
+	GclConfig_t gclConfig = {};
+	static queueMaxSduEntry_t queueMaxSduTable[2] = {
+		{ .trafficClass = 0, .queueMaxSdu = 1500, .transmissionOverrun = 0 },
+		{ .trafficClass = 1, .queueMaxSdu = 1500, .transmissionOverrun = 0 }
+	};
+	static GclEntry_t adminGcl[2] = {
+		{.index = 0, .gateStatesValue = 0x01, .timeIntervalValue = 500000 },
+		{.index = 1, .gateStatesValue = 0x02, .timeIntervalValue = 500000}
+	};
+	gclConfig.queueMaxSduTable.assign(queueMaxSduTable, queueMaxSduTable + 2);
+	gclConfig.gateEnabled = true;
+	gclConfig.adminGateStates = 0xFF;
+	gclConfig.adminCycleTime = {.numerator = 1'000'000, .denominator = 1'000'000'000};
+	gclConfig.adminCycleTimeExtensionNs = 0;
+	struct timespec ts;
+	clock_gettime(CLOCK_REALTIME, &ts);
+	gclConfig.adminBaseTime = {.seconds = ts.tv_sec, .nanoseconds = ts.tv_nsec};
+	gclConfig.adminControlList.assign(adminGcl, adminGcl + 2);
+	gclConfig.operGateStates = 0xFF;
+	gclConfig.operCycleTime = gclConfig.adminCycleTime;
+	gclConfig.operBaseTime = gclConfig.adminBaseTime;
+	gclConfig.operControlList.assign(adminGcl, adminGcl + 2);
+	gclConfig.configChange = true;
+
+	NetlinkSocket sock;
+	QdiscManager qm;
+	NetconfNetlinkMapper mapper;
+	TaprioConfig taprioConf = mapper.mapToTaprio(gclConfig);
+	std::string ifname = "enp2s0f2";
+
+	qm.setOperationalQdisc(sock, ifname, taprioConf);
+	//qm.removeQdisc(sock, ifname);
 }

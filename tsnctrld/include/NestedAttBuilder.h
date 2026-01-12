@@ -15,7 +15,7 @@ private:
     const int maxPayloadLength;
     nlmsghdr* nlh{};
 
-    void addAttrLength(int attrBuilderID, int length);
+    void propagateToParent(const int parentID, const int childLen);
     int insertAttr(attrBuilderItem* attr, int type, const void* data, int len);
     void clearAttrVector();
 

@@ -13,14 +13,17 @@
 #include <cstdlib>
 #include <iostream>
 
+/**
+ * @brief Creates and returns a Netlink socket file descriptor.
+ *
+ * @return int The socket file descriptor, or <0 on failure
+ */
 int NetlinkSocket::connectSocket() {
     return socket(AF_NETLINK, SOCK_RAW, NETLINK_ROUTE);
 }
 
 /**
  * @brief Initialization of the NetlinkSocket class with member initialization socket_fd with the return value of connect_socket()
- * @param 
- * @return
  */
 NetlinkSocket::NetlinkSocket(): socketFd(connectSocket()) {
     if(this->socketFd < 0) {
@@ -39,6 +42,11 @@ NetlinkSocket::NetlinkSocket(): socketFd(connectSocket()) {
     }
 }
 
+/**
+ * @brief Destructor for NetlinkSocket.
+ *
+ * Clears any saved kernel responses and closes the socket.
+ */
 NetlinkSocket::~NetlinkSocket() {
     this->clearResponse();
     close(this->socketFd);
@@ -71,12 +79,14 @@ rtattr* NetlinkSocket::addRtaAttribute(nlmsghdr *nlh, const int maxlen, const in
 }
 
 /**
- * @brief Sends the constructed Netlink Message to the kernel
+ * @brief Send a Netlink message to the kernel.
+ *
+ * Sends the constructed netlink message to the kernel and saves the response.
+ * Exits the program if sending fails.
+ *
  * @param nlh Pointer to the netlink message header
- * @param len length of the message
- * @return 
+ * @param len Length of the message in bytes
  */
-
 void NetlinkSocket::sendMessage(nlmsghdr *nlh, const size_t len) {
     nlh->nlmsg_flags |= NLM_F_ACK;
     struct iovec iov = { nlh, len };
@@ -92,7 +102,10 @@ void NetlinkSocket::sendMessage(nlmsghdr *nlh, const size_t len) {
 }
 
 /**
- * @brief Saves the response provided by the kernel
+ * @brief Receive and store responses from the kernel.
+ *
+ * Reads all available messages from the kernel and saves them internally.
+ * Handles NLMSG_DONE and NLMSG_ERROR messages.
  */
 void NetlinkSocket::saveResponse() {
     char buffer[BUFFER_SIZE_REC];
@@ -128,7 +141,9 @@ void NetlinkSocket::saveResponse() {
 }
 
 /**
- * @brief Clears the response data structure
+ * @brief Clear all saved kernel responses.
+ *
+ * Frees allocated memory and clears the internal response vector.
  */
 void NetlinkSocket::clearResponse() {
     for(nlmsghdr* nlh : this->response) {
@@ -138,7 +153,9 @@ void NetlinkSocket::clearResponse() {
 }
 
 /**
- * @brief Getter for the saved response
+ * @brief Get the saved kernel responses.
+ *
+ * @return std::vector<nlmsghdr *> Vector of pointers to nlmsghdr structures
  */
 std::vector<nlmsghdr *> NetlinkSocket::getResponse() const {
     return this->response;
