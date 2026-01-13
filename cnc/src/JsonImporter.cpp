@@ -1,4 +1,5 @@
 #include "JsonImporter.h"
+#include "Inventory.h"
 #include <fstream>
 #include <iostream>
 #include <nlohmann/json.hpp>
@@ -27,21 +28,15 @@ namespace cnc {
             for (const auto& nodeItem : root["nodes"]) {
                 CncNode_t node;
                 
-                // 1. Hostname & IP (angepasst an dein JSON)
+                // 1. Hostname & IP
                 node.hostName = nodeItem.value("hostName", "unknown");
-                node.ipAddress = nodeItem.value("management_ip", ""); // <--- WICHTIG!
-
-                if (node.ipAddress.empty()) {
-                    std::cerr << "[Warning] Node " << node.hostName << " has no IP configured!" << std::endl;
-                }
 
                 // 2. Interfaces
                 if (nodeItem.contains("interfaces") && nodeItem["interfaces"].is_array()) {
                     for (const auto& ifaceItem : nodeItem["interfaces"]) {
                         ietfInterface_t iface;
-                        
-                        // HIER WAR DIE LÜCKE: Wir brauchen den Port-Namen!
-                        iface.name = ifaceItem.value("name", "eth0"); 
+
+                        iface.name = ifaceItem.value("name", ""); 
                         
                         // Neighbor Info (Optional)
                         iface.lldpNeighbor.systemName = ifaceItem.value("neighbor", "");
@@ -104,5 +99,44 @@ namespace cnc {
             std::cerr << "[Error] JSON Parse Error: " << e.what() << std::endl;
             return false;
         }
+    }
+
+    InventoryMap JsonImporter::importInventory(const std::string& filename) {
+        InventoryMap inventory; // Das ist unsere Map<string, DeviceCredentials>
+        
+        std::ifstream file(filename);
+        if (!file.is_open()) {
+            std::cerr << "[Error] Could not open inventory file: " << filename << std::endl;
+            return inventory;
+        }
+
+        try {
+            json root;
+            file >> root;
+
+            if (!root.contains("inventory") || !root["inventory"].is_array()) {
+                std::cerr << "[Error] Inventory JSON missing 'inventory' array." << std::endl;
+                return inventory;
+            }
+
+            for (const auto& item : root["inventory"]) {
+                std::string host = item.value("hostName", "");
+                if (host.empty()) continue; // Ohne Hostname bringt der Eintrag nichts
+
+                DeviceCredentials_t creds;
+                creds.ip = item.value("management_ip", "");
+                creds.username = item.value("username", "");
+                creds.password = item.value("password", "");
+
+                // Ab in die Map damit!
+                // Key = "vstsn01", Value = {IP, User, Pass}
+                inventory[host] = creds;
+            }
+
+        } catch (const json::exception& e) {
+            std::cerr << "[Error] Inventory JSON Parse Error: " << e.what() << std::endl;
+        }
+
+        return inventory;
     }
 }

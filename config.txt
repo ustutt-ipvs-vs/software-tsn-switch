@@ -1,0 +1,6 @@
+# SSH Zugangsdaten für die Switches
+USER=enpro
+PASS=enpro#ENPRO
+
+# Pfad zur Topology Datei (relativ zum Root)
+TOPOLOGY_FILE=cnc/examples/simple_example_schedule_v2.json

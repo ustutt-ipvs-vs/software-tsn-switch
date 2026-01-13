@@ -4,4 +4,4 @@ cmake-build-debug-vstsn01/
 .cache/
 .idea/
 .vscode/
-config.txt
+cnc/config/inventory.json

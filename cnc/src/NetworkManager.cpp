@@ -1,5 +1,6 @@
 #include "../include/NetworkManager.h"
 #include "../include/GclXmlBuilder.h"
+#include "../include/Inventory.h"
 #include <iostream>
 #include <sstream> // Needed for XML construction
 
@@ -13,27 +14,36 @@ namespace cnc {
         sessions_.clear();
     }
 
-    bool NetworkManager::connectAllNodes(const std::string& username, const std::string& password) {
+    bool NetworkManager::connectAllNodes(const InventoryMap& inventory) {
         bool atLeastOneConnected = false;
 
         for (const auto& node : topology_.nodes) {
-            // Check if ip and port exist
-            if (node.ipAddress.empty()) {
-                std::cerr << "[Warning] Node " << node.hostName << " is missing IP address." << std::endl;
+            // Lookup credentials in inventory
+            auto it = inventory.find(node.hostName);
+
+            if (it == inventory.end()) {
+                std::cerr << "[Warning] No credentials found for node " << node.hostName << std::endl;
                 continue;
             }
 
-            
+            const DeviceCredentials_t& creds = it->second;
+
+            // Validate credentials
+            if (creds.username.empty() || creds.password.empty()) {
+                std::cerr << "[Warning] Incomplete credentials for node " << node.hostName << std::endl;
+                continue;
+            }
+
             // Create new session (smart pointer for automatic memory management)
             auto session = std::make_shared<common::NetconfSession>();
 
             // Using same user and password for all nodes for simplicity (can be extended later)
-            if (session->connect(node.ipAddress, 830, username, password)) {
+            if (session->connect(creds.ip, 830, creds.username, creds.password)) {
                 // Add new session to the map
                 sessions_[node.hostName] = session;
                 atLeastOneConnected = true;
             } else {
-                std::cerr << "[Error] Failed to connect to node " << node.hostName << " at " << node.ipAddress << std::endl;
+                std::cerr << "[Error] Failed to connect to node " << node.hostName << " at " << creds.ip << std::endl;
             }
         }
 

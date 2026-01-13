@@ -8,6 +8,7 @@
 #include "NetconfSession.h"
 #include "Topology.h"
 #include "CncTypes.h"
+#include "Inventory.h"
 
 namespace cnc {
     class NetworkManager {
@@ -25,11 +26,10 @@ namespace cnc {
 
             /**
              * @brief Connects to all nodes in the topology using the provided credentials.
-             * @param username The username for authentication.
-             * @param password The password for authentication.
+             * @param inventory The inventory map containing device credentials (hostname to DeviceCredentials_t).
              * @return true if all nodes were connected successfully, false otherwise.
              */
-            bool connectAllNodes(const std::string& username, const std::string& password);
+            bool connectAllNodes(const InventoryMap& inventory);
 
             /**
              * @brief Fetches LLDP data from all connected nodes and updates the topology.

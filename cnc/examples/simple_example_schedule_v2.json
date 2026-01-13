@@ -2,7 +2,6 @@
   "nodes": [
     {
       "hostName": "vstsn01", 
-      "management_ip": "vstsn01.infra.informatik.uni-stuttgart.de",
       "interfaces": [
         {
           "name": "enp2s0f2",
@@ -16,13 +15,13 @@
             "entries": [
               {
                 "index": 0,
-                "timeIntervalValue": 200000,
+                "timeIntervalValue": 123000,
                 "gateStatesValue": 128,
                 "operationName": "sched:set-gate-states"
               },
               {
                 "index": 1,
-                "timeIntervalValue": 800000,
+                "timeIntervalValue": 123000,
                 "gateStatesValue": 255,
                 "operationName": "sched:set-gate-states"
               }
