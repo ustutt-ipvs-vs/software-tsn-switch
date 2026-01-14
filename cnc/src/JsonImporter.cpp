@@ -37,12 +37,8 @@ namespace cnc {
                         ietfInterface_t iface;
 
                         iface.name = ifaceItem.value("name", ""); 
-                        
-                        // Neighbor Info (Optional)
-                        iface.lldpNeighbor.systemName = ifaceItem.value("neighbor", "");
-                        iface.lldpNeighbor.hasNeighbor = !iface.lldpNeighbor.systemName.empty();
 
-                        // 3. GCL Parsing
+                        // 3. GCL Parsing TODO: look into standard values --> maybe error instead of defaults?
                         if (ifaceItem.contains("gcl")) {
                             auto gclItem = ifaceItem["gcl"];
                             GclConfig_t& gclConfig = iface.bridgePort.gateParameterTable;

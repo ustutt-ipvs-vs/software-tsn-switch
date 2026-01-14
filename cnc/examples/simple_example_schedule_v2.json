@@ -5,7 +5,6 @@
       "interfaces": [
         {
           "name": "enp2s0f2",
-          "neighbor": "vstsn02",
           "gcl": {
             "adminGateStates": 255,
             "cycleTime": 1000000,
