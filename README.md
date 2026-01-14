@@ -32,3 +32,13 @@ The repository is organized as a monorepo containing the following components:
 ## Getting Started
 
 In order to compile the code, various libraries are needed, the steps needed are written in [steps_for_installing_updating.txt] (TODO:Cleanup).
+
+To build the project, create a build folder and run CMake and Make in it:
+```bash
+mkdir build; cd build && cmake .. && make
+```
+
+To run all tests (after building and while still in the `build` directory):
+```bash
+ctest
+```
