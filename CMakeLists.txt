@@ -58,3 +58,21 @@ target_link_libraries(yang_demo_cpp PkgConfig::SYSREPO_CPP PkgConfig::LIBYANG_CP
 # --- Netlink ---
 add_executable(enpro-switch tsnctrld/QdiscManager.cpp)
 target_link_libraries(enpro-switch PRIVATE tsnctrld_lib)
+
+
+
+# ==============================================================================
+# 5. TESTS
+# ==============================================================================
+include(FetchContent)
+FetchContent_Declare(
+    googletest
+    URL https://github.com/google/googletest/archive/refs/tags/v1.17.0.zip
+    DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+)
+# For Windows: prevent overriding parent project's compiler/linker settings
+set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+FetchContent_MakeAvailable(googletest)
+enable_testing()
+
+add_subdirectory(tsnctrld/tests)

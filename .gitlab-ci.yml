@@ -7,11 +7,7 @@ stages:
   - build
   - test
 
-image: gcc:latest
-
-before_script:
-  - apt-get update -y
-  - apt-get install -y cmake clang-format
+image: gitlab-vs.informatik.uni-stuttgart.de:5050/software-tsn-switch/enpro-switch/test-pipeline:001
 
 format:
   stage: format
