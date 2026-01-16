@@ -1,0 +1,15 @@
+<lldp xmlns="urn:ieee:std:802.1AB:yang:ieee802-dot1ab-lldp">
+  <port>
+    <name>enp2s0f2</name>
+    <remote-systems-data>
+      <remote-index>1</remote-index>
+      <chassis-id>00:11:22:33:44:55</chassis-id> 
+      <port-id>eth0</port-id>
+      <system-name>vstsn02</system-name>
+      
+      <management-address>
+        <address>192.168.1.20</address>
+        </management-address>
+    </remote-systems-data>
+  </port>
+</lldp>
