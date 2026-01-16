@@ -14,13 +14,13 @@
             "entries": [
               {
                 "index": 0,
-                "timeIntervalValue": 123000,
+                "timeIntervalValue": 321000,
                 "gateStatesValue": 128,
                 "operationName": "sched:set-gate-states"
               },
               {
                 "index": 1,
-                "timeIntervalValue": 123000,
+                "timeIntervalValue": 322000,
                 "gateStatesValue": 255,
                 "operationName": "sched:set-gate-states"
               }
