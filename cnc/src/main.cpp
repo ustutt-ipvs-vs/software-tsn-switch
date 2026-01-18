@@ -12,7 +12,7 @@
 
 int main() {
     std::cout << "========================================" << std::endl;
-    std::cout << "      CNC NETWORK CONTROLLER v1.1       " << std::endl;
+    std::cout << "      CNC NETWORK CONTROLLER v1.2       " << std::endl;
     std::cout << "========================================" << std::endl;
 
     // 1. Hardcoded path to file 
@@ -70,6 +70,10 @@ int main() {
         std::cerr << "[FATAL] Could not connect to all nodes!" << std::endl;
         return 1;
     }
+
+    // 6. Fetch LLDP Data
+    std::cout << "\n[INFO] --- Fetching LLDP Data ---" << std::endl;
+    manager.fetchLldpData();
 
     // 6. Deployment (Create XML and send via Netconf)
     std::cout << "\n[INFO] --- Starting Deployment Phase ---" << std::endl;
