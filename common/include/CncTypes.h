@@ -83,7 +83,7 @@ struct GclConfig_t {
 };
 
 struct LldpNeighbor_t{
-    bool hasNeighbor;
+    bool hasNeighbor = false;
     std::string chassisId;
     std::string portId;
     std::string systemName;
