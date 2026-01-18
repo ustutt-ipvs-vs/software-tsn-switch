@@ -54,6 +54,16 @@ target_link_libraries(yang_demo PkgConfig::SYSREPO PkgConfig::LIBYANG)
 # --- Yang ---
 add_executable(yang_demo_cpp tsnctrld/sysrepo_connection/yang_demo_cpp.cpp)
 target_link_libraries(yang_demo_cpp PkgConfig::SYSREPO_CPP PkgConfig::LIBYANG_CPP)
+# --- Interfaces demo ---
+add_executable(interface_demo tsnctrld/sysrepo_connection/interface_demo.cpp)
+target_link_libraries(interface_demo PkgConfig::SYSREPO_CPP PkgConfig::LIBYANG_CPP)
+# --- Interfaces demo ---
+add_executable(interface_demo2 tsnctrld/sysrepo_connection/interface_demo2.cpp)
+target_link_libraries(interface_demo2 PkgConfig::SYSREPO_CPP PkgConfig::LIBYANG_CPP)
+
+add_executable(tsncrld tsnctrld/tsnctrld.cpp)
+target_link_libraries(tsncrld PUBLIC PkgConfig::SYSREPO_CPP PkgConfig::LIBYANG_CPP)
+target_link_libraries(tsncrld PRIVATE tsnctrld_lib)
 
 # --- Netlink ---
 add_executable(enpro-switch tsnctrld/QdiscManager.cpp)

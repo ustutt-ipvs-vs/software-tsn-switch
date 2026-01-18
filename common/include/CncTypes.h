@@ -33,23 +33,23 @@ struct queueMaxSduEntry_t{
 
 // Main Configuration Struct (mapped to sched-parameters)
 struct GclConfig_t {
+    // Metadata variables to be set by netlink parser
+    // Used determine which variables make sense to read
+    bool operDataSet = false;
+    bool adminDataSet = false;
 
-    //uint8_t queueMaxSduCount; //uint8_t since assume less than 256 classes
-    //queueMaxSduEntry_t* queueMaxSduTable;
     std::vector<queueMaxSduEntry_t> queueMaxSduTable;
 
     // 802.1Qbv Admin Parameters
-    bool gateEnabled = true;          // Master switch for TSN
+    bool gateEnabled = false;          // Master switch for TSN
     uint8_t adminGateStates = 255;    // Initial state (255 = all open)
 
-    RationalTime_t adminCycleTime;      // Cycle duration
+    RationalTime_t adminCycleTime = {.numerator = 1, .denominator = 1};      // Cycle duration
     uint32_t adminCycleTimeExtensionNs = 0; // Max extension for updates (prevent packet loss)
     
     PtpTime_t adminBaseTime;            // Start time for the schedule (ConfigChangeTime)
     
     std::vector<GclEntry_t> adminControlList; // The actual schedule list
-    //uint32_t adminControlListSize;
-    //GclEntry_t* adminControlList;
 
     uint8_t operGateStates = 255;    // Initial state (255 = all open)
 
@@ -59,8 +59,6 @@ struct GclConfig_t {
     PtpTime_t operBaseTime;            // Start time for the schedule (ConfigChangeTime)
     
     std::vector<GclEntry_t> operControlList; // The actual schedule list
-    //uint32_t operControlListSize;
-    //GclEntry_t* operControlList;
 
     bool configChange;                 // RW: Set true to trigger apply
     
@@ -75,11 +73,11 @@ struct GclConfig_t {
     uint64_t currentTimeSeconds;
     uint32_t currentTimeNanoseconds;
 
-    uint32_t supportedListMax;
-    uint32_t supportedIntervalMax;
+    uint32_t supportedListMax = 31;
+    uint32_t supportedIntervalMax = 1e9;
     
-    uint32_t supportedCycleMaxNumerator;
-    uint32_t supportedCycleMaxDenominator;
+    uint32_t supportedCycleMaxNumerator = 1e9;
+    uint32_t supportedCycleMaxDenominator = 1e9;
 
 };
 
@@ -89,6 +87,7 @@ struct BridgePort_t{
 };
 
 struct ietfInterface_t{
+    int ifindex;
     std::string name;
     bool enabled;
     BridgePort_t bridgePort;
