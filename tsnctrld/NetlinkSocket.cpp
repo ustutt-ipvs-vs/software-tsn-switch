@@ -27,8 +27,7 @@ int NetlinkSocket::connectSocket() {
  */
 NetlinkSocket::NetlinkSocket(): socketFd(connectSocket()) {
     if(this->socketFd < 0) {
-        std::cerr << "Error creating netlink socket." << std::endl;
-	exit(-1);
+        throw std::runtime_error("Error creating netlink socket.");
     }
 
     sockaddr_nl sa;
@@ -36,9 +35,8 @@ NetlinkSocket::NetlinkSocket(): socketFd(connectSocket()) {
     sa.nl_family = AF_NETLINK;
 
     if (bind(socketFd, (struct sockaddr *)&sa, sizeof(sa)) < 0) {
-        std::cerr << "Error binding Netlink socket" << std::endl;
         close(socketFd);
-        exit(-1);
+        throw std::runtime_error("Error binding Netlink socket");
     }
 }
 
@@ -94,8 +92,7 @@ void NetlinkSocket::sendMessage(nlmsghdr *nlh, const size_t len) {
     struct msghdr msg = { &kernel, sizeof(kernel), &iov, 1, NULL, 0, 0 };
 
     if (sendmsg(socketFd, &msg, 0) < 0) {
-        std::cerr << "Failed to send message to kernel" << std::endl;
-        exit(-1);
+        throw std::runtime_error("Failed to send message to kernel");
     }
 
     this->saveResponse();
@@ -126,7 +123,7 @@ void NetlinkSocket::saveResponse() {
                 if(error->error == 0) {
                     std::cout << "Netlink Message accepted" << std::endl;
                 } else {
-                    std::cerr << "Error in received message with code: " << error->error << std::endl;
+                    throw std::runtime_error("Error in received message with code: " +  std::to_string(error->error));
                 }
             }
             struct nlmsghdr *nlh_save = (nlmsghdr *)std::malloc(nlh->nlmsg_len);

@@ -3,7 +3,6 @@
 #include <vector>
 #include <string>
 #include <cstdint>
-#include <optional>
 
 // Single entry for the Gate Control List
 struct GclEntry_t {

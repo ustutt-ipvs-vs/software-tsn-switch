@@ -11,12 +11,21 @@ NestedAttrBuilder::NestedAttrBuilder(const int maxPayloadLength) : maxPayloadLen
  * @param attrBuilderID ID of the attribute in the internal data structure
  * @param length The new length of the attribute
  */
-void NestedAttrBuilder::propagateToParent(const int parentID, const int childLen) {
-    auto *parent = attrs.at(parentID);
-    parent->attr->rta_len += childLen;
+void NestedAttrBuilder::addAttrLength(const int attrBuilderID, const int length) {
+    attrBuilderItem* item = this->attrs.at(attrBuilderID);
 
-    if (parent->parentID.has_value()) {
-        propagateToParent(parent->parentID.value(), childLen);
+    item->attr->rta_len += RTA_ALIGN(length);
+
+    if(item->parentID.has_value()) {
+        this->addAttrLength(item->parentID.value(), length);
+    } else {
+        const int nlh_len = NLMSG_ALIGN(this->nlh->nlmsg_len) + length;
+
+        if(nlh_len > this->maxPayloadLength) {
+            throw std::runtime_error("Message exceeds maximum length");
+        }
+
+        this->nlh->nlmsg_len = nlh_len;
     }
 }
 
@@ -42,7 +51,7 @@ int NestedAttrBuilder::addAttribute(nlmsghdr *nlh, const int type, const void *d
  * @param type The type of the attribute that will be added
  * @param data Pointer to the data of the attribute
  * @param len The length of the attribute to be added
- * @return 
+ * @return
  */
 int NestedAttrBuilder::addAttribute(const int attrBuilderParentID, const int type, const void *data, const int len) {
     attrBuilderItem* parent = this->attrs.at(attrBuilderParentID);
@@ -59,21 +68,26 @@ int NestedAttrBuilder::addAttribute(const int attrBuilderParentID, const int typ
  * @return The ID of the attribute in the internal data structure
  */
 int NestedAttrBuilder::insertAttr(attrBuilderItem *item, const int type, const void *data, const int len) {
-    this->attrs.emplace_back(item);
-    const int id = this->attrs.size() - 1;
-
-    item->attr->rta_type = type;
     item->attr->rta_len = RTA_LENGTH(len);
+    item->attr->rta_type = type;
+    this->attrs.emplace_back(item);
+    int delta = RTA_ALIGN(item->attr->rta_len);
 
-    if(data != nullptr) std::memcpy(RTA_DATA(item->attr), data, len);
-
-    if (item->parentID.has_value()) {
-        propagateToParent(item->parentID.value(), RTA_ALIGN(item->attr->rta_len));
-    } else {
-        nlh->nlmsg_len = NLMSG_ALIGN(nlh->nlmsg_len) + RTA_ALIGN(item->attr->rta_len);
+    if(data != nullptr) {
+        std::memcpy(RTA_DATA(item->attr), data, len);
     }
 
-    return id;
+    if(item->parentID.has_value()) {
+        this->addAttrLength(item->parentID.value(), delta);
+    } else {
+        const int nlh_len = NLMSG_ALIGN(this->nlh->nlmsg_len) + delta;
+        if(nlh_len > this->maxPayloadLength) {
+            throw std::runtime_error("Message exceeds maximum length");
+        }
+        this->nlh->nlmsg_len = nlh_len;
+    }
+
+    return this->attrs.size() - 1;
 }
 
 /**
