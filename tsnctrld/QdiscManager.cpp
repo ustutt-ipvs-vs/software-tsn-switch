@@ -82,7 +82,6 @@ void QdiscManager::setQdisc(NetlinkSocket &netlinkSocket, const std::string& ifn
 		builder.addAttribute(entryId, TCA_TAPRIO_SCHED_ENTRY_INTERVAL, &entry.interval, sizeof(entry.interval));
 	}
 
-	printf("nlmsg_len = %u\n", req.nh.nlmsg_len);
 	netlinkSocket.sendMessage(&req.nh, req.nh.nlmsg_len);
 }
 
