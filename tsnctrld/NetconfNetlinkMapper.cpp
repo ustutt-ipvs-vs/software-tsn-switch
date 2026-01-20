@@ -10,7 +10,7 @@
  * @param rationalTime Time represented as a RationalTime_t (numerator/denominator)
  * @return uint64_t Time in nanoseconds
  */
-uint64_t NetconfNetlinkMapper::rationalToNs(const RationalTime_t& rationalTime) const {
+uint64_t NetconfNetlinkMapper::rationalToNs(const RationalTime_t& rationalTime) {
     return (static_cast<uint64_t>(rationalTime.numerator) * 1'000'000'000ULL) / rationalTime.denominator;
 }
 
@@ -20,7 +20,7 @@ uint64_t NetconfNetlinkMapper::rationalToNs(const RationalTime_t& rationalTime) 
  * @param time Time represented as a PtpTime_t (seconds + nanoseconds)
  * @return uint64_t Time in nanoseconds
  */
-uint64_t NetconfNetlinkMapper::ptpToNs(const PtpTime_t& time) const {
+uint64_t NetconfNetlinkMapper::ptpToNs(const PtpTime_t& time) {
     return time.seconds * 1'000'000'000ULL + time.nanoseconds;
 }
 

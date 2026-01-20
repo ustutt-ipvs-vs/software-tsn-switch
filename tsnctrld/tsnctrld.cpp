@@ -89,9 +89,12 @@ void printTaprioConfig(const TaprioConfig& cfg) {
 
     // 1. Basic Parameters
     std::cout << "Traffic Classes (numTc): " << cfg.numTc << std::endl;
-    std::cout << "Clock Source:            " << getClockName(cfg.clockid) << std::endl;
-    std::cout << "Base Time (ns):          " << cfg.baseTime << std::endl;
-    std::cout << "Cycle Time (ns):         " << cfg.cycleTime << std::endl;
+    std::cout << "Admin Clock Source:            " << getClockName(cfg.admin.clockid) << std::endl;
+    std::cout << "Admin Base Time (ns):          " << cfg.admin.baseTime << std::endl;
+    std::cout << "Admin Cycle Time (ns):         " << cfg.admin.cycleTime << std::endl;
+    std::cout << "Oper Clock Source:            " << getClockName(cfg.oper.clockid) << std::endl;
+    std::cout << "Oper Base Time (ns):          " << cfg.oper.baseTime << std::endl;
+    std::cout << "Oper Cycle Time (ns):         " << cfg.oper.cycleTime << std::endl;
 
     // 2. Priority to Traffic Class Mapping
     std::cout << "Priority-to-TC Mapping:" << std::endl;
@@ -106,16 +109,35 @@ void printTaprioConfig(const TaprioConfig& cfg) {
     std::cout << "\n" << std::endl;
 
     // 3. The Schedule (Gate Control List)
-    std::cout << "Gate Control List (Schedule):" << std::endl;
+    std::cout << "Admin Gate Control List (Schedule):" << std::endl;
     std::cout << "--------------------------------------------" << std::endl;
     std::cout << " Index | Command | Gate Mask | Interval (ns) " << std::endl;
     std::cout << "-------|---------|-----------|---------------" << std::endl;
 
-    if (cfg.schedule.empty()) {
+    if (cfg.admin.entries.empty()) {
         std::cout << "          [ Schedule is empty ]             " << std::endl;
     } else {
         int idx = 0;
-        for (const auto& entry : cfg.schedule) {
+        for (const auto& entry : cfg.admin.entries) {
+            std::cout << " " << std::setw(5) << idx++ << " | "
+                      << "  " << std::setw(5) << (int)entry.command << " | "
+                      << "    0x" << std::hex << std::setw(2) << std::setfill('0') << (int)entry.gateMask << std::dec
+                      << std::setfill(' ') << "    | " << std::setw(13) << entry.interval << std::endl;
+        }
+    }
+    std::cout << "--------------------------------------------" << std::endl;
+    std::cout << std::endl;
+    // 3. The Schedule (Gate Control List)
+    std::cout << "Oper Gate Control List (Schedule):" << std::endl;
+    std::cout << "--------------------------------------------" << std::endl;
+    std::cout << " Index | Command | Gate Mask | Interval (ns) " << std::endl;
+    std::cout << "-------|---------|-----------|---------------" << std::endl;
+
+    if (cfg.oper.entries.empty()) {
+        std::cout << "          [ Schedule is empty ]             " << std::endl;
+    } else {
+        int idx = 0;
+        for (const auto& entry : cfg.oper.entries) {
             std::cout << " " << std::setw(5) << idx++ << " | "
                       << "  " << std::setw(5) << (int)entry.command << " | "
                       << "    0x" << std::hex << std::setw(2) << std::setfill('0') << (int)entry.gateMask << std::dec
@@ -355,8 +377,7 @@ void tsnctrld::ensureCurrentNetlinkResponseInterfaces(uint32_t currentRequestId,
     std::cout << "[CACHE] [QUERY_NL] Different requestId (current:" << currentRequestId << ") from record ("
               << m_lastNetlinkId << "), querying netlink for latest state." << std::endl;
     m_interfaces.clear();
-    m_qm.getQdisc(m_sock, ifname);  // TODO:Fix. Will likely break, right now this function gets all interfaces, even if
-                                    // ifname is set, use new function.
+    m_qm.getAllQdiscInfo(m_sock);
 
     std::cout << "[CACHE] [QUERY_NL] Parsing response into internal list " << std::endl;
     m_qm.getInterfacesInResponse(m_sock, m_interfaces);
@@ -726,7 +747,7 @@ sysrepo::ErrorCode tsnctrld::changeGptCallback(sysrepo::Session sess, uint32_t s
 
                         printTaprioConfig(taprioCfg);
                         std::cout << "[CB_CHANGE] [GPT] Sending qdisc" << std::endl;
-                        m_qm.newQdisc(m_sock, ifname, taprioCfg);
+                        m_qm.setQdisc(m_sock, ifname, taprioCfg);
                         std::cout << "[CB_CHANGE] [GPT] Qdisc \"sent\"" << std::endl;
                         m_pathsToReset.push_back(std::string(change.node.path()));
                     }
