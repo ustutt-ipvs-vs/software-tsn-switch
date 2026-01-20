@@ -7,17 +7,23 @@
 
 struct TaprioSchedEntry {
     uint8_t command;
-    uint8_t gateMask;
-    uint64_t interval;
+    uint32_t gateMask;
+    uint32_t interval;
+};
+
+struct TaprioSchedule {
+    int32_t clockid;
+    int64_t baseTime;
+    int64_t cycleTime;
+    int64_t cycleTimeExt;
+    std::vector<TaprioSchedEntry> entries;
 };
 
 struct TaprioConfig {
     uint32_t numTc;
     std::array<uint8_t, TC_QOPT_BITMASK + 1> prioTc;
-    __clockid_t clockid;
-    uint64_t baseTime;
-    uint64_t cycleTime;
-    std::pmr::vector<TaprioSchedEntry> schedule;
+    TaprioSchedule admin;
+    TaprioSchedule oper;
 };
 
 #endif //ENPRO_TAPRIOMODEL_H

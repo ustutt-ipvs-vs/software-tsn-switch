@@ -4,14 +4,35 @@
 #include "../common/include/CncTypes.h"
 #include "include/TaprioModel.h"
 
-uint64_t NetconfNetlinkMapper::toNs(const RationalTime_t& rationalTime) {
+/**
+ * @brief Convert a rational time to nanoseconds.
+ *
+ * @param rationalTime Time represented as a RationalTime_t (numerator/denominator)
+ * @return uint64_t Time in nanoseconds
+ */
+uint64_t NetconfNetlinkMapper::rationalToNs(const RationalTime_t& rationalTime) const {
     return (static_cast<uint64_t>(rationalTime.numerator) * 1'000'000'000ULL) / rationalTime.denominator;
 }
 
-uint64_t NetconfNetlinkMapper::toNs(const PtpTime_t& time) {
+/**
+ * @brief Convert a PTP time to nanoseconds.
+ *
+ * @param time Time represented as a PtpTime_t (seconds + nanoseconds)
+ * @return uint64_t Time in nanoseconds
+ */
+uint64_t NetconfNetlinkMapper::ptpToNs(const PtpTime_t& time) const {
     return time.seconds * 1'000'000'000ULL + time.nanoseconds;
 }
 
+/**
+ * @brief Map a Netconf configuration to a TAPRIO qdisc configuration.
+ *
+ * Converts an operational/configuration GCL (Gate Control List) configuration
+ * to a TAPRIO configuration suitable for netlink message submission.
+ *
+ * @param gcl The GCL configuration
+ * @return TaprioConfig The resulting TAPRIO configuration for the kernel
+ */
 
 RationalTime_t NetconfNetlinkMapper::fromNsToRational(uint64_t ns) {
 // To get back to the original value using (N * 10^9) / D:
@@ -41,18 +62,32 @@ TaprioConfig NetconfNetlinkMapper::mapToTaprio(const GclConfig_t& gcl) {
         taprioConf.prioTc[i] = i;
     }
 
-    taprioConf.clockid = CLOCK_TAI;
-    taprioConf.baseTime = toNs(gcl.adminBaseTime);
-    taprioConf.cycleTime = toNs(gcl.adminCycleTime);
-    taprioConf.schedule.reserve(gcl.adminControlList.size());
+    taprioConf.admin.clockid = CLOCK_TAI;
+    taprioConf.admin.baseTime = ptpToNs(gcl.adminBaseTime);
+    taprioConf.admin.cycleTime = rationalToNs(gcl.adminCycleTime);
+    taprioConf.admin.cycleTimeExt = gcl.adminCycleTimeExtensionNs;
 
-    for (uint32_t i = 0; i < gcl.adminControlList.size(); ++i) {
-        const GclEntry_t& entry = gcl.adminControlList[i];
-        TaprioSchedEntry taprioEntry{};
-        taprioEntry.command = TC_TAPRIO_CMD_SET_GATES;
-        taprioEntry.gateMask = entry.gateStatesValue;
-        taprioEntry.interval = entry.timeIntervalValue;
-        taprioConf.schedule.push_back(taprioEntry);
+    taprioConf.admin.entries.reserve(gcl.adminControlList.size());
+    for (const GclEntry_t& entry : gcl.adminControlList) {
+        taprioConf.admin.entries.push_back({
+            .command  = TC_TAPRIO_CMD_SET_GATES,
+            .gateMask = entry.gateStatesValue,
+            .interval = entry.timeIntervalValue
+        });
+    }
+
+    taprioConf.oper.clockid = CLOCK_TAI;
+    taprioConf.oper.baseTime = ptpToNs(gcl.operBaseTime);
+    taprioConf.oper.cycleTime = rationalToNs(gcl.operCycleTime);
+    taprioConf.oper.cycleTimeExt = gcl.operCycleTimeExtensionNs;
+
+    taprioConf.oper.entries.reserve(gcl.operControlList.size());
+    for (const GclEntry_t& entry : gcl.operControlList) {
+        taprioConf.oper.entries.push_back({
+            .command  = TC_TAPRIO_CMD_SET_GATES,
+            .gateMask = entry.gateStatesValue,
+            .interval = entry.timeIntervalValue
+        });
     }
 
     return taprioConf;
