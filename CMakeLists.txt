@@ -66,8 +66,8 @@ target_link_libraries(tsncrld PUBLIC PkgConfig::SYSREPO_CPP PkgConfig::LIBYANG_C
 target_link_libraries(tsncrld PRIVATE tsnctrld_lib)
 
 # --- Netlink ---
-add_executable(enpro-switch tsnctrld/QdiscManager.cpp)
-target_link_libraries(enpro-switch PRIVATE tsnctrld_lib)
+#add_executable(enpro-switch tsnctrld/QdiscManager.cpp)
+#target_link_libraries(enpro-switch PRIVATE tsnctrld_lib)
 
 
 
