@@ -4,23 +4,23 @@
       "hostName": "vstsn01", 
       "interfaces": [
         {
-          "name": "enp2s0f2",
+          "name": "enp2s0f3",
           "gcl": {
             "adminGateStates": 255,
             "cycleTime": 1000000,
             "cycleTimeExtension": 500,
-            "baseTimeSeconds": 0,
+            "baseTimeSeconds": 1769015386,
             "baseTimeNanoseconds": 0,
             "entries": [
               {
                 "index": 0,
-                "timeIntervalValue": 321000,
+                "timeIntervalValue": 700000,
                 "gateStatesValue": 128,
                 "operationName": "sched:set-gate-states"
               },
               {
                 "index": 1,
-                "timeIntervalValue": 322000,
+                "timeIntervalValue": 300000,
                 "gateStatesValue": 255,
                 "operationName": "sched:set-gate-states"
               }

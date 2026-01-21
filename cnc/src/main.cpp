@@ -72,8 +72,8 @@ int main() {
     }
 
     // 6. Fetch LLDP Data
-    std::cout << "\n[INFO] --- Fetching LLDP Data ---" << std::endl;
-    manager.fetchLldpData();
+    //std::cout << "\n[INFO] --- Fetching LLDP Data ---" << std::endl;
+    //manager.fetchLldpData();
 
     // 6. Deployment (Create XML and send via Netconf)
     std::cout << "\n[INFO] --- Starting Deployment Phase ---" << std::endl;
