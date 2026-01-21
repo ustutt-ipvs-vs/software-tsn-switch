@@ -36,6 +36,7 @@ add_library(cnc_lib STATIC
     src/NetworkManager.cpp
     src/GclXmlBuilder.cpp
     src/LldpParser.cpp
+    src/GclParser.cpp
 )
 
 # Header paths for the library (and all who use it)
