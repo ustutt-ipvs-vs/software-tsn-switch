@@ -1,0 +1,17 @@
+# Checks starting WITHOUT a minus are inclusions, checks starting WITH a minus
+# are exclusions. The -* line disables all default checks to then allow
+# enabling checks selectively.
+Checks: >
+  -*,
+  bugprone-*,
+  clang-analyzer-*,
+  modernize-*,
+  performance-*,
+  readability-*,
+  -bugprone-easily-swappable-parameters,
+  -modernize-use-trailing-return-type,
+  -readability-magic-numbers,
+  -readability-identifier-length
+
+# Directories we are responsible for
+HeaderFilterRegex: '(cnc|common|tsnctrld)/.*'

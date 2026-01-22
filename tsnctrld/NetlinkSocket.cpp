@@ -2,16 +2,18 @@
  * In part taken from @kupkabn implementation
  */
 #include "NetlinkSocket.h"
-#include <cstring>
-#include <unistd.h>
+
 #include <arpa/inet.h>
 #include <linux/netlink.h>
 #include <linux/rtnetlink.h>
 #include <net/if.h>
 #include <sys/socket.h>
-#include <stdexcept>
+#include <unistd.h>
+
 #include <cstdlib>
+#include <cstring>
 #include <iostream>
+#include <stdexcept>
 
 /**
  * @brief Creates and returns a Netlink socket file descriptor.
@@ -23,10 +25,11 @@ int NetlinkSocket::connectSocket() {
 }
 
 /**
- * @brief Initialization of the NetlinkSocket class with member initialization socket_fd with the return value of connect_socket()
+ * @brief Initialization of the NetlinkSocket class with member initialization socket_fd with the return value of
+ * connect_socket()
  */
-NetlinkSocket::NetlinkSocket(): socketFd(connectSocket()) {
-    if(this->socketFd < 0) {
+NetlinkSocket::NetlinkSocket() : socketFd(connectSocket()) {
+    if (this->socketFd < 0) {
         throw std::runtime_error("Error creating netlink socket.");
     }
 
@@ -59,7 +62,8 @@ NetlinkSocket::~NetlinkSocket() {
  * @param The length of the added attribute
  * @return A pointer to the attributes of the netlink message
  */
-rtattr* NetlinkSocket::addRtaAttribute(nlmsghdr *nlh, const int maxlen, const int type, const void *data, const int len) {
+rtattr *NetlinkSocket::addRtaAttribute(nlmsghdr *nlh, const int maxlen, const int type, const void *data,
+                                       const int len) {
     struct rtattr *rta = NLMSG_TAIL(nlh);
     int rtalen = RTA_LENGTH(len);
 
@@ -70,7 +74,7 @@ rtattr* NetlinkSocket::addRtaAttribute(nlmsghdr *nlh, const int maxlen, const in
     rta->rta_type = type;
     rta->rta_len = rtalen;
 
-    if(data != nullptr) memcpy(RTA_DATA(rta), data, len);
+    if (data != nullptr) memcpy(RTA_DATA(rta), data, len);
 
     nlh->nlmsg_len = NLMSG_ALIGN(nlh->nlmsg_len) + RTA_ALIGN(rtalen);
     return rta;
@@ -87,9 +91,9 @@ rtattr* NetlinkSocket::addRtaAttribute(nlmsghdr *nlh, const int maxlen, const in
  */
 void NetlinkSocket::sendMessage(nlmsghdr *nlh, const size_t len) {
     nlh->nlmsg_flags |= NLM_F_ACK;
-    struct iovec iov = { nlh, len };
-    struct sockaddr_nl kernel = { .nl_family = AF_NETLINK };
-    struct msghdr msg = { &kernel, sizeof(kernel), &iov, 1, NULL, 0, 0 };
+    struct iovec iov = {nlh, len};
+    struct sockaddr_nl kernel = {.nl_family = AF_NETLINK};
+    struct msghdr msg = {&kernel, sizeof(kernel), &iov, 1, NULL, 0, 0};
 
     if (sendmsg(socketFd, &msg, 0) < 0) {
         throw std::runtime_error("Failed to send message to kernel");
@@ -120,10 +124,10 @@ void NetlinkSocket::saveResponse() {
 
             if (nlh->nlmsg_type == NLMSG_ERROR) {
                 struct nlmsgerr *error = (struct nlmsgerr *)NLMSG_DATA(nlh);
-                if(error->error == 0) {
+                if (error->error == 0) {
                     std::cout << "Netlink Message accepted" << std::endl;
                 } else {
-                    throw std::runtime_error("Error in received message with code: " +  std::to_string(error->error));
+                    throw std::runtime_error("Error in received message with code: " + std::to_string(error->error));
                 }
             }
             struct nlmsghdr *nlh_save = (nlmsghdr *)std::malloc(nlh->nlmsg_len);
@@ -143,7 +147,7 @@ void NetlinkSocket::saveResponse() {
  * Frees allocated memory and clears the internal response vector.
  */
 void NetlinkSocket::clearResponse() {
-    for(nlmsghdr* nlh : this->response) {
+    for (nlmsghdr *nlh : this->response) {
         std::free(nlh);
     }
     this->response.clear();
@@ -157,4 +161,3 @@ void NetlinkSocket::clearResponse() {
 std::vector<nlmsghdr *> NetlinkSocket::getResponse() const {
     return this->response;
 }
-

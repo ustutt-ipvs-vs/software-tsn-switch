@@ -1,10 +1,13 @@
-#include "NestedAttBuilder.h"
-#include <cstring>
 #include <NetlinkSocket.h>
 #include <linux/rtnetlink.h>
+
+#include <cstring>
 #include <stdexcept>
 
-NestedAttrBuilder::NestedAttrBuilder(const int maxPayloadLength) : maxPayloadLength(maxPayloadLength) {}
+#include "NestedAttBuilder.h"
+
+NestedAttrBuilder::NestedAttrBuilder(const int maxPayloadLength) : maxPayloadLength(maxPayloadLength) {
+}
 
 /**
  * @brief Add the new length of a given attribute
@@ -16,12 +19,12 @@ void NestedAttrBuilder::addAttrLength(const int attrBuilderID, const int length)
 
     item->attr->rta_len += RTA_ALIGN(length);
 
-    if(item->parentID.has_value()) {
+    if (item->parentID.has_value()) {
         this->addAttrLength(item->parentID.value(), length);
     } else {
         const int nlh_len = NLMSG_ALIGN(this->nlh->nlmsg_len) + length;
 
-        if(nlh_len > this->maxPayloadLength) {
+        if (nlh_len > this->maxPayloadLength) {
             throw std::runtime_error("Message exceeds maximum length");
         }
 
@@ -37,7 +40,7 @@ void NestedAttrBuilder::addAttrLength(const int attrBuilderID, const int length)
  * @param len The length of the attribute to be added
  * @return Returns the ID of the added attribute in the internal data structure
  */
-int NestedAttrBuilder::addAttribute(nlmsghdr *nlh, const int type, const void *data, const int len) {
+int NestedAttrBuilder::addAttribute(nlmsghdr* nlh, const int type, const void* data, const int len) {
     this->clearAttrVector();
 
     rtattr* attr = NLMSG_TAIL(nlh);
@@ -53,7 +56,7 @@ int NestedAttrBuilder::addAttribute(nlmsghdr *nlh, const int type, const void *d
  * @param len The length of the attribute to be added
  * @return
  */
-int NestedAttrBuilder::addAttribute(const int attrBuilderParentID, const int type, const void *data, const int len) {
+int NestedAttrBuilder::addAttribute(const int attrBuilderParentID, const int type, const void* data, const int len) {
     attrBuilderItem* parent = this->attrs.at(attrBuilderParentID);
     rtattr* attr = (struct rtattr*)((char*)parent->attr + RTA_ALIGN(parent->attr->rta_len));
     return this->insertAttr(new attrBuilderItem{.attr = attr, .parentID = attrBuilderParentID}, type, data, len);
@@ -67,21 +70,21 @@ int NestedAttrBuilder::addAttribute(const int attrBuilderParentID, const int typ
  * @param len The length of the attribute to be added
  * @return The ID of the attribute in the internal data structure
  */
-int NestedAttrBuilder::insertAttr(attrBuilderItem *item, const int type, const void *data, const int len) {
+int NestedAttrBuilder::insertAttr(attrBuilderItem* item, const int type, const void* data, const int len) {
     item->attr->rta_len = RTA_LENGTH(len);
     item->attr->rta_type = type;
     this->attrs.emplace_back(item);
     int delta = RTA_ALIGN(item->attr->rta_len);
 
-    if(data != nullptr) {
+    if (data != nullptr) {
         std::memcpy(RTA_DATA(item->attr), data, len);
     }
 
-    if(item->parentID.has_value()) {
+    if (item->parentID.has_value()) {
         this->addAttrLength(item->parentID.value(), delta);
     } else {
         const int nlh_len = NLMSG_ALIGN(this->nlh->nlmsg_len) + delta;
-        if(nlh_len > this->maxPayloadLength) {
+        if (nlh_len > this->maxPayloadLength) {
             throw std::runtime_error("Message exceeds maximum length");
         }
         this->nlh->nlmsg_len = nlh_len;
@@ -94,7 +97,7 @@ int NestedAttrBuilder::insertAttr(attrBuilderItem *item, const int type, const v
  * @brief Clear the internal data structure of all added attributes
  */
 void NestedAttrBuilder::clearAttrVector() {
-    for(attrBuilderItem* item : this->attrs) {
+    for (attrBuilderItem* item : this->attrs) {
         std::free(item);
     }
     this->attrs.clear();
@@ -103,4 +106,3 @@ void NestedAttrBuilder::clearAttrVector() {
 NestedAttrBuilder::~NestedAttrBuilder() {
     this->clearAttrVector();
 }
-

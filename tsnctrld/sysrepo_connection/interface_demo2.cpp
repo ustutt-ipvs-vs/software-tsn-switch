@@ -1,24 +1,24 @@
-#include <iostream>
-#include <string>
-#include <vector>
-#include <thread>
-#include <chrono>
-#include <optional>
 #include <algorithm>
+#include <chrono>
+#include <iostream>
 #include <map>
+#include <optional>
+#include <string>
+#include <thread>
+#include <vector>
 
 // Linux & Sysrepo
-#include <sys/types.h>
 #include <ifaddrs.h>
 #include <net/if.h>
-#include <unistd.h>
 #include <netpacket/packet.h>
+#include <sys/types.h>
+#include <unistd.h>
 
+#include <libyang-cpp/Context.hpp>
+#include <sysrepo-cpp/Changes.hpp>
 #include <sysrepo-cpp/Connection.hpp>
 #include <sysrepo-cpp/Session.hpp>
 #include <sysrepo-cpp/Subscription.hpp>
-#include <sysrepo-cpp/Changes.hpp>
-#include <libyang-cpp/Context.hpp>
 
 // Structs provided in CncTypes.h
 #include "../../common/include/CncTypes.h"
@@ -64,7 +64,8 @@ sysrepo::ErrorCode apply_gcl_to_hw(const std::string& ifname, const GclConfig_t&
 
 class TsnManager {
    public:
-    TsnManager(sysrepo::Session sess) : m_sess(sess) {}
+    TsnManager(sysrepo::Session sess) : m_sess(sess) {
+    }
 
     void initialize() {
         std::cout << "[INIT] Starting TSN Management Backend..." << std::endl;
@@ -79,7 +80,8 @@ class TsnManager {
 
     /* --- CONFIGURATION CALLBACKS --- */
 
-    static sysrepo::ErrorCode interface_config_cb(sysrepo::Session sess, uint32_t, const std::string&, const std::optional<std::string>&, sysrepo::Event event, uint32_t) {
+    static sysrepo::ErrorCode interface_config_cb(sysrepo::Session sess, uint32_t, const std::string&,
+                                                  const std::optional<std::string>&, sysrepo::Event event, uint32_t) {
         std::cout << "[CB] [IF-CONFIG] [" << event << "] triggered." << std::endl;
         if (event != sysrepo::Event::Change) return sysrepo::ErrorCode::Ok;
 
@@ -102,14 +104,17 @@ class TsnManager {
                 continue;
             }
 
-            if (change.operation == sysrepo::ChangeOperation::Created || change.operation == sysrepo::ChangeOperation::Deleted) {
-                std::cerr << "[CB] [IF-CONFIG] [REJECT] Structural change: \"" << path << "\" with operation: " << change.operation << std::endl;
+            if (change.operation == sysrepo::ChangeOperation::Created ||
+                change.operation == sysrepo::ChangeOperation::Deleted) {
+                std::cerr << "[CB] [IF-CONFIG] [REJECT] Structural change: \"" << path
+                          << "\" with operation: " << change.operation << std::endl;
                 return sysrepo::ErrorCode::Unsupported;
             }
         }
         return sysrepo::ErrorCode::Ok;
     }
-    static sysrepo::ErrorCode interface_config_cb2(sysrepo::Session sess, uint32_t, const std::string&, const std::optional<std::string>&, sysrepo::Event event, uint32_t) {
+    static sysrepo::ErrorCode interface_config_cb2(sysrepo::Session sess, uint32_t, const std::string&,
+                                                   const std::optional<std::string>&, sysrepo::Event event, uint32_t) {
         std::cout << "[CB] [IF-CONFIG] [" << event << "] triggered." << std::endl;
         if (event != sysrepo::Event::Change) return sysrepo::ErrorCode::Ok;
 
@@ -132,15 +137,18 @@ class TsnManager {
                 continue;
             }
 
-            if (change.operation == sysrepo::ChangeOperation::Created || change.operation == sysrepo::ChangeOperation::Deleted) {
-                std::cerr << "[CB] [IF-CONFIG] [REJECT] Structural change: \"" << path << "\" with operation: " << change.operation << std::endl;
+            if (change.operation == sysrepo::ChangeOperation::Created ||
+                change.operation == sysrepo::ChangeOperation::Deleted) {
+                std::cerr << "[CB] [IF-CONFIG] [REJECT] Structural change: \"" << path
+                          << "\" with operation: " << change.operation << std::endl;
                 return sysrepo::ErrorCode::Unsupported;
             }
         }
         return sysrepo::ErrorCode::Ok;
     }
 
-    static sysrepo::ErrorCode gate_table_cb(sysrepo::Session sess, uint32_t, const std::string&, const std::optional<std::string>&, sysrepo::Event event, uint32_t) {
+    static sysrepo::ErrorCode gate_table_cb(sysrepo::Session sess, uint32_t, const std::string&,
+                                            const std::optional<std::string>&, sysrepo::Event event, uint32_t) {
         std::cout << "[CB] [GATE-CONFIG] [" << event << "] triggered." << std::endl;
         if (event != sysrepo::Event::Change) return sysrepo::ErrorCode::Ok;
 
@@ -153,7 +161,7 @@ class TsnManager {
                 std::string ifname = path.substr(start, end - start);
 
                 std::cout << "[CB] [GATE-CONFIG] [ACTION] Applying qdisc for " << ifname << std::endl;
-                GclConfig_t cfg = fetch_hw_state(ifname); // Real app: pull admin values from sess.getData()
+                GclConfig_t cfg = fetch_hw_state(ifname);  // Real app: pull admin values from sess.getData()
                 auto res = apply_gcl_to_hw(ifname, cfg);
                 if (res != sysrepo::ErrorCode::Ok) return res;
             }
@@ -163,7 +171,9 @@ class TsnManager {
 
     /* --- OPERATIONAL CALLBACKS (PULL MODEL) --- */
 
-    static sysrepo::ErrorCode oper_interface_cb(sysrepo::Session sess, uint32_t, const std::string&, const std::optional<std::string>&, const std::optional<std::string>&, uint32_t, std::optional<libyang::DataNode>& parent) {
+    static sysrepo::ErrorCode oper_interface_cb(sysrepo::Session sess, uint32_t, const std::string&,
+                                                const std::optional<std::string>&, const std::optional<std::string>&,
+                                                uint32_t, std::optional<libyang::DataNode>& parent) {
         std::cout << "[CB] [OPER-IF] Refreshing interface status..." << std::endl;
         struct ifaddrs *ifaddr, *ifa;
         if (getifaddrs(&ifaddr) == -1) return sysrepo::ErrorCode::Internal;
@@ -175,14 +185,17 @@ class TsnManager {
             std::string path = "/ietf-interfaces:interfaces/interface[name='" + name + "']";
             bool is_loop = (ifa->ifa_flags & IFF_LOOPBACK);
 
-            if (!parent) parent = ctx.newPath(path + "/oper-status", (ifa->ifa_flags & IFF_RUNNING) ? "up" : "down");
-            else parent->newPath(path + "/oper-status", (ifa->ifa_flags & IFF_RUNNING) ? "up" : "down");
-            struct sockaddr_ll *s = (struct sockaddr_ll*)ifa->ifa_addr;
+            if (!parent)
+                parent = ctx.newPath(path + "/oper-status", (ifa->ifa_flags & IFF_RUNNING) ? "up" : "down");
+            else
+                parent->newPath(path + "/oper-status", (ifa->ifa_flags & IFF_RUNNING) ? "up" : "down");
+            struct sockaddr_ll* s = (struct sockaddr_ll*)ifa->ifa_addr;
             if (!is_loop) parent->newPath(path + "/phys-address", mac_to_string(s->sll_addr, 6, ':'));
 
             if (!get_bridge_master(name).empty() || is_bridge(name)) {
                 GclConfig_t hw = fetch_hw_state(name);
-                std::string gpt = path + "/ieee802-dot1q-bridge:bridge-port/ieee802-dot1q-sched-bridge:gate-parameter-table";
+                std::string gpt =
+                    path + "/ieee802-dot1q-bridge:bridge-port/ieee802-dot1q-sched-bridge:gate-parameter-table";
                 parent->newPath(gpt + "/oper-cycle-time/numerator", std::to_string(hw.operCycleTime.numerator));
                 parent->newPath(gpt + "/oper-cycle-time/denominator", std::to_string(hw.operCycleTime.denominator));
             }
@@ -192,7 +205,9 @@ class TsnManager {
     }
 
     // Callback 4: Bridge-Port List Mapping (Efficient pass on top-level /bridges)
-    static sysrepo::ErrorCode oper_bridge_cb(sysrepo::Session sess, uint32_t, const std::string&, const std::optional<std::string>&, const std::optional<std::string>&, uint32_t, std::optional<libyang::DataNode>& parent) {
+    static sysrepo::ErrorCode oper_bridge_cb(sysrepo::Session sess, uint32_t, const std::string&,
+                                             const std::optional<std::string>&, const std::optional<std::string>&,
+                                             uint32_t, std::optional<libyang::DataNode>& parent) {
         std::cout << "[CB] [OPER-BR] Scanning interfaces for bridge members..." << std::endl;
         struct ifaddrs *ifaddr, *ifa;
         if (getifaddrs(&ifaddr) == -1) return sysrepo::ErrorCode::Internal;
@@ -205,9 +220,12 @@ class TsnManager {
 
             if (!master.empty()) {
                 // Populate config-false leaf-list in bridge model
-                std::string path = "/ieee802-dot1q-bridge:bridges/bridge[name='" + master + "']/component[name='" + master + "_comp']/bridge-port";
-                if(!parent) parent = ctx.newPath(path, ifname);
-                else parent->newPath(path, ifname);
+                std::string path = "/ieee802-dot1q-bridge:bridges/bridge[name='" + master + "']/component[name='" +
+                                   master + "_comp']/bridge-port";
+                if (!parent)
+                    parent = ctx.newPath(path, ifname);
+                else
+                    parent->newPath(path, ifname);
             }
         }
         freeifaddrs(ifaddr);
@@ -216,17 +234,21 @@ class TsnManager {
 
     /* --- GRANULAR REJECT CALLBACKS --- */
 
-    static sysrepo::ErrorCode bridge_reject_cb(sysrepo::Session sess, uint32_t, const std::string& mod, const std::optional<std::string>&, sysrepo::Event event, uint32_t) {
+    static sysrepo::ErrorCode bridge_reject_cb(sysrepo::Session sess, uint32_t, const std::string& mod,
+                                               const std::optional<std::string>&, sysrepo::Event event, uint32_t) {
         if (event == sysrepo::Event::Change) {
-            std::cerr << "[CB] [REJECT] Edits to 'ieee802-dot1q-bridge' (Bridges) are currently not implemented." << std::endl;
+            std::cerr << "[CB] [REJECT] Edits to 'ieee802-dot1q-bridge' (Bridges) are currently not implemented."
+                      << std::endl;
             return sysrepo::ErrorCode::Unsupported;
         }
         return sysrepo::ErrorCode::Ok;
     }
 
-    static sysrepo::ErrorCode lldp_reject_cb(sysrepo::Session sess, uint32_t, const std::string& mod, const std::optional<std::string>&, sysrepo::Event event, uint32_t) {
+    static sysrepo::ErrorCode lldp_reject_cb(sysrepo::Session sess, uint32_t, const std::string& mod,
+                                             const std::optional<std::string>&, sysrepo::Event event, uint32_t) {
         if (event == sysrepo::Event::Change) {
-            std::cerr << "[CB] [REJECT] Edits to 'ieee802-dot1ab-lldp' (LLDP) are currently not implemented." << std::endl;
+            std::cerr << "[CB] [REJECT] Edits to 'ieee802-dot1ab-lldp' (LLDP) are currently not implemented."
+                      << std::endl;
             return sysrepo::ErrorCode::Unsupported;
         }
         return sysrepo::ErrorCode::Ok;
@@ -235,31 +257,36 @@ class TsnManager {
     /* --- LLDP CALLBACKS --- */
 
     // Configuration Callback: Rejects any attempt to change LLDP settings
-    static sysrepo::ErrorCode lldp_config_cb(sysrepo::Session sess, uint32_t, const std::string&, const std::optional<std::string>&, sysrepo::Event event, uint32_t) {
+    static sysrepo::ErrorCode lldp_config_cb(sysrepo::Session sess, uint32_t, const std::string&,
+                                             const std::optional<std::string>&, sysrepo::Event event, uint32_t) {
         if (event != sysrepo::Event::Change) return sysrepo::ErrorCode::Ok;
 
         for (const auto& change : sess.getChanges("//.")) {
             // Responsibility Filter
             if (change.node.schema().module().name() != "ieee802-dot1ab-lldp") continue;
 
-            std::cerr << "[CB] [LLDP-CONFIG] [REJECT] Unauthorized modification on LLDP config: "
-                      << change.node.path() << std::endl;
+            std::cerr << "[CB] [LLDP-CONFIG] [REJECT] Unauthorized modification on LLDP config: " << change.node.path()
+                      << std::endl;
             return sysrepo::ErrorCode::Unsupported;
         }
         return sysrepo::ErrorCode::Ok;
     }
 
     // Operational Callback: Provides mock local data and neighbor information
-    static sysrepo::ErrorCode oper_lldp_cb(sysrepo::Session sess, uint32_t, const std::string&, const std::optional<std::string>&, const std::optional<std::string>&, uint32_t, std::optional<libyang::DataNode>& parent) {
+    static sysrepo::ErrorCode oper_lldp_cb(sysrepo::Session sess, uint32_t, const std::string&,
+                                           const std::optional<std::string>&, const std::optional<std::string>&,
+                                           uint32_t, std::optional<libyang::DataNode>& parent) {
         std::cout << "[CB] [OPER-LLDP] [INFO] Providing mock LLDP operational data..." << std::endl;
 
         auto ctx = sess.getContext();
         // Use a helper to initialize 'parent' if it's the first time
         auto add_path = [&](const std::string& path, const std::string& val = "") {
             if (!parent) {
-                parent = ctx.newPath(path, val.empty() ? std::nullopt : std::optional<std::string>(val), libyang::CreationOptions::Output);
+                parent = ctx.newPath(path, val.empty() ? std::nullopt : std::optional<std::string>(val),
+                                     libyang::CreationOptions::Output);
             } else {
-                parent->newPath(path, val.empty() ? std::nullopt : std::optional<std::string>(val), libyang::CreationOptions::Output);
+                parent->newPath(path, val.empty() ? std::nullopt : std::optional<std::string>(val),
+                                libyang::CreationOptions::Output);
             }
         };
 
@@ -273,7 +300,9 @@ class TsnManager {
             // 2. Mock Neighbor Data (Remote Systems)
             // Note: The structure depends on the exact YANG version.
             // In 802.1ABcu, neighbors are often under lldp/port/remote-systems-data
-            std::string remote_base = "/ieee802-dot1ab-lldp:lldp/port[name='enp2s0f2'][dest-mac-address='01-80-c2-00-00-0e']/remote-systems-data";
+            std::string remote_base =
+                "/ieee802-dot1ab-lldp:lldp/port[name='enp2s0f2'][dest-mac-address='01-80-c2-00-00-0e']/"
+                "remote-systems-data";
 
             // Neighbors are identified by a time-mark and a remote-index
             std::string neighbor = remote_base + "[time-mark=1][remote-index=1]";
@@ -293,9 +322,11 @@ class TsnManager {
     void setup_subscriptions() {
         std::cout << "[INIT] [SUBS] Registering granular callbacks..." << std::endl;
 
-        //m_sub = m_sess.onModuleChange("ietf-interfaces", interface_config_cb, "/ietf-interfaces:interfaces");
+        // m_sub = m_sess.onModuleChange("ietf-interfaces", interface_config_cb, "/ietf-interfaces:interfaces");
         m_sub = m_sess.onModuleChange("ietf-interfaces", interface_config_cb, std::nullopt);
-        m_sub->onModuleChange("ietf-interfaces", gate_table_cb, "/ietf-interfaces:interfaces/interface/ieee802-dot1q-bridge:bridge-port/ieee802-dot1q-sched-bridge:gate-parameter-table");
+        m_sub->onModuleChange("ietf-interfaces", gate_table_cb,
+                              "/ietf-interfaces:interfaces/interface/ieee802-dot1q-bridge:bridge-port/"
+                              "ieee802-dot1q-sched-bridge:gate-parameter-table");
 
         m_sub->onOperGet("ietf-interfaces", oper_interface_cb, "/ietf-interfaces:interfaces/interface");
         // FIX: Subscribe to top-level bridges for efficient population of all bridge-ports at once
@@ -323,7 +354,7 @@ class TsnManager {
             if (ifa->ifa_addr == NULL || ifa->ifa_addr->sa_family != AF_PACKET) continue;
 
             std::string name = ifa->ifa_name;
-            if (name == "ovs-system") continue; // Keep OVS skip as requested earlier
+            if (name == "ovs-system") continue;  // Keep OVS skip as requested earlier
 
             // Determine properties via flags
             bool is_loop = (ifa->ifa_flags & IFF_LOOPBACK);
@@ -332,25 +363,30 @@ class TsnManager {
 
             // --- PASS 1: Bridges (Only if it's a bridge and NOT loopback) ---
             if (is_br && !is_loop) {
-                struct sockaddr_ll *s = (struct sockaddr_ll*)ifa->ifa_addr;
+                struct sockaddr_ll* s = (struct sockaddr_ll*)ifa->ifa_addr;
                 std::string br_path = "/ieee802-dot1q-bridge:bridges/bridge[name='" + name + "']";
                 std::string mac = mac_to_string(s->sll_addr, 6, '-');
 
-                if (!forest) forest = ctx.newPath(br_path + "/address", mac);
-                else forest->newPath(br_path + "/address", mac);
+                if (!forest)
+                    forest = ctx.newPath(br_path + "/address", mac);
+                else
+                    forest->newPath(br_path + "/address", mac);
 
                 forest->newPath(br_path + "/bridge-type", "ieee802-dot1q-bridge:customer-vlan-bridge");
                 forest->newPath(br_path + "/component[name='" + name + "_comp']/id", "1");
-                forest->newPath(br_path + "/component[name='" + name + "_comp']/type", "ieee802-dot1q-bridge:c-vlan-component");
+                forest->newPath(br_path + "/component[name='" + name + "_comp']/type",
+                                "ieee802-dot1q-bridge:c-vlan-component");
             }
 
             // --- PASS 2: Interface Core ---
             std::string if_path = "/ietf-interfaces:interfaces/interface[name='" + name + "']";
-            std::string type = is_loop ? "iana-if-type:softwareLoopback" :
-                                       (is_br ? "iana-if-type:bridge" : "iana-if-type:ethernetCsmacd");
+            std::string type = is_loop ? "iana-if-type:softwareLoopback"
+                                       : (is_br ? "iana-if-type:bridge" : "iana-if-type:ethernetCsmacd");
 
-            if (!forest) forest = ctx.newPath(if_path + "/type", type);
-            else forest->newPath(if_path + "/type", type);
+            if (!forest)
+                forest = ctx.newPath(if_path + "/type", type);
+            else
+                forest->newPath(if_path + "/type", type);
 
             forest->newPath(if_path + "/enabled", is_up ? "true" : "false");
 
@@ -368,17 +404,21 @@ class TsnManager {
                 GclConfig_t hw_cfg = fetch_hw_state(name);
                 std::string gpt = bp_path + "/ieee802-dot1q-sched-bridge:gate-parameter-table";
                 forest->newPath(gpt + "/supported-list-max", std::to_string(hw_cfg.supportedListMax));
-                forest->newPath(gpt + "/supported-cycle-max/numerator", std::to_string(hw_cfg.supportedCycleMaxNumerator));
-                forest->newPath(gpt + "/supported-cycle-max/denominator", std::to_string(hw_cfg.supportedCycleMaxDenominator));
+                forest->newPath(gpt + "/supported-cycle-max/numerator",
+                                std::to_string(hw_cfg.supportedCycleMaxNumerator));
+                forest->newPath(gpt + "/supported-cycle-max/denominator",
+                                std::to_string(hw_cfg.supportedCycleMaxDenominator));
                 forest->newPath(gpt + "/supported-interval-max", std::to_string(hw_cfg.supportedIntervalMax));
                 forest->newPath(gpt + "/admin-cycle-time/numerator", std::to_string(hw_cfg.adminCycleTime.numerator));
-                forest->newPath(gpt + "/admin-cycle-time/denominator", std::to_string(hw_cfg.adminCycleTime.denominator));
+                forest->newPath(gpt + "/admin-cycle-time/denominator",
+                                std::to_string(hw_cfg.adminCycleTime.denominator));
             }
 
             if (!is_loop && !is_br) {
                 std::cout << "[INIT] [LLDP] Enabling discovery on: " << name << std::endl;
-                std::string lldp_port = "/ieee802-dot1ab-lldp:lldp/port[name='" + name + "'][dest-mac-address='01-80-c2-00-00-0e']";
-                forest->newPath(lldp_port + "/admin-status", "tx-and-rx"); // 'both' = tx and rx
+                std::string lldp_port =
+                    "/ieee802-dot1ab-lldp:lldp/port[name='" + name + "'][dest-mac-address='01-80-c2-00-00-0e']";
+                forest->newPath(lldp_port + "/admin-status", "tx-and-rx");  // 'both' = tx and rx
             }
         }
         freeifaddrs(ifaddr);
@@ -387,7 +427,8 @@ class TsnManager {
             std::cout << "[INIT] [SYNC] Applying Batch to Datastore..." << std::endl;
             std::cout << "[INIT] [SYNC] Switching to first sibling..." << std::endl;
             forest = forest->firstSibling();
-            std::cout << "  -> [SYNC DEBUG] Data forest:\n" << forest->printStr(libyang::DataFormat::XML, libyang::PrintFlags::Siblings).value() << std::endl;
+            std::cout << "  -> [SYNC DEBUG] Data forest:\n"
+                      << forest->printStr(libyang::DataFormat::XML, libyang::PrintFlags::Siblings).value() << std::endl;
             std::cout << "[SYNC] Editing batch..." << std::endl;
             m_sess.editBatch(*forest, sysrepo::DefaultOperation::Merge);
             std::cout << "[SYNC] Applying changes..." << std::endl;
@@ -396,13 +437,21 @@ class TsnManager {
         }
     }
     // Static Utils
-    static bool is_bridge(const std::string& n) { return (access(("/sys/class/net/" + n + "/bridge").c_str(), F_OK) == 0); }
+    static bool is_bridge(const std::string& n) {
+        return (access(("/sys/class/net/" + n + "/bridge").c_str(), F_OK) == 0);
+    }
     static std::string get_bridge_master(const std::string& n) {
-        char buf[256]; ssize_t l = readlink(("/sys/class/net/" + n + "/master").c_str(), buf, 255);
-        if (l == -1) return ""; buf[l] = '\0'; std::string s(buf); return s.substr(s.find_last_of('/') + 1);
+        char buf[256];
+        ssize_t l = readlink(("/sys/class/net/" + n + "/master").c_str(), buf, 255);
+        if (l == -1) return "";
+        buf[l] = '\0';
+        std::string s(buf);
+        return s.substr(s.find_last_of('/') + 1);
     }
     static std::string mac_to_string(unsigned char* s, int len, char sep) {
-        char b[18]; snprintf(b, 18, "%02x%c%02x%c%02x%c%02x%c%02x%c%02x", s[0],sep,s[1],sep,s[2],sep,s[3],sep,s[4],sep,s[5]);
+        char b[18];
+        snprintf(b, 18, "%02x%c%02x%c%02x%c%02x%c%02x%c%02x", s[0], sep, s[1], sep, s[2], sep, s[3], sep, s[4], sep,
+                 s[5]);
         return std::string(b);
     }
     void start_notification_loop() {
@@ -412,7 +461,8 @@ class TsnManager {
                 try {
                     auto notif = m_sess.getContext().newPath("/ieee802-dot1ab-lldp:remote-table-change", std::nullopt);
                     m_sess.sendNotification(notif, sysrepo::Wait::No);
-                } catch (...) {}
+                } catch (...) {
+                }
             }
         }).detach();
     }
@@ -427,7 +477,8 @@ int main() {
         manager.initialize();
         while (true) std::this_thread::sleep_for(std::chrono::seconds(1));
     } catch (const std::exception& e) {
-        std::cerr << "[FATAL] " << e.what() << std::endl; return 1;
+        std::cerr << "[FATAL] " << e.what() << std::endl;
+        return 1;
     }
     return 0;
 }

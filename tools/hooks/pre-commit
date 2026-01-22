@@ -1,0 +1,33 @@
+#!/bin/sh
+
+# Abort on error
+set -e
+
+# Allow disabling via git config
+FORMAT_ENABLED=$(git config --bool hooks.clangformat || echo true)
+if [ "$FORMAT_ENABLED" = "true" ]; then
+    # Check whether clang-format is installed
+    if ! command -v clang-format >/dev/null 2>&1; then
+        echo "Error: clang-format is not installed or not in PATH." >&2
+        echo "If you want to disable this pre-commit formatting check:" >&2
+        echo "git config --local hooks.clangformat false" >&2
+        exit 1
+    fi
+
+    # Get list of relevant tracked files
+    FILES=$(git ls-files '*.cpp' '*.hpp' '*.h')
+
+    # If no matching files, exit successfully
+    [ -z "$FILES" ] && exit 0
+
+    # Check formatting
+    if ! clang-format --dry-run --Werror $FILES >/dev/null 2>&1; then
+        echo "clang-format check failed."  >&2
+        echo "Please run clang-format before committing." >&2
+        echo "Hint: ./tools/format-project.sh" >&2
+        echo "If you want to disable this pre-commit formatting check:" >&2
+        echo "git config --local hooks.clangformat false" >&2
+        exit 1
+    fi
+    echo "clang-format check passed."
+fi

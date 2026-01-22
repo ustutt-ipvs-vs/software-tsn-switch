@@ -33,12 +33,47 @@ The repository is organized as a monorepo containing the following components:
 
 In order to compile the code, various libraries are needed, the steps needed are written in [steps_for_installing_updating.txt] (TODO:Cleanup).
 
-To build the project, create a build folder and run CMake and Make in it:
+To build the project, run CMake (all commands assume you're in the repo's root):
 ```bash
-mkdir build; cd build && cmake .. && make
+cmake -S . -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON && make --directory=build
 ```
 
-To run all tests (after building and while still in the `build` directory):
+To run all tests:
 ```bash
-ctest
+ctest --test-dir build
 ```
+
+## Formatting
+We use clang-format as our formatter.
+Make sure you have it installed: `sudo apt install clang-format`.
+
+Before you commit, please run our formatting script to keep the code tidy:
+
+```bash
+./tools/format-project.sh
+```
+
+If you forget to do this, the pipeline will complain.
+If you would like an automated reminder, install our Git hook, which checks the code before each commit:
+
+```bash
+cp -rf tools/hooks/ .git; chmod --recursive +x .git/hooks/
+```
+
+## Linting
+We use clang-tidy as our linter.
+Make sure you have it installed: `sudo apt install clang-tidy`.
+To lint a specific file (after building with the above commands!):
+
+```bash
+clang-tidy -p build path/to/file.cpp
+```
+
+To lint *everything*:
+
+```bash
+run-clang-tidy -p build -quiet '(cnc|common|tsnctrld)/.*'
+```
+
+Since linting takes a while to process and can sometimes be a pain to comply with,
+there is no git hook for linting and the pipline will allow linting failures.

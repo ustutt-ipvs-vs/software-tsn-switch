@@ -85,8 +85,9 @@ class tsnctrld {
 
     ietfInterface_t* syncInterfaceFromSysrepo(sysrepo::Session sess, const std::string& ifname);
 
-   void resetTriggerLeaf(const std::string& xpath);
-       public:
+    void resetTriggerLeaf(const std::string& xpath);
+
+   public:
     tsnctrld();
     void initialize();
 };

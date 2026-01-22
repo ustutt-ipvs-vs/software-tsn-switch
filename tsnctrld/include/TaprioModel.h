@@ -1,9 +1,10 @@
 #ifndef ENPRO_TAPRIOMODEL_H
 #define ENPRO_TAPRIOMODEL_H
+#include <linux/pkt_sched.h>
+
+#include <array>
 #include <cstdint>
 #include <vector>
-#include <linux/pkt_sched.h>
-#include <array>
 
 struct TaprioSchedEntry {
     uint8_t command;
@@ -26,4 +27,4 @@ struct TaprioConfig {
     TaprioSchedule oper;
 };
 
-#endif //ENPRO_TAPRIOMODEL_H
+#endif  // ENPRO_TAPRIOMODEL_H

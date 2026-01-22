@@ -7,7 +7,8 @@ COPY yang yang-models
 RUN apt-get update && \
     # APT dependencies
     apt install -y build-essential libpcre2-dev libssl-dev libssh-dev \
-    libcurl4-openssl-dev systemd-dev libsystemd-dev git curl cmake clang-format
+    libcurl4-openssl-dev systemd-dev libsystemd-dev git curl liblldpctl-dev \
+    cmake clang-format clang-tidy
 
 # Install from repositories
 RUN mkdir gitrepos && cd gitrepos && \

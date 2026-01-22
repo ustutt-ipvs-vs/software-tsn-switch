@@ -1,18 +1,19 @@
 #ifndef NESTEDATTRBUILDER_H
 #define NESTEDATTRBUILDER_H
-#include <optional>
-#include <vector>
 #include <linux/rtnetlink.h>
 
+#include <optional>
+#include <vector>
+
 class NestedAttrBuilder {
-public:
+   public:
     NestedAttrBuilder(int maxPayloadLength);
     int addAttribute(int attrBuilderItemID, int type, const void* data, int len);
-    int addAttribute(nlmsghdr* nlh, int  type, const void* data, int len);
+    int addAttribute(nlmsghdr* nlh, int type, const void* data, int len);
     void addAttrLength(const int attrBuilderID, const int length);
     ~NestedAttrBuilder();
 
-private:
+   private:
     struct attrBuilderItem {
         rtattr* attr{};
         std::optional<int> parentID;

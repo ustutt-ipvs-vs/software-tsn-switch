@@ -15,7 +15,7 @@
 #include "NestedAttBuilder.h"
 
 class NestedAttrBuilderTest : public testing::Test {
-protected:
+   protected:
     static constexpr int kBufferSize = 1024;
 
     char buffer[kBufferSize];
@@ -61,18 +61,15 @@ TEST_F(NestedAttrBuilderTest, DeeplyNestedAttributesUpdateMessageLength) {
     int childVal = 20;
     int grandChildVal = 30;
 
-    int rootId = builder.addAttribute(
-        nlh, /*type=*/100, &rootVal, sizeof(rootVal));
+    int rootId = builder.addAttribute(nlh, /*type=*/100, &rootVal, sizeof(rootVal));
 
     int lenAfterRoot = nlh->nlmsg_len;
 
-    int childId = builder.addAttribute(
-        rootId, /*type=*/101, &childVal, sizeof(childVal));
+    int childId = builder.addAttribute(rootId, /*type=*/101, &childVal, sizeof(childVal));
 
     int lenAfterChild = nlh->nlmsg_len;
 
-    builder.addAttribute(
-        childId, /*type=*/102, &grandChildVal, sizeof(grandChildVal));
+    builder.addAttribute(childId, /*type=*/102, &grandChildVal, sizeof(grandChildVal));
 
     int lenAfterGrandChild = nlh->nlmsg_len;
 
@@ -89,10 +86,7 @@ TEST_F(NestedAttrBuilderTest, AddAttributeWithNullData) {
 
     int lenBefore = nlh->nlmsg_len;
 
-    EXPECT_NO_THROW({
-        builder.addAttribute(
-            nlh, /*type=*/50, nullptr, /*len=*/0);
-    });
+    EXPECT_NO_THROW({ builder.addAttribute(nlh, /*type=*/50, nullptr, /*len=*/0); });
 
     EXPECT_GT(nlh->nlmsg_len, lenBefore);
 }
@@ -108,13 +102,14 @@ TEST_F(NestedAttrBuilderTest, NestedAttributesExceedMaxPayload) {
     int childVal = 2;
     int childVal2 = 3;
 
-    int parentId = builder.addAttribute(
-        nlh, 1, &parentVal, sizeof(parentVal));
+    int parentId = builder.addAttribute(nlh, 1, &parentVal, sizeof(parentVal));
 
-    EXPECT_THROW({
-        builder.addAttribute(parentId, 2, &childVal, sizeof(childVal));
-        builder.addAttribute(parentId, 3, &childVal2, sizeof(childVal2));
-    }, std::runtime_error);
+    EXPECT_THROW(
+        {
+            builder.addAttribute(parentId, 2, &childVal, sizeof(childVal));
+            builder.addAttribute(parentId, 3, &childVal2, sizeof(childVal2));
+        },
+        std::runtime_error);
 }
 
 /**
@@ -128,14 +123,12 @@ TEST_F(NestedAttrBuilderTest, NewTopLevelAttributeClearsInternalState) {
     int v2 = 2;
 
     int id1 = builder.addAttribute(nlh, 10, &v1, sizeof(v1));
-    (void)id1; // suppress unused warning
+    (void)id1;  // suppress unused warning
 
     // Simulate new message
     nlh->nlmsg_len = NLMSG_LENGTH(0);
 
-    EXPECT_NO_THROW({
-        builder.addAttribute(nlh, 20, &v2, sizeof(v2));
-    });
+    EXPECT_NO_THROW({ builder.addAttribute(nlh, 20, &v2, sizeof(v2)); });
 
     EXPECT_GT(nlh->nlmsg_len, NLMSG_LENGTH(0));
 }
@@ -152,5 +145,5 @@ TEST_F(NestedAttrBuilderTest, DestructorCleansUpSafely) {
         builder.addAttribute(nlh, 2, &v, sizeof(v));
     }
 
-    SUCCEED(); // If we reach here, destructor behaved correctly
+    SUCCEED();  // If we reach here, destructor behaved correctly
 }

@@ -5,35 +5,46 @@ default:
 stages:
   - format
   - build
+  - lint
   - test
 
-image: gitlab-vs.informatik.uni-stuttgart.de:5050/software-tsn-switch/enpro-switch/test-pipeline:001
+image: gitlab-vs.informatik.uni-stuttgart.de:5050/software-tsn-switch/enpro-switch/test-pipeline:002
 
 format:
   stage: format
   script:
     - echo "Running clang-format check"
-    - clang-format -n $(find src -name "*.cpp" -o -name "*.hpp" -o -name "*.h")
+    - clang-format --dry-run --Werror $(find . -path ./build -prune -o \( -name '*.cpp' -o -name '*.hpp' -o -name '*.h' \) -print)
   only:
     - branches
 
 build:
   stage: build
   script:
-    - mkdir build
-    - cd build
-    - cmake ..
-    - make -j$(nproc)
+    - cmake -S . -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+    - make --directory=build -j$(nproc)
   artifacts:
     paths:
       - build/
   only:
     - branches
 
+lint:
+  stage: lint
+  script:
+    - run-clang-tidy -p build -warnings-as-errors="*" -quiet '(cnc|common|tsnctrld)/.*'
+  allow_failure: true
+
 test:
   stage: test
   script:
-    - cd build
-    - ctest --output-on-failure
+    - ctest --test-dir build --output-junit junit_report.xml --output-on-failure
   only:
     - branches
+
+  artifacts:
+    when: always
+    paths:
+      - build/junit_report.xml
+    reports:
+      junit: build/junit_report.xml

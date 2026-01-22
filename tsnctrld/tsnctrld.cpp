@@ -339,7 +339,7 @@ ietfInterface_t* tsnctrld::syncInterfaceFromSysrepo(sysrepo::Session sess, const
         {.trafficClass = 0, .queueMaxSdu = 1500, .transmissionOverrun = 0},
         {.trafficClass = 1, .queueMaxSdu = 1500, .transmissionOverrun = 0}};
     gcl.queueMaxSduTable.assign(queueMaxSduTable, queueMaxSduTable + 2);
-    //gcl.adminCycleTime = {.numerator = 1'500'000, .denominator = 1'000'000'000};
+    // gcl.adminCycleTime = {.numerator = 1'500'000, .denominator = 1'000'000'000};
     struct timespec ts;
     clock_gettime(CLOCK_REALTIME, &ts);
     gcl.adminBaseTime = {.seconds = static_cast<uint64_t>(ts.tv_sec), .nanoseconds = static_cast<uint32_t>(ts.tv_nsec)};
@@ -579,7 +579,7 @@ sysrepo::ErrorCode tsnctrld::operInterfaceCallback(sysrepo::Session sess, uint32
             fillGptNode(hw_cfg, gpt_node, GclFillOptions::FillOper);
         }
     }
-    //freeifaddrs(ifaddr);
+    // freeifaddrs(ifaddr);
     return sysrepo::ErrorCode::Ok;
 }
 
@@ -618,7 +618,7 @@ sysrepo::ErrorCode tsnctrld::operBridgeCallback(sysrepo::Session sess, uint32_t 
             parent = parent ? parent->newPath(path, ifname) : ctx.newPath(path, ifname);
         }
     }
-    //freeifaddrs(ifaddr);
+    // freeifaddrs(ifaddr);
     return sysrepo::ErrorCode::Ok;
 }
 sysrepo::ErrorCode tsnctrld::operLldpCallback(sysrepo::Session sess, uint32_t subId, const std::string& moduleName,
@@ -766,7 +766,6 @@ sysrepo::ErrorCode tsnctrld::changeGptCallback(sysrepo::Session sess, uint32_t s
         }
         m_pathsToReset.clear();
     }
-
 
     // 3. PHASE: ROLLBACK (Event::Abort)
     if (event == sysrepo::Event::Abort) {
