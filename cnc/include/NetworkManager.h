@@ -38,6 +38,12 @@ namespace cnc {
             void fetchLldpData();
 
             /**
+             * @brief Fetches operational GCL data from all connected nodes and updates their configurations.
+             * Reads GCL data via /interfaces/interface/bridge-port/gate-parameter-table via Netconf <get>.
+             */
+            void fetchOperationGcl();
+
+            /**
              * @brief Configures specific nodes with TSN parameters.
              * 1. Transforms CncNode_t data into appropriate XML configuration.
              * 2. Sends configuration via Netconf <edit-config> to the target nodes (candidate datastore).

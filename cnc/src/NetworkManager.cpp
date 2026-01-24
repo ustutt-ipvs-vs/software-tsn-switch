@@ -1,6 +1,8 @@
 #include "../include/NetworkManager.h"
 #include "../include/GclXmlBuilder.h"
 #include "../include/Inventory.h"
+#include "../include/GclParser.h"
+#include "../include/LldpParser.h"
 #include <iostream>
 #include <sstream> // Needed for XML construction
 
@@ -70,7 +72,39 @@ namespace cnc {
                 // No LLDP data retrieved
                 continue;
             } else {
-                // TODO: Parsing LLDP data (assuming XML format) 
+                CncNode_t* currentNode = topology_.getNode(name);
+                if (currentNode) {
+                    if (!cnc::LldpParser::parseLldpData(lldpData, *currentNode)) {
+                        std::cerr << "[Error] Failed to parse LLDP data for node " << name << std::endl;
+                    }
+                } else {
+                    std::cerr << "[Error] Node " << name << " not found in topology." << std::endl;
+                }
+            }
+        }
+    }
+
+    void NetworkManager::fetchOperationGcl() {
+        const std::string gclXPath = "/ietf-interfaces:interfaces/interface/ieee802-dot1q-bridge:bridge-port/ieee802-dot1q-sched-bridge:gate-parameter-table";
+
+        for (auto const& [name, session] : sessions_) {
+            if (!session->isConnected()) continue;
+
+            // Fetch GCL data via NETCONF <get>
+            std::string gclData = session->getData(gclXPath);
+
+            if (gclData.empty()) {
+                // No GCL data retrieved
+                continue;
+            } 
+
+            CncNode_t* node = topology_.getNode(name);
+            if (!node) continue;
+
+            if (cnc::GclParser::parseOperationalGclData(gclData, *node)) {
+                // Successfully parsed and updated node's GCL data
+            } else {
+                std::cerr << "[Error] Failed to parse GCL data for node " << name << std::endl;
             }
         }
     }

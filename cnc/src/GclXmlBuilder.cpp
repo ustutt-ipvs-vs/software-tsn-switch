@@ -45,6 +45,13 @@ namespace cnc {
         // Extract GCL configuration
         const GclConfig_t& gclConfig = iface.bridgePort.gateParameterTable;
 
+        // Set gate-enabled (defaults to true in config struct)
+        if (gclConfig.gateEnabled) {
+             ss << "<gate-enabled>true</gate-enabled>";
+        } else {
+             ss << "<gate-enabled>false</gate-enabled>";
+        }
+
         // Append admin base time
         appendPtpTime(ss, gclConfig.adminBaseTime, "admin-base-time");
 
@@ -58,6 +65,7 @@ namespace cnc {
         if (gclConfig.configChange) {
             ss << "<config-change>true</config-change>";
         } else {
+            // This can be potentially dangerous
             ss << "<config-change>false</config-change>";
         }
 
@@ -87,7 +95,8 @@ namespace cnc {
             return; // No control list to append
         }
 
-        ss << "<admin-control-list>";
+        //ss << "<admin-control-list>";
+        ss << "<admin-control-list xmlns:nc=\"urn:ietf:params:xml:ns:netconf:base:1.0\" nc:operation=\"replace\">";
 
         for (uint32_t i = 0; i < config.adminControlListSize; ++i) {
             const GclEntry_t& entry = config.adminControlList[i];
