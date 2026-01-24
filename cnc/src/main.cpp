@@ -12,7 +12,7 @@
 
 int main() {
     std::cout << "========================================" << std::endl;
-    std::cout << "      CNC NETWORK CONTROLLER v1.2       " << std::endl;
+    std::cout << "      CNC NETWORK CONTROLLER v1.3       " << std::endl;
     std::cout << "========================================" << std::endl;
 
     // 1. Hardcoded path to file 
@@ -75,11 +75,15 @@ int main() {
     //std::cout << "\n[INFO] --- Fetching LLDP Data ---" << std::endl;
     //manager.fetchLldpData();
 
-    // 6. Deployment (Create XML and send via Netconf)
+    // 7. Deployment (Create XML and send via Netconf)
     std::cout << "\n[INFO] --- Starting Deployment Phase ---" << std::endl;
     manager.deployConfigToAll();
 
-    // 7. Finish
+    // 8. Fetch Operational GCL Data for verification
+    std::cout << "\n[INFO] --- Fetching Operational GCL Data for Verification ---" << std::endl;
+    manager.fetchOperationGcl();
+
+    // 9. Finish
     std::cout << "\n========================================" << std::endl;
     std::cout << "      CNC OPERATION FINISHED            " << std::endl;
     std::cout << "========================================" << std::endl;

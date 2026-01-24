@@ -37,6 +37,7 @@ add_library(cnc_lib STATIC
     src/GclXmlBuilder.cpp
     src/LldpParser.cpp
     src/GclParser.cpp
+    src/Topology.cpp
 )
 
 # Header paths for the library (and all who use it)
