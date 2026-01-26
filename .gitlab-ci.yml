@@ -8,7 +8,7 @@ stages:
   - lint
   - test
 
-image: gitlab-vs.informatik.uni-stuttgart.de:5050/software-tsn-switch/enpro-switch/test-pipeline:002
+image: gitlab-vs.informatik.uni-stuttgart.de:5050/software-tsn-switch/enpro-switch/test-pipeline:003
 
 format:
   stage: format

@@ -9,9 +9,10 @@ function(add_gtest TARGET)
 
     target_link_libraries(${TARGET}
         PRIVATE
-            GTest::gtest
-            GTest::gtest_main
-            tsnctrld_lib
+        GTest::gtest
+        GTest::gtest_main
+        tsnctrld_lib
+        PkgConfig::SPDLOG
     )
 
     target_compile_features(${TARGET} PRIVATE cxx_std_20)

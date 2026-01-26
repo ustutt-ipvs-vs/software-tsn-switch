@@ -9,8 +9,11 @@ include_directories(
 )
 
 find_package(nlohmann_json 3.2.0 REQUIRED)
+find_package(spdlog REQUIRED)
 
 add_executable(cnc_app
     src/main.cpp
     src/FipsImporter.cpp
 )
+
+target_link_libraries(cnc_app PRIVATE spdlog::spdlog)
