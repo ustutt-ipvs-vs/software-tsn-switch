@@ -2,7 +2,7 @@
 # Some steps have prerequisites
 
 sudo apt-get update
-sudo apt install build-essential libpcre2-dev libssl-dev libssh-dev libcurl4-openssl-dev systemd-dev libsystemd-dev git curl liblldpctl-dev cmake clang-format clang-tidy
+sudo apt install build-essential libpcre2-dev libssl-dev libssh-dev libcurl4-openssl-dev systemd-dev libsystemd-dev  git curl liblldpctl-dev libspdlog-dev cmake clang-format clang-tidy
 
 cd ~/gitrepos; git clone https://github.com/CESNET/libyang.git
 cd ~/gitrepos; git clone https://github.com/CESNET/libnetconf2.git
