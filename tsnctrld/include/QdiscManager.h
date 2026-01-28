@@ -5,6 +5,7 @@
 #include <linux/netlink.h>
 #include <linux/rtnetlink.h>
 
+#include <map>
 #include <string>
 
 #include "../../common/include/CncTypes.h"
@@ -13,23 +14,24 @@
 
 class QdiscManager {
    private:
-    static void fillTaprioOptions(const rtattr* rta, int len, GclConfig_t& toFill);
-    static void fillTaprioAdminSched(const rtattr* rta, int len, GclConfig_t& toFill);
-    static void fillTaprioSchedEntry(const rtattr* rta, int len, std::vector<GclEntry_t>& toFill);
+    static void fillTaprioOptions(const rtattr* rta, int len, ietfInterface_t& ifToFill);
+    static void fillTaprioAdminSched(const rtattr* rta, int len, ietfInterface_t& ifToFill);
+    static void fillTaprioSchedEntry(const rtattr* rta, int len, std::vector<GclEntry_t>& gclEntriesToFill);
+    static void printTaprioOptions(const rtattr* rta, int len);
+    static void printTaprioSchedEntry(const rtattr* rta, int len);
+    static void printSingleQdisc(const nlmsghdr* nlh);
+    static void parseAdminSchedule(const rtattr* rta, int len);
+    static void parseEntryList(const rtattr* rta, int len);
+    static void printPriomap(const rtattr* rta);
+    static void parsePriomap(const rtattr* rta, ietfInterface_t& ifToFill);
 
    public:
     static void setQdisc(NetlinkSocket& netlink_socket, const std::string& ifname, TaprioConfig& gclConfig);
     static void removeQdisc(NetlinkSocket& netlink_socket, const std::string& ifname);
-    void getQdiscInfo(NetlinkSocket& netlink_socket, const std::string& ifname);
-    void getAllQdiscInfo(NetlinkSocket& netlink_socket);
-    void printKernelResponse(const NetlinkSocket& sock);
-    void printTaprioOptions(const rtattr* rta, int len);
-    void printTaprioSchedEntry(const rtattr* rta, int len);
-    void printSingleQdisc(const nlmsghdr* nlh);
-    void parseAdminSchedule(const rtattr* rta, int len);
-    void parseEntryList(const rtattr* rta, int len);
-    void parsePriomap(const rtattr* rta);
-    static void getInterfacesInResponse(const NetlinkSocket& sock, std::vector<ietfInterface_t>& interfacesOut);
+    static void getQdiscInfo(NetlinkSocket& netlink_socket, const std::string& ifname);
+    static void getAllQdiscInfo(NetlinkSocket& netlink_socket);
+    static void printKernelResponse(const NetlinkSocket& sock);
+    static void getInterfacesInResponse(const NetlinkSocket& sock, std::map<int, ietfInterface_t>& interfacesMap, uint32_t currentReqId);
 };
 
 #endif

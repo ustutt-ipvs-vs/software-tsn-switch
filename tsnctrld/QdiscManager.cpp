@@ -261,7 +261,7 @@ void QdiscManager::printTaprioOptions(const rtattr* rta, int len) {
     for (; RTA_OK(rta, len); rta = RTA_NEXT(rta, len)) {
         switch (rta->rta_type & ~NLA_F_NESTED) {
             case TCA_TAPRIO_ATTR_PRIOMAP:
-                parsePriomap(rta);
+                printPriomap(rta);
                 break;
             case TCA_TAPRIO_ATTR_SCHED_CLOCKID:
                 printf("  clockID: %d\n", *(int32_t*)RTA_DATA(rta));
@@ -306,7 +306,7 @@ void QdiscManager::parseEntryList(const rtattr* rta, int len) {
  * queues
  * @param rta Pointer to the rtattr containing the tc_mqprio_qopt struct
  */
-void QdiscManager::parsePriomap(const rtattr* rta) {
+void QdiscManager::printPriomap(const rtattr* rta) {
     const auto* qopt = reinterpret_cast<const tc_mqprio_qopt*>(RTA_DATA(rta));
     printf("  priomap: tc %u\n", qopt->num_tc);
     printf("    map: ");
@@ -376,7 +376,7 @@ void QdiscManager::parseAdminSchedule(const rtattr* rta, int len) {
 /**
  * @param sock The Netlink Socket
  */
-void QdiscManager::getInterfacesInResponse(const NetlinkSocket& sock, std::vector<ietfInterface_t>& interfacesOut) {
+void QdiscManager::getInterfacesInResponse(const NetlinkSocket& sock, std::map<int, ietfInterface_t>& interfacesMap, uint32_t currentReqId) {
     for (const nlmsghdr* nlh : sock.getResponse()) {
         if (nlh->nlmsg_type != RTM_NEWQDISC && nlh->nlmsg_type != RTM_GETQDISC) {
             continue;
@@ -389,21 +389,11 @@ void QdiscManager::getInterfacesInResponse(const NetlinkSocket& sock, std::vecto
         printf("handle: %x\n", tcm->tcm_handle);
         printf("parent: %x\n", tcm->tcm_parent);
 
-        auto it = std::find_if(interfacesOut.begin(), interfacesOut.end(),
-                               [ifindex](const ietfInterface_t& iface) { return iface.ifindex == ifindex; });
+        ietfInterface_t& current = interfacesMap[ifindex];
 
-        ietfInterface_t* current;
-        if (it != interfacesOut.end()) {
-            current = &(*it);
-        } else {
-            interfacesOut.emplace_back();
-            current = &interfacesOut.back();
-            current->ifindex = ifindex;
+        current.lastQdiscUpdateId = currentReqId;
+        current.ifindex = ifindex;
 
-            char nameBuf[16];
-            if_indextoname(ifindex, nameBuf);
-            current->name = nameBuf;
-        }
 
         int len = nlh->nlmsg_len - NLMSG_LENGTH(sizeof(*tcm));
         rtattr* rta = (rtattr*)(((char*)tcm) + NLMSG_ALIGN(sizeof(*tcm)));
@@ -417,8 +407,7 @@ void QdiscManager::getInterfacesInResponse(const NetlinkSocket& sock, std::vecto
                     break;
                 case TCA_OPTIONS:
                     if (kind == "taprio") {
-                        fillTaprioOptions((rtattr*)RTA_DATA(rta), RTA_PAYLOAD(rta),
-                                          current->bridgePort.gateParameterTable);
+                        fillTaprioOptions((rtattr*)RTA_DATA(rta), RTA_PAYLOAD(rta), current);
                     }
                     break;
                 default:
@@ -428,50 +417,52 @@ void QdiscManager::getInterfacesInResponse(const NetlinkSocket& sock, std::vecto
     }
 };
 
-void QdiscManager::fillTaprioOptions(const rtattr* rta, int len, GclConfig_t& toFill) {
+void QdiscManager::fillTaprioOptions(const rtattr* rta, int len, ietfInterface_t& ifToFill) {
     int32_t clockId;
     int64_t baseTime;
     int64_t cycleTime;
-    tc_mqprio_qopt prioMapStruct;
 
-    toFill.gateEnabled = true;
+    BridgePort_t& bpToFill = ifToFill.bridgePort;
+    GclConfig_t& gptToFill = bpToFill.gateParameterTable;
 
     for (; RTA_OK(rta, len); rta = RTA_NEXT(rta, len)) {
         switch (rta->rta_type) {
             case TCA_TAPRIO_ATTR_PRIOMAP:
-                prioMapStruct = *(tc_mqprio_qopt*)RTA_DATA(rta);
+                parsePriomap(rta, ifToFill);
                 break;
             case TCA_TAPRIO_ATTR_SCHED_CLOCKID:
                 clockId = *(int32_t*)RTA_DATA(rta);
                 printf("  clockid: %d\n", clockId);
+                gptToFill.clockId = clockId;
                 break;
             case TCA_TAPRIO_ATTR_SCHED_BASE_TIME:
                 baseTime = *(uint64_t*)RTA_DATA(rta);
                 printf("  base_time: %lu ns\n", baseTime);
-                toFill.operBaseTime = NetconfNetlinkMapper::fromNsToPtp(baseTime);
+                gptToFill.operBaseTime = NetconfNetlinkMapper::fromNsToPtp(baseTime);
                 break;
             case TCA_TAPRIO_ATTR_SCHED_CYCLE_TIME:
                 cycleTime = *(uint64_t*)RTA_DATA(rta);
                 printf("  cycle_time: %lu ns\n", cycleTime);
-                toFill.operCycleTime = NetconfNetlinkMapper::fromNsToRational(cycleTime);
+                gptToFill.operCycleTime = NetconfNetlinkMapper::fromNsToRational(cycleTime);
                 break;
             case TCA_TAPRIO_ATTR_SCHED_ENTRY_LIST: {
-                toFill.gateEnabled = true;
+                gptToFill.operControlList.clear();
                 printf("  schedule:\n");
                 int elen = RTA_PAYLOAD(rta);
                 const rtattr* e = (rtattr*)RTA_DATA(rta);
                 for (; RTA_OK(e, elen); e = RTA_NEXT(e, elen)) {
                     if (e->rta_type == TCA_TAPRIO_SCHED_ENTRY) {
-                        toFill.operDataSet = true;
-                        fillTaprioSchedEntry((rtattr*)RTA_DATA(e), RTA_PAYLOAD(e), toFill.operControlList);
+                        fillTaprioSchedEntry((rtattr*)RTA_DATA(e), RTA_PAYLOAD(e), gptToFill.operControlList);
                     }
                 }
+                gptToFill.gateEnabled = true;
+                gptToFill.operDataSet = true;
                 break;
             }
             case TCA_TAPRIO_ATTR_ADMIN_SCHED:
                 printf("  admin schedule:\n   ...\n");
-                toFill.adminDataSet = true;
-                fillTaprioAdminSched((rtattr*)RTA_DATA(rta), RTA_PAYLOAD(rta), toFill);
+                gptToFill.adminDataSet = true;
+                fillTaprioAdminSched((rtattr*)RTA_DATA(rta), RTA_PAYLOAD(rta), ifToFill);
                 break;
             default:
                 break;
@@ -479,28 +470,32 @@ void QdiscManager::fillTaprioOptions(const rtattr* rta, int len, GclConfig_t& to
     }
 }
 
-void QdiscManager::fillTaprioAdminSched(const rtattr* rta, int len, GclConfig_t& toFill) {
+void QdiscManager::fillTaprioAdminSched(const rtattr* rta, int len, ietfInterface_t& ifToFill) {
+    BridgePort_t& bpToFill = ifToFill.bridgePort;
+    GclConfig_t& gptToFill = bpToFill.gateParameterTable;
+
     for (; RTA_OK(rta, len); rta = RTA_NEXT(rta, len)) {
         switch (rta->rta_type) {
             case TCA_TAPRIO_ATTR_SCHED_BASE_TIME: {
                 uint64_t baseTime = *(uint64_t*)RTA_DATA(rta);
                 printf("    admin_base_time: %lu ns\n", baseTime);
-                toFill.adminBaseTime = NetconfNetlinkMapper::fromNsToPtp(baseTime);
+                gptToFill.adminBaseTime = NetconfNetlinkMapper::fromNsToPtp(baseTime);
                 break;
             }
             case TCA_TAPRIO_ATTR_SCHED_CYCLE_TIME: {
                 uint64_t cycleTime = *(uint64_t*)RTA_DATA(rta);
                 printf("    admin_cycle_time: %lu ns\n", cycleTime);
-                toFill.adminCycleTime = NetconfNetlinkMapper::fromNsToRational(cycleTime);
+                gptToFill.adminCycleTime = NetconfNetlinkMapper::fromNsToRational(cycleTime);
                 break;
             }
             case TCA_TAPRIO_ATTR_SCHED_ENTRY_LIST: {
+                gptToFill.adminControlList.clear();
                 int elen = RTA_PAYLOAD(rta);
                 const rtattr* e = (rtattr*)RTA_DATA(rta);
                 for (; RTA_OK(e, elen); e = RTA_NEXT(e, elen)) {
                     if (e->rta_type == TCA_TAPRIO_SCHED_ENTRY) {
                         // Pass the ADMIN list as the target
-                        fillTaprioSchedEntry((rtattr*)RTA_DATA(e), RTA_PAYLOAD(e), toFill.adminControlList);
+                        fillTaprioSchedEntry((rtattr*)RTA_DATA(e), RTA_PAYLOAD(e), gptToFill.adminControlList);
                     }
                 }
                 break;
@@ -509,7 +504,7 @@ void QdiscManager::fillTaprioAdminSched(const rtattr* rta, int len, GclConfig_t&
     }
 }
 
-void QdiscManager::fillTaprioSchedEntry(const rtattr* rta, int len, std::vector<GclEntry_t>& toFill) {
+void QdiscManager::fillTaprioSchedEntry(const rtattr* rta, int len, std::vector<GclEntry_t>& gclEntriesToFill) {
     uint8_t cmd = 0;
     uint32_t gate = 0;
     uint32_t index = 0;
@@ -539,6 +534,20 @@ void QdiscManager::fillTaprioSchedEntry(const rtattr* rta, int len, std::vector<
                 break;
         }
     }
-    toFill.push_back(currentEntry);
+    gclEntriesToFill.push_back(currentEntry);
     printf("    entry: cmd=%u gate_mask=0x%x interval=%u ns index=%u\n", cmd, gate, interval, index);
+}
+
+/**
+ * @brief Parse the Priomap containing the amount of traffic classes, priority mapping & the offset and count of the
+ * queues
+ * @param rta Pointer to the rtattr containing the tc_mqprio_qopt struct
+ */
+void QdiscManager::parsePriomap(const rtattr* rta, ietfInterface_t& ifToFill) {
+    ifToFill.bridgePort.trafficClassData.mapDataSet = true;
+    const auto* qopt = reinterpret_cast<const tc_mqprio_qopt*>(RTA_DATA(rta));
+    ifToFill.bridgePort.trafficClassData.numTrafficClasses = qopt->num_tc;
+    for (int i = 0; i < 8; ++i) {
+        ifToFill.bridgePort.trafficClassData.priorityMap[i] = qopt->prio_tc_map[i];
+    }
 }

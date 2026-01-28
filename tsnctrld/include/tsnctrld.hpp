@@ -7,6 +7,8 @@
 #include <sysrepo-cpp/Session.hpp>
 #include <sysrepo-cpp/Subscription.hpp>
 
+#include "InterfacesCache.h"
+#include "LinkManager.h"
 #include "NetconfNetlinkMapper.h"
 #include "NetlinkSocket.h"
 #include "QdiscManager.h"
@@ -30,16 +32,13 @@ class tsnctrld {
    private:
     NetlinkSocket m_sock;
     QdiscManager m_qm;
+    LinkManager m_lm;
     NetconfNetlinkMapper m_mapper;
     sysrepo::Connection m_conn;
     sysrepo::Session m_sess;
     std::optional<sysrepo::Subscription> m_sub;
 
-    std::vector<ietfInterface_t> m_interfaces;
-    struct ifaddrs* m_ifa_cache = nullptr;
-    uint32_t m_lastNetlinkId = -1;
-    uint32_t m_lastIfAddrsId = -1;
-    std::mutex m_cacheMtx;
+    InterfacesCache m_ifcache;
 
     std::vector<std::string> m_pathsToReset;
 
@@ -78,14 +77,19 @@ class tsnctrld {
 
     void syncHardwareToRunning();
     void setupSubscriptions();
-    ietfInterface_t& getExistingOrNewInterface(const std::string& ifname, std::vector<ietfInterface_t>& interfaces);
+    //ietfInterface_t& getExistingOrNewInterface(const std::string& ifname, std::vector<ietfInterface_t>& interfaces);
+//
+    //void ensureCurrentNetlinkGetQdiscResponseInterfaces(uint32_t currentRequestId, const std::string& ifname);
+    //void ensureCurrentNetlinkGetLinkResponseInterfaces(uint32_t currentRequestId, const std::string& ifname);
+    //struct ifaddrs* ensureCurrentIfAddrsInterfaces(uint32_t currentRequestId);
 
-    void ensureCurrentNetlinkResponseInterfaces(uint32_t currentRequestId, const std::string& ifname);
-    struct ifaddrs* ensureCurrentIfAddrsInterfaces(uint32_t currentRequestId);
-
-    ietfInterface_t* syncInterfaceFromSysrepo(sysrepo::Session sess, const std::string& ifname);
+    ietfInterface_t* syncInterfaceFromSysrepo(sysrepo::Session sess, const std::string& ifname, uint32_t requestId);
 
     void resetTriggerLeaf(const std::string& xpath);
+
+    template <typename T>
+    T getLeaf(const std::optional<libyang::DataNode>& node, const std::string& path);
+
 
    public:
     tsnctrld();

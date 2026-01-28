@@ -3,6 +3,8 @@ set(SOURCE_FILES
 	NetlinkSocket.cpp
 	QdiscManager.cpp
 	NetconfNetlinkMapper.cpp
+	LinkManager.cpp
+	InterfacesCache.cpp
 )
 
 add_library(tsnctrld_lib STATIC ${SOURCE_FILES})
