@@ -1,9 +1,6 @@
 #include "include/tsnctrld.hpp"
 
 #include <ifaddrs.h>
-#include <net/if.h>
-#include <netpacket/packet.h>
-
 #include <ctime>
 #include <iostream>
 #include <thread>
@@ -451,6 +448,8 @@ void tsnctrld::syncHardwareToRunning() {
         }
     }
     // freeifaddrs(ifaddr);
+    LldpDaemon lldpDaemon(m_operSess);
+    lldpDaemon.syncInitialNeighbors();
 
     if (forest) {
         std::cout << "[SYNC] Applying Batch to Datastore..." << std::endl;
@@ -836,7 +835,8 @@ void tsnctrld::setupSubscriptions() {
     std::cout << "[INIT] [SUBS] Registered oper callbacks..." << std::endl;
 }
 
-tsnctrld::tsnctrld() : m_sess(m_conn.sessionStart()) {
+tsnctrld::tsnctrld() : m_sess(m_conn.sessionStart()), m_operSess(m_conn.sessionStart()) {
+    m_operSess.switchDatastore(sysrepo::Datastore::Operational);
 }
 
 int main() {

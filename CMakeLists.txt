@@ -26,7 +26,7 @@ pkg_check_modules(LIBNETCONF2_CPP REQUIRED libnetconf2-cpp IMPORTED_TARGET)
 pkg_check_modules(SYSREPO REQUIRED sysrepo IMPORTED_TARGET)
 pkg_check_modules(LIBYANG REQUIRED libyang IMPORTED_TARGET)
 pkg_check_modules(LIBNETCONF2 REQUIRED libnetconf2 IMPORTED_TARGET)
-
+pkg_check_modules(LLDPCTL REQUIRED lldpctl IMPORTED_TARGET)
 
 
 # ==============================================================================

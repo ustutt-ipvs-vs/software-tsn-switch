@@ -12,6 +12,7 @@
 #include "NetconfNetlinkMapper.h"
 #include "NetlinkSocket.h"
 #include "QdiscManager.h"
+#include "LldpDaemon.h"
 
 enum class GclFillOptions : uint32_t {
     OnlyDefault = 0b00,
@@ -36,6 +37,7 @@ class tsnctrld {
     NetconfNetlinkMapper m_mapper;
     sysrepo::Connection m_conn;
     sysrepo::Session m_sess;
+    sysrepo::Session m_operSess;
     std::optional<sysrepo::Subscription> m_sub;
 
     InterfacesCache m_ifcache;
