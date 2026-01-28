@@ -1,11 +1,11 @@
 set(SOURCE_FILES 
-	NestedAttrBuilder.cpp
-	NetlinkSocket.cpp
-	QdiscManager.cpp
-	NetconfNetlinkMapper.cpp
+	    NestedAttrBuilder.cpp
+	    NetlinkSocket.cpp
+        QdiscManager.cpp
+        NetconfNetlinkMapper.cpp
+        LinkManager.cpp
+        InterfacesCache.cpp
         LldpDaemon.cpp
-	LinkManager.cpp
-	InterfacesCache.cpp
 )
 
 add_library(tsnctrld_lib STATIC ${SOURCE_FILES})
