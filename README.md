@@ -4,6 +4,10 @@ This repository contains the source code for the development project **"Software
 
 The goal of this project is the realization of a deterministic real-time network connection (Time-Sensitive Networking) for Linux end devices, virtual machines, and containers. The system consists of a software switch component (tsnctrld) and a central controller (cnc).
 
+## Documentation
+For end-users: [User Documentation](http://enpro-switch-64df46.gitlab-pages-vs.informatik.uni-stuttgart.de/docs-user)  
+For developers: [Developer Documentation](http://enpro-switch-64df46.gitlab-pages-vs.informatik.uni-stuttgart.de/docs-dev)
+
 ## Project Structure
 
 The repository is organized as a monorepo containing the following components:
@@ -29,51 +33,5 @@ The repository is organized as a monorepo containing the following components:
 * **`cmake/`:**
     Helper modules for the build system (e.g., to locate libraries like libnetconf2).
 
-## Getting Started
-
-In order to compile the code, various libraries are needed, the steps needed are written in [steps_for_installing_updating.txt] (TODO:Cleanup).
-
-To build the project, run CMake (all commands assume you're in the repo's root):
-```bash
-cmake -S . -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON && make --directory=build
-```
-
-To run all tests:
-```bash
-ctest --test-dir build
-```
-
-## Formatting
-We use clang-format as our formatter.
-Make sure you have it installed: `sudo apt install clang-format`.
-
-Before you commit, please run our formatting script to keep the code tidy:
-
-```bash
-./tools/format-project.sh
-```
-
-If you forget to do this, the pipeline will complain.
-If you would like an automated reminder, install our Git hook, which checks the code before each commit:
-
-```bash
-cp -rf tools/hooks/ .git; chmod --recursive +x .git/hooks/
-```
-
-## Linting
-We use clang-tidy as our linter.
-Make sure you have it installed: `sudo apt install clang-tidy`.
-To lint a specific file (after building with the above commands!):
-
-```bash
-clang-tidy -p build path/to/file.cpp
-```
-
-To lint *everything*:
-
-```bash
-run-clang-tidy -p build -quiet '(cnc|common|tsnctrld)/.*'
-```
-
-Since linting takes a while to process and can sometimes be a pain to comply with,
-there is no git hook for linting and the pipline will allow linting failures.
+## Building & Checking
+Please view the corresponding guide in the [developer documentation](http://enpro-switch-64df46.gitlab-pages-vs.informatik.uni-stuttgart.de/docs-dev/howto-build-check.html)!

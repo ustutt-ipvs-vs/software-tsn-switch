@@ -1,6 +1,9 @@
 build/
+build-dev-docs/
+build-user-docs/
 cmake-build-debug/
 cmake-build-debug-vstsn01/
 .cache/
 .idea/
 .vscode/
+.venv/

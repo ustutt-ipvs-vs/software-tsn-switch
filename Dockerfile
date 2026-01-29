@@ -8,7 +8,7 @@ RUN apt-get update && \
     # APT dependencies
     apt install -y build-essential libpcre2-dev libssl-dev libssh-dev \
     libcurl4-openssl-dev systemd-dev libsystemd-dev git curl liblldpctl-dev \
-    libspdlog-dev cmake clang-format clang-tidy
+    libspdlog-dev cmake clang-format clang-tidy python3 python3-pip doxygen
 
 # Install from repositories
 RUN mkdir gitrepos && cd gitrepos && \
@@ -79,3 +79,7 @@ RUN useradd enpro -p '12345' && \
     echo '<nacm xmlns="urn:ietf:params:xml:ns:yang:ietf-netconf-acm"><enable-nacm>true</enable-nacm><read-default>permit</read-default><write-default>deny</write-default><groups><group><name>admin</name><user-name>root</user-name><user-name>enpro</user-name></group></groups><rule-list><name>admin-full-access</name><group>admin</group><rule><name>permit-all</name><module-name>*</module-name><access-operations>*</access-operations><action>permit</action></rule></rule-list></nacm>' > nacm_init.xml && \
     sysrepocfg --import=nacm_init.xml --module ietf-netconf-acm --datastore running && \
     sysrepocfg --copy-from running --datastore startup
+
+# Install dependencies for sphinx builds
+COPY doc/user/requirements.txt requirements.txt
+RUN pip install --break-system-packages --no-cache-dir -r requirements.txt
