@@ -31,7 +31,8 @@ class QdiscManager {
     static void getQdiscInfo(NetlinkSocket& netlink_socket, const std::string& ifname);
     static void getAllQdiscInfo(NetlinkSocket& netlink_socket);
     static void printKernelResponse(const NetlinkSocket& sock);
-    static void getInterfacesInResponse(const NetlinkSocket& sock, std::map<int, ietfInterface_t>& interfacesMap, uint32_t currentReqId);
+    static void getInterfacesInResponse(const NetlinkSocket& sock, std::map<int, ietfInterface_t>& interfacesMap,
+                                        uint32_t currentReqId);
 };
 
 #endif

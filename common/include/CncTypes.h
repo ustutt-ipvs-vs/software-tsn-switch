@@ -1,10 +1,10 @@
 #pragma once
 
+#include <array>
 #include <cstdint>
+#include <optional>
 #include <string>
 #include <vector>
-#include <array>
-#include <optional>
 
 enum class OperStatus : uint8_t {
     UP = 1,
@@ -21,49 +21,61 @@ enum class OperStatus : uint8_t {
  * Returns a reference to a static optional string to avoid allocations.
  */
 inline const std::optional<std::string>& operStatusToYangString(OperStatus status) {
-    static const std::optional<std::string> s_up        = "up";
-    static const std::optional<std::string> s_down      = "down";
-    static const std::optional<std::string> s_testing   = "testing";
-    static const std::optional<std::string> s_unknown   = "unknown";
-    static const std::optional<std::string> s_dormant   = "dormant";
+    static const std::optional<std::string> s_up = "up";
+    static const std::optional<std::string> s_down = "down";
+    static const std::optional<std::string> s_testing = "testing";
+    static const std::optional<std::string> s_unknown = "unknown";
+    static const std::optional<std::string> s_dormant = "dormant";
     static const std::optional<std::string> s_notPresent = "not-present";
     static const std::optional<std::string> s_lowerDown = "lower-layer-down";
-    static const std::optional<std::string> s_none      = std::nullopt;
+    static const std::optional<std::string> s_none = std::nullopt;
 
     switch (status) {
-        case OperStatus::UP:               return s_up;
-        case OperStatus::DOWN:             return s_down;
-        case OperStatus::TESTING:          return s_testing;
-        case OperStatus::UNKNOWN:          return s_unknown;
-        case OperStatus::DORMANT:          return s_dormant;
-        case OperStatus::NOT_PRESENT:      return s_notPresent;
-        case OperStatus::LOWER_LAYER_DOWN: return s_lowerDown;
-        default:                           return s_none;
+        case OperStatus::UP:
+            return s_up;
+        case OperStatus::DOWN:
+            return s_down;
+        case OperStatus::TESTING:
+            return s_testing;
+        case OperStatus::UNKNOWN:
+            return s_unknown;
+        case OperStatus::DORMANT:
+            return s_dormant;
+        case OperStatus::NOT_PRESENT:
+            return s_notPresent;
+        case OperStatus::LOWER_LAYER_DOWN:
+            return s_lowerDown;
+        default:
+            return s_none;
     }
 }
 
-
 enum class IfType {
-    ETHERNET,   // iana-if-type:ethernetCsmacd (Default)
-    BRIDGE,     // iana-if-type:bridge
-    LAG,        // iana-if-type:ieee8023adLag
-    LOOPBACK    // iana-if-type:softwareLoopback
+    ETHERNET,  // iana-if-type:ethernetCsmacd (Default)
+    BRIDGE,    // iana-if-type:bridge
+    LAG,       // iana-if-type:ieee8023adLag
+    LOOPBACK   // iana-if-type:softwareLoopback
 };
 
 inline const std::optional<std::string>& ifTypeToIanaString(IfType type) {
     // These are initialized once the first time the function is called
     static const std::optional<std::string> s_ethernet = "iana-if-type:ethernetCsmacd";
-    static const std::optional<std::string> s_bridge   = "iana-if-type:bridge";
-    static const std::optional<std::string> s_lag      = "iana-if-type:ieee8023adLag";
+    static const std::optional<std::string> s_bridge = "iana-if-type:bridge";
+    static const std::optional<std::string> s_lag = "iana-if-type:ieee8023adLag";
     static const std::optional<std::string> s_loopback = "iana-if-type:softwareLoopback";
-    static const std::optional<std::string> s_none     = std::nullopt;
+    static const std::optional<std::string> s_none = std::nullopt;
 
     switch (type) {
-        case IfType::ETHERNET: return s_ethernet;
-        case IfType::BRIDGE:   return s_bridge;
-        case IfType::LAG:      return s_lag;
-        case IfType::LOOPBACK: return s_loopback;
-        default:               return s_none;
+        case IfType::ETHERNET:
+            return s_ethernet;
+        case IfType::BRIDGE:
+            return s_bridge;
+        case IfType::LAG:
+            return s_lag;
+        case IfType::LOOPBACK:
+            return s_loopback;
+        default:
+            return s_none;
     }
 }
 
@@ -167,17 +179,17 @@ struct ietfInterface_t {
     uint32_t lastQdiscUpdateId;
 
     // --- IETF Interfaces Data ---
-    IfType type = IfType::ETHERNET;               // Will be mapped to "iana-if-type:ethernetCsmacd", "iana-if-type:bridge", etc.
-    bool adminEnabled = false;      // Derived from IFF_UP
-    OperStatus operStatus = OperStatus::UNKNOWN; // Derived from IFLA_OPERSTATE
+    IfType type = IfType::ETHERNET;  // Will be mapped to "iana-if-type:ethernetCsmacd", "iana-if-type:bridge", etc.
+    bool adminEnabled = false;       // Derived from IFF_UP
+    OperStatus operStatus = OperStatus::UNKNOWN;  // Derived from IFLA_OPERSTATE
 
     bool hasPhysAddr = false;
-    std::array<uint8_t, 6> physAddress = {0}; // Derived from IFLA_ADDRESS
+    std::array<uint8_t, 6> physAddress = {0};  // Derived from IFLA_ADDRESS
 
-    uint32_t mtu = 0;               // Derived from IFLA_MTU
+    uint32_t mtu = 0;  // Derived from IFLA_MTU
 
     // --- Capabilities / Logic ---
-    uint32_t numTxQueues = 1;       // Derived from IFLA_NUM_TX_QUEUES (Crucial for TSN)
+    uint32_t numTxQueues = 1;  // Derived from IFLA_NUM_TX_QUEUES (Crucial for TSN)
 
     BridgePort_t bridgePort;
 };

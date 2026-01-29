@@ -77,11 +77,11 @@ class tsnctrld {
 
     void syncHardwareToRunning();
     void setupSubscriptions();
-    //ietfInterface_t& getExistingOrNewInterface(const std::string& ifname, std::vector<ietfInterface_t>& interfaces);
-//
-    //void ensureCurrentNetlinkGetQdiscResponseInterfaces(uint32_t currentRequestId, const std::string& ifname);
-    //void ensureCurrentNetlinkGetLinkResponseInterfaces(uint32_t currentRequestId, const std::string& ifname);
-    //struct ifaddrs* ensureCurrentIfAddrsInterfaces(uint32_t currentRequestId);
+    // ietfInterface_t& getExistingOrNewInterface(const std::string& ifname, std::vector<ietfInterface_t>& interfaces);
+    //
+    // void ensureCurrentNetlinkGetQdiscResponseInterfaces(uint32_t currentRequestId, const std::string& ifname);
+    // void ensureCurrentNetlinkGetLinkResponseInterfaces(uint32_t currentRequestId, const std::string& ifname);
+    // struct ifaddrs* ensureCurrentIfAddrsInterfaces(uint32_t currentRequestId);
 
     ietfInterface_t* syncInterfaceFromSysrepo(sysrepo::Session sess, const std::string& ifname, uint32_t requestId);
 
@@ -89,7 +89,6 @@ class tsnctrld {
 
     template <typename T>
     T getLeaf(const std::optional<libyang::DataNode>& node, const std::string& path);
-
 
    public:
     tsnctrld();

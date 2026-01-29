@@ -29,34 +29,34 @@ std::map<int, ietfInterface_t>& InterfacesCache::getAllInterfaces() {
     return m_interfaces;
 }
 
-//ietfInterface_t* InterfacesCache::ensureLinkData(NetlinkSocket& sock, int ifindex) {
-//    ietfInterface_t* iface = getInterface(ifindex);
+// ietfInterface_t* InterfacesCache::ensureLinkData(NetlinkSocket& sock, int ifindex) {
+//     ietfInterface_t* iface = getInterface(ifindex);
 //
-//    // 1. Freshness Check
-//    if (iface && iface->lastLinkUpdateId == m_currentRequestId) {
-//        return iface;  // Cache Hit
-//    }
+//     // 1. Freshness Check
+//     if (iface && iface->lastLinkUpdateId == m_currentRequestId) {
+//         return iface;  // Cache Hit
+//     }
 //
-//    // 2. Fetch Targeted
-//    // Note: RTM_GETLINK always returns full attributes.
-//    // Partial parsing isn't useful here as the kernel constructs the full message anyway.
-//    try {
-//        LinkManager::getInterface(sock, ifindex);
-//    } catch (...) {
-//        return nullptr;  // Interface likely doesn't exist
-//    }
+//     // 2. Fetch Targeted
+//     // Note: RTM_GETLINK always returns full attributes.
+//     // Partial parsing isn't useful here as the kernel constructs the full message anyway.
+//     try {
+//         LinkManager::getInterface(sock, ifindex);
+//     } catch (...) {
+//         return nullptr;  // Interface likely doesn't exist
+//     }
 //
-//    // 3. Parse & Upsert
-//    LinkManager::getInterfacesInResponse(sock, m_interfaces, m_currentRequestId);
+//     // 3. Parse & Upsert
+//     LinkManager::getInterfacesInResponse(sock, m_interfaces, m_currentRequestId);
 //
-//    return getInterface(ifindex);
-//}
+//     return getInterface(ifindex);
+// }
 //
-//ietfInterface_t* InterfacesCache::ensureLinkData(NetlinkSocket& sock, const std::string& name) {
-//    unsigned int idx = if_nametoindex(name.c_str());
-//    if (idx == 0) return nullptr;  // OS doesn't know this name
-//    return ensureLinkData(sock, static_cast<int>(idx));
-//}
+// ietfInterface_t* InterfacesCache::ensureLinkData(NetlinkSocket& sock, const std::string& name) {
+//     unsigned int idx = if_nametoindex(name.c_str());
+//     if (idx == 0) return nullptr;  // OS doesn't know this name
+//     return ensureLinkData(sock, static_cast<int>(idx));
+// }
 
 /**
  * @brief Ensure Link Data is fresh for ALL interfaces.
@@ -80,9 +80,9 @@ void InterfacesCache::ensureFullLinkData(NetlinkSocket& sock) {
 
     // 4. Prune Dead Interfaces
     // If lastLinkUpdateId wasn't updated to currentReqId, the kernel didn't report it.
-    for (auto it = m_interfaces.begin(); it != m_interfaces.end(); ) {
+    for (auto it = m_interfaces.begin(); it != m_interfaces.end();) {
         if (it->second.lastLinkUpdateId != m_currentRequestId) {
-            it = m_interfaces.erase(it); // Erase invalidates only this iterator
+            it = m_interfaces.erase(it);  // Erase invalidates only this iterator
         } else {
             ++it;
         }
@@ -91,35 +91,35 @@ void InterfacesCache::ensureFullLinkData(NetlinkSocket& sock) {
     m_fullLinkDumpDone = true;
 }
 
-//ietfInterface_t* InterfacesCache::ensureQdiscData(NetlinkSocket& sock, int ifindex) {
-//    ietfInterface_t* iface = ensureLinkData(sock, ifindex);
-//    if (!iface) return nullptr;
+// ietfInterface_t* InterfacesCache::ensureQdiscData(NetlinkSocket& sock, int ifindex) {
+//     ietfInterface_t* iface = ensureLinkData(sock, ifindex);
+//     if (!iface) return nullptr;
 //
-//    // 1. Freshness Check
-//    if (iface->lastQdiscUpdateId == m_currentRequestId) {
-//        return iface;
-//    }
+//     // 1. Freshness Check
+//     if (iface->lastQdiscUpdateId == m_currentRequestId) {
+//         return iface;
+//     }
 //
-//    // 2. Fetch Targeted
-//    // Note: QdiscManager::sendGetQdiscTargeted must set tcm_ifindex
-//    try {
-//        QdiscManager::sendGetQdiscTargeted(sock, ifindex);
-//    } catch (...) {
-//        return iface;  // Return what we have, even if QDisc fetch failed
-//    }
+//     // 2. Fetch Targeted
+//     // Note: QdiscManager::sendGetQdiscTargeted must set tcm_ifindex
+//     try {
+//         QdiscManager::sendGetQdiscTargeted(sock, ifindex);
+//     } catch (...) {
+//         return iface;  // Return what we have, even if QDisc fetch failed
+//     }
 //
-//    // 3. Parse & Upsert (Targeted Filter)
-//    // Pass ifindex to parser to avoid processing unrelated noise if kernel dumps too much
-//    QdiscManager::getInterfacesInResponse(sock, m_interfaces, m_currentRequestId, ifindex);
+//     // 3. Parse & Upsert (Targeted Filter)
+//     // Pass ifindex to parser to avoid processing unrelated noise if kernel dumps too much
+//     QdiscManager::getInterfacesInResponse(sock, m_interfaces, m_currentRequestId, ifindex);
 //
-//    return findByIndex(ifindex);
-//}
+//     return findByIndex(ifindex);
+// }
 //
-//ietfInterface_t* InterfacesCache::ensureQdiscData(NetlinkSocket& sock, const std::string& name) {
-//    unsigned int idx = if_nametoindex(name.c_str());
-//    if (idx == 0) return nullptr;  // OS doesn't know this name
-//    return ensureQdiscData(sock, static_cast<int>(idx));
-//}
+// ietfInterface_t* InterfacesCache::ensureQdiscData(NetlinkSocket& sock, const std::string& name) {
+//     unsigned int idx = if_nametoindex(name.c_str());
+//     if (idx == 0) return nullptr;  // OS doesn't know this name
+//     return ensureQdiscData(sock, static_cast<int>(idx));
+// }
 
 /**
  * @brief Ensure QDisc Data is fresh for ALL interfaces.
