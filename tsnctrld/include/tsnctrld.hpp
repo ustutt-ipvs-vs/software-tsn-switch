@@ -9,10 +9,10 @@
 
 #include "InterfacesCache.h"
 #include "LinkManager.h"
+#include "LldpDaemon.h"
 #include "NetconfNetlinkMapper.h"
 #include "NetlinkSocket.h"
 #include "QdiscManager.h"
-#include "LldpDaemon.h"
 
 enum class GclFillOptions : uint32_t {
     OnlyDefault = 0b00,
