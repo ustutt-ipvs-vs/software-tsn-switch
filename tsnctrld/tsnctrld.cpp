@@ -248,7 +248,6 @@ void fillGptNode(const GclConfig_t& hw_cfg, std::optional<libyang::DataNode>& to
                 << std::endl;
         }
     }
-    return;
 }
 
 ietfInterface_t* tsnctrld::syncInterfaceFromSysrepo(sysrepo::Session sess, const std::string& ifname,
@@ -448,8 +447,6 @@ void tsnctrld::syncHardwareToRunning() {
         }
     }
     // freeifaddrs(ifaddr);
-    LldpDaemon lldpDaemon(m_operSess);
-    lldpDaemon.syncInitialNeighbors();
 
     if (forest) {
         std::cout << "[SYNC] Applying Batch to Datastore..." << std::endl;
@@ -463,6 +460,10 @@ void tsnctrld::syncHardwareToRunning() {
         m_sess.applyChanges();
         std::cout << "[SYNC] Datastore synchronized." << std::endl;
     }
+
+    m_lldpDaemon = std::make_unique<LldpDaemon>(m_operSess);
+    m_lldpDaemon->syncInitialNeighbors();
+    m_lldpDaemon->startWatching();
 }
 
 sysrepo::ErrorCode tsnctrld::defaultOperCallback(sysrepo::Session sess, uint32_t subId, const std::string& moduleName,

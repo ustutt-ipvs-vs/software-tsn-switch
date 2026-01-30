@@ -39,6 +39,7 @@ class tsnctrld {
     sysrepo::Session m_sess;
     sysrepo::Session m_operSess;
     std::optional<sysrepo::Subscription> m_sub;
+    std::unique_ptr<LldpDaemon> m_lldpDaemon;
 
     InterfacesCache m_ifcache;
 
