@@ -177,8 +177,9 @@ void LldpDaemon::syncInitialNeighbors() {
  * once LldpDaemon is destructed.
  */
 void LldpDaemon::startWatching() {
-    if (m_watchThread.joinable()) return;
-
+    if (m_watchThread.joinable()) {
+        return;
+    }
     m_stop = false;
     m_watchThread = std::thread([this]() {
         std::cout << "[LLDP] Watcher thread started. Waiting for events...\n";
@@ -187,7 +188,9 @@ void LldpDaemon::startWatching() {
                 std::cerr << "[LLDP] Watcher error: " << lldpctl_last_error(m_watchConn) << "\n";
                 break;
             }
-            if (m_stop) break;
+            if (m_stop) {
+                break;
+            }
         }
         std::cout << "[LLDP] Watcher thread exiting.\n";
     });
@@ -231,7 +234,7 @@ void LldpDaemon::processEvent(lldpctl_change_t type, lldpctl_atom_t* iface, lldp
  */
 void LldpDaemon::refreshPortNeighbors(const std::string& ifName) {
     lldpctl_atom_t* ifaces = lldpctl_get_interfaces(m_queryConn);
-    if (!ifaces) {
+    if (ifaces != nullptr) {
         std::cerr << "[LLDP] refreshPortNeighbors: get_interfaces failed: " << lldpctl_last_error(m_queryConn) << "\n";
     }
 
@@ -242,13 +245,17 @@ void LldpDaemon::refreshPortNeighbors(const std::string& ifName) {
     lldpctl_atom_t* iface = nullptr;
     lldpctl_atom_foreach(ifaces, iface) {
         const std::string name = getStr(iface, lldpctl_k_interface_name);
-        if (name != ifName) continue;
+        if (name != ifName) {
+            continue;
+        }
 
         lldpctl_atom_t* port = lldpctl_get_port(iface);
-        if (!port) break;
+        if (port != nullptr) {
+            break;
+        }
 
         lldpctl_atom_t* neighbors = lldpctl_atom_get(port, lldpctl_k_port_neighbors);
-        if (!neighbors) {
+        if (neighbors != nullptr) {
             lldpctl_atom_dec_ref(port);
             break;
         }
@@ -259,8 +266,8 @@ void LldpDaemon::refreshPortNeighbors(const std::string& ifName) {
             lldpctl_atom_t* chassis = lldpctl_atom_get(neigh, lldpctl_k_port_chassis);
 
             const uint32_t timeMark = currentTimeMark();
-            const std::string chassisId = chassis ? getStr(chassis, lldpctl_k_chassis_id) : "";
-            const std::string systemName = chassis ? getStr(chassis, lldpctl_k_chassis_name) : "";
+            const std::string chassisId = (chassis != nullptr) ? getStr(chassis, lldpctl_k_chassis_id) : "";
+            const std::string systemName = (chassis != nullptr) ? getStr(chassis, lldpctl_k_chassis_name) : "";
             const std::string portId = getStr(neigh, lldpctl_k_port_id);
 
             const std::string base =
@@ -282,7 +289,9 @@ void LldpDaemon::refreshPortNeighbors(const std::string& ifName) {
 
             remoteIndex++;
 
-            if (chassis) lldpctl_atom_dec_ref(chassis);
+            if (chassis != nullptr) {
+                lldpctl_atom_dec_ref(chassis);
+            }
         }
 
         lldpctl_atom_dec_ref(neighbors);
