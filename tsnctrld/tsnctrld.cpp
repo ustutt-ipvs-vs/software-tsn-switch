@@ -255,7 +255,6 @@ ietfInterface_t* tsnctrld::syncInterfaceFromSysrepo(sysrepo::Session sess, const
     m_ifcache.setCurrentRequestId(requestId);
     m_ifcache.ensureFullLinkData(m_sock);
 
-
     ietfInterface_t* iface_ptr = m_ifcache.getInterface(ifname);
     if (!iface_ptr) {
         std::cout << "[SYSREPO->STRUCT] [DEBUG] no interface found with name " << ifname << std::endl;

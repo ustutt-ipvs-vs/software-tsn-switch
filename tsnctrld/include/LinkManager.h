@@ -13,7 +13,8 @@ class LinkManager {
     static void getInterface(NetlinkSocket& netlinkSocket, int ifindex);
 
     static void printLinkResponse(const NetlinkSocket& sock);
-    static void getInterfacesInResponse(const NetlinkSocket& sock, std::map<int, ietfInterface_t>& interfacesMap, uint32_t currentReqId);
+    static void getInterfacesInResponse(const NetlinkSocket& sock, std::map<int, ietfInterface_t>& interfacesMap,
+                                        uint32_t currentReqId);
 };
 
 #endif  // ENPRO_SWITCH_LINKMANAGER_H

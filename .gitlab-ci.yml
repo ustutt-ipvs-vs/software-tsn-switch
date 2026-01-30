@@ -7,44 +7,102 @@ stages:
   - build
   - lint
   - test
+  - docs
 
-image: gitlab-vs.informatik.uni-stuttgart.de:5050/software-tsn-switch/enpro-switch/test-pipeline:003
+image: gitlab-vs.informatik.uni-stuttgart.de:5050/software-tsn-switch/enpro-switch/test-pipeline:004
 
 format:
   stage: format
+  needs: []
+  rules:
+    - if: $CI_COMMIT_BRANCH
   script:
     - echo "Running clang-format check"
     - clang-format --dry-run --Werror $(find . -path ./build -prune -o \( -name '*.cpp' -o -name '*.hpp' -o -name '*.h' \) -print)
-  only:
-    - branches
 
 build:
   stage: build
+  needs: []
+  rules:
+    - if: $CI_COMMIT_BRANCH
   script:
     - cmake -S . -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
     - make --directory=build -j$(nproc)
   artifacts:
     paths:
       - build/
-  only:
-    - branches
 
 lint:
   stage: lint
+  needs: [build]
+  rules:
+    - if: $CI_COMMIT_BRANCH
   script:
     - run-clang-tidy -p build -warnings-as-errors="*" -quiet '(cnc|common|tsnctrld)/.*'
   allow_failure: true
 
 test:
   stage: test
+  needs: [build]
+  rules:
+    - if: $CI_COMMIT_BRANCH
   script:
     - ctest --test-dir build --output-junit junit_report.xml --output-on-failure
-  only:
-    - branches
-
   artifacts:
     when: always
     paths:
       - build/junit_report.xml
     reports:
       junit: build/junit_report.xml
+
+main-user-docs:
+  stage: docs
+  needs: []
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+  script:
+    - echo "Building user documentation pages"
+    - sphinx-build -M html doc/user/source build-user-docs
+  pages:
+    publish: build-user-docs/html
+    path_prefix: docs-user
+    expire_in: never
+
+main-dev-docs:
+  stage: docs
+  needs: []
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+  script:
+    - echo "Building developer documentation pages"
+    - doxygen doc/dev/Doxyfile
+  pages:
+    publish: build-dev-docs/html
+    path_prefix: docs-dev
+    expire_in: never
+
+manual-user-docs:
+  stage: docs
+  needs: []
+  when: manual
+  script:
+    - echo "Building user documentation pages"
+    - sphinx-build -M html doc/user/source build-user-docs
+  pages:
+    publish: build-user-docs/html
+    path_prefix: "docs-user---$CI_COMMIT_BRANCH"
+    expire_in: 1 week
+
+manual-dev-docs:
+  stage: docs
+  needs: []
+  when: manual
+  rules:
+    - if: $CI_COMMIT_BRANCH
+  script:
+    - echo "Building developer documentation pages"
+    - doxygen doc/dev/Doxyfile
+  pages:
+    publish: build-dev-docs/html
+    path_prefix: "docs-dev---$CI_COMMIT_BRANCH"
+    expire_in: 1 week

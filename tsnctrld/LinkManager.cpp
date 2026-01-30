@@ -116,7 +116,6 @@ void LinkManager::getInterface(NetlinkSocket& netlinkSocket, int ifindex) {
     printLinkResponse(netlinkSocket);
 }
 
-
 void LinkManager::printLinkResponse(const NetlinkSocket& sock) {
     for (const nlmsghdr* nlh : sock.getResponse()) {
         if (nlh->nlmsg_type != RTM_NEWLINK) continue;
@@ -209,7 +208,8 @@ void LinkManager::printLinkResponse(const NetlinkSocket& sock) {
     }
 }
 
-void LinkManager::getInterfacesInResponse(const NetlinkSocket& sock, std::map<int, ietfInterface_t>& interfacesMap, uint32_t currentReqId) {
+void LinkManager::getInterfacesInResponse(const NetlinkSocket& sock, std::map<int, ietfInterface_t>& interfacesMap,
+                                          uint32_t currentReqId) {
     for (const nlmsghdr* nlh : sock.getResponse()) {
         // We only care about New/Get Link messages
         if (nlh->nlmsg_type != RTM_NEWLINK) {

@@ -1,4 +1,4 @@
-# How to change the pipeline Docker container
+# How to change the CI pipeline Docker container {#howto-change-ci-container}
 
 1. Modify the `Dockerfile` and build the image locally to test it.
     ```

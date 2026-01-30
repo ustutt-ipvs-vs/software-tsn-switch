@@ -376,7 +376,8 @@ void QdiscManager::parseAdminSchedule(const rtattr* rta, int len) {
 /**
  * @param sock The Netlink Socket
  */
-void QdiscManager::getInterfacesInResponse(const NetlinkSocket& sock, std::map<int, ietfInterface_t>& interfacesMap, uint32_t currentReqId) {
+void QdiscManager::getInterfacesInResponse(const NetlinkSocket& sock, std::map<int, ietfInterface_t>& interfacesMap,
+                                           uint32_t currentReqId) {
     for (const nlmsghdr* nlh : sock.getResponse()) {
         if (nlh->nlmsg_type != RTM_NEWQDISC && nlh->nlmsg_type != RTM_GETQDISC) {
             continue;
@@ -393,7 +394,6 @@ void QdiscManager::getInterfacesInResponse(const NetlinkSocket& sock, std::map<i
 
         current.lastQdiscUpdateId = currentReqId;
         current.ifindex = ifindex;
-
 
         int len = nlh->nlmsg_len - NLMSG_LENGTH(sizeof(*tcm));
         rtattr* rta = (rtattr*)(((char*)tcm) + NLMSG_ALIGN(sizeof(*tcm)));
