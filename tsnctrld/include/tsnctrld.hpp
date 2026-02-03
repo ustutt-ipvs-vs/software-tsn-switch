@@ -36,7 +36,7 @@ class tsnctrld {
     NetconfNetlinkMapper m_mapper;
     sysrepo::Connection m_conn;
     sysrepo::Session m_sess;
-    std::optional<sysrepo::Subscription> m_sub;
+    std::vector<sysrepo::Subscription> m_subs;
 
     InterfacesCache m_ifcache;
 
@@ -83,7 +83,7 @@ class tsnctrld {
     // void ensureCurrentNetlinkGetLinkResponseInterfaces(uint32_t currentRequestId, const std::string& ifname);
     // struct ifaddrs* ensureCurrentIfAddrsInterfaces(uint32_t currentRequestId);
 
-    ietfInterface_t* syncInterfaceFromSysrepo(sysrepo::Session sess, const std::string& ifname, uint32_t requestId);
+    ietfInterface_t* syncInterfaceFromSysrepo(sysrepo::Session& sess, const std::string& ifname, uint32_t requestId);
 
     void resetTriggerLeaf(const std::string& xpath);
 

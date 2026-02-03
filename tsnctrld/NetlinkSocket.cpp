@@ -14,6 +14,7 @@
 #include <cstring>
 #include <iostream>
 #include <stdexcept>
+#include <spdlog/spdlog.h>
 
 /**
  * @brief Creates and returns a Netlink socket file descriptor.
@@ -125,7 +126,7 @@ void NetlinkSocket::saveResponse() {
             if (nlh->nlmsg_type == NLMSG_ERROR) {
                 struct nlmsgerr *error = (struct nlmsgerr *)NLMSG_DATA(nlh);
                 if (error->error == 0) {
-                    std::cout << "Netlink Message accepted" << std::endl;
+                    spdlog::debug("Netlink Message accepted");
                 } else {
                     throw std::runtime_error("Error in received message with code: " + std::to_string(error->error));
                 }

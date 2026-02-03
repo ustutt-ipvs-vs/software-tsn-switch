@@ -23,9 +23,9 @@
  *
  * @param netlinkSocket The NetlinkSocket used to communicate with the kernel
  * @param ifname Name of the interface on which to install the TAPRIO qdisc
- * @param gclConfig Configuration object defining traffic classes, priorities, and schedule
+ * @param taprioConfig Configuration object defining traffic classes, priorities, and schedule
  */
-void QdiscManager::setQdisc(NetlinkSocket& netlinkSocket, const std::string& ifname, TaprioConfig& gclConfig) {
+void QdiscManager::setQdisc(NetlinkSocket& netlinkSocket, const std::string& ifname, TaprioConfig& taprioConfig) {
     struct {
         nlmsghdr nh;
         tcmsg tcm;
@@ -52,12 +52,23 @@ void QdiscManager::setQdisc(NetlinkSocket& netlinkSocket, const std::string& ifn
     int optionsID = builder.addAttribute(&req.nh, TCA_OPTIONS | NLA_F_NESTED, nullptr, 0);
 
     tc_mqprio_qopt qopt{};
-    qopt.num_tc = gclConfig.numTc;
-    for (size_t i = 0; i < gclConfig.prioTc.size(); ++i) {
-        qopt.prio_tc_map[i] = gclConfig.prioTc[i];
+    qopt.num_tc = taprioConfig.numTc;
+    for (size_t i = 0; i < taprioConfig.prioTc.size(); ++i) {
+        qopt.prio_tc_map[i] = taprioConfig.prioTc[i];
     }
 
-    for (uint32_t tc = 0; tc < gclConfig.numTc; ++tc) {
+    for (uint32_t tc = 0; tc < taprioConfig.numTc; ++tc) {
+        if (taprioConfig.numTc <= taprioConfig.numTxQs) {
+            // 1:1 Mapping
+            qopt.offset[tc] = tc;
+            qopt.count[tc] = 1;
+        } else {
+            // Multiple TCs share HW queues
+            qopt.offset[tc] = tc % taprioConfig.numTxQs;
+            qopt.count[tc] = 1;
+        }
+    }
+    for (uint32_t tc = 0; tc < taprioConfig.numTc; ++tc) {
         qopt.count[tc] = 1;
         qopt.offset[tc] = tc;
     }
@@ -68,26 +79,36 @@ void QdiscManager::setQdisc(NetlinkSocket& netlinkSocket, const std::string& ifn
     builder.addAttribute(optionsID, TCA_TAPRIO_ATTR_SCHED_CLOCKID, &clockid, sizeof(clockid));
 
     // Base Time
-    builder.addAttribute(optionsID, TCA_TAPRIO_ATTR_SCHED_BASE_TIME, &gclConfig.admin.baseTime,
-                         sizeof(gclConfig.admin.baseTime));
+    builder.addAttribute(optionsID, TCA_TAPRIO_ATTR_SCHED_BASE_TIME, &taprioConfig.admin.baseTime,
+                         sizeof(taprioConfig.admin.baseTime));
 
     // Cycle Time
-    builder.addAttribute(optionsID, TCA_TAPRIO_ATTR_SCHED_CYCLE_TIME, &gclConfig.admin.cycleTime,
-                         sizeof(gclConfig.admin.cycleTime));
+    builder.addAttribute(optionsID, TCA_TAPRIO_ATTR_SCHED_CYCLE_TIME, &taprioConfig.admin.cycleTime,
+                         sizeof(taprioConfig.admin.cycleTime));
 
     // Cycle Time Extension
-    builder.addAttribute(optionsID, TCA_TAPRIO_ATTR_SCHED_CYCLE_TIME_EXTENSION, &gclConfig.admin.cycleTimeExt,
-                         sizeof(gclConfig.admin.cycleTimeExt));
+    builder.addAttribute(optionsID, TCA_TAPRIO_ATTR_SCHED_CYCLE_TIME_EXTENSION, &taprioConfig.admin.cycleTimeExt,
+                         sizeof(taprioConfig.admin.cycleTimeExt));
 
     // TAPRIO Schedule Entry List
     int entryListID = builder.addAttribute(optionsID, TCA_TAPRIO_ATTR_SCHED_ENTRY_LIST | NLA_F_NESTED, nullptr, 0);
 
-    for (const auto& entry : gclConfig.admin.entries) {
+    for (const auto& entry : taprioConfig.admin.entries) {
         int entryId = builder.addAttribute(entryListID, TCA_TAPRIO_SCHED_ENTRY | NLA_F_NESTED, nullptr, 0);
         builder.addAttribute(entryId, TCA_TAPRIO_SCHED_ENTRY_CMD, &entry.command, sizeof(entry.command));
         builder.addAttribute(entryId, TCA_TAPRIO_SCHED_ENTRY_GATE_MASK, &entry.gateMask, sizeof(entry.gateMask));
         builder.addAttribute(entryId, TCA_TAPRIO_SCHED_ENTRY_INTERVAL, &entry.interval, sizeof(entry.interval));
     }
+
+    // Max SDU entries
+    for (uint8_t i = 0; i < taprioConfig.numTc; i++) {
+        const auto& entry = taprioConfig.maxSDUs[i];
+        int sduId = builder.addAttribute(optionsID, TCA_TAPRIO_ATTR_TC_ENTRY | NLA_F_NESTED, nullptr, 0);
+        builder.addAttribute(sduId, TCA_TAPRIO_TC_ENTRY_INDEX, &entry.trafficClass, sizeof(entry.trafficClass));
+        builder.addAttribute(sduId, TCA_TAPRIO_TC_ENTRY_MAX_SDU, &entry.queueMaxSdu, sizeof(entry.queueMaxSdu));
+        builder.addAttribute(sduId, TCA_TAPRIO_TC_ENTRY_FP, &entry.preemtible, sizeof(entry.preemtible));
+    }
+
 
     netlinkSocket.sendMessage(&req.nh, req.nh.nlmsg_len);
 }

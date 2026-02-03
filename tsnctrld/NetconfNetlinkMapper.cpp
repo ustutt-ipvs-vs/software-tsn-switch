@@ -50,13 +50,26 @@ PtpTime_t NetconfNetlinkMapper::fromNsToPtp(uint64_t ns) {
     };
 }
 
-TaprioConfig NetconfNetlinkMapper::mapToTaprio(const GclConfig_t& gcl) {
+TaprioConfig NetconfNetlinkMapper::mapToTaprio(const ietfInterface_t &iface) {
+    const BridgePort_t &bp = iface.bridgePort;
+    const GclConfig_t &gcl = bp.gateParameterTable;
+
     TaprioConfig taprioConf{};
-    taprioConf.numTc = gcl.queueMaxSduTable.size();
+    taprioConf.numTxQs = iface.numTxQueues;
+    taprioConf.numTc = bp.trafficClassData.numTrafficClasses;
+
+    for (uint8_t i = 0; i < 8; ++i) {
+        taprioConf.prioTc[i] = bp.trafficClassData.priorityMap[i];
+    }
+    for (uint8_t i = 8; i < TC_QOPT_BITMASK + 1; ++i) {
+        // TODO: How are priorities above 7 mapped? YANG only supports 8, linux 16
+        taprioConf.prioTc[i] = 0;
+    }
 
     for (uint8_t i = 0; i < taprioConf.numTc; ++i) {
-        // todo check if this config is valid in regards to the standard
-        taprioConf.prioTc[i] = i;
+        taprioConf.maxSDUs[i].trafficClass = gcl.queueMaxSduTable[i].trafficClass;
+        taprioConf.maxSDUs[i].queueMaxSdu = gcl.queueMaxSduTable[i].queueMaxSdu;
+        taprioConf.maxSDUs[i].preemtible = TC_FP_EXPRESS; // Not part of the ieee802-dot1q-sched model, assume always non-preemptible
     }
 
     taprioConf.admin.clockid = CLOCK_TAI;
@@ -69,18 +82,6 @@ TaprioConfig NetconfNetlinkMapper::mapToTaprio(const GclConfig_t& gcl) {
         taprioConf.admin.entries.push_back({.command = TC_TAPRIO_CMD_SET_GATES,
                                             .gateMask = entry.gateStatesValue,
                                             .interval = entry.timeIntervalValue});
-    }
-
-    taprioConf.oper.clockid = CLOCK_TAI;
-    taprioConf.oper.baseTime = ptpToNs(gcl.operBaseTime);
-    taprioConf.oper.cycleTime = rationalToNs(gcl.operCycleTime);
-    taprioConf.oper.cycleTimeExt = gcl.operCycleTimeExtensionNs;
-
-    taprioConf.oper.entries.reserve(gcl.operControlList.size());
-    for (const GclEntry_t& entry : gcl.operControlList) {
-        taprioConf.oper.entries.push_back({.command = TC_TAPRIO_CMD_SET_GATES,
-                                           .gateMask = entry.gateStatesValue,
-                                           .interval = entry.timeIntervalValue});
     }
 
     return taprioConf;

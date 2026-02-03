@@ -5,7 +5,7 @@
 
 class NetconfNetlinkMapper {
    public:
-    static TaprioConfig mapToTaprio(const GclConfig_t& gcl);
+    static TaprioConfig mapToTaprio(const ietfInterface_t &iface);
     static PtpTime_t fromNsToPtp(uint64_t Ns);
     static RationalTime_t fromNsToRational(uint64_t Ns);
 
