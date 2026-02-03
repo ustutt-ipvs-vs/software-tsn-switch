@@ -9,6 +9,7 @@
 
 #include "InterfacesCache.h"
 #include "LinkManager.h"
+#include "LldpDaemon.h"
 #include "NetconfNetlinkMapper.h"
 #include "NetlinkSocket.h"
 #include "QdiscManager.h"
@@ -36,7 +37,9 @@ class tsnctrld {
     NetconfNetlinkMapper m_mapper;
     sysrepo::Connection m_conn;
     sysrepo::Session m_sess;
+    sysrepo::Session m_operSess;
     std::vector<sysrepo::Subscription> m_subs;
+    std::unique_ptr<LldpDaemon> m_lldpDaemon;
 
     InterfacesCache m_ifcache;
 

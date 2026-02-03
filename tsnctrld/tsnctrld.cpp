@@ -1,8 +1,6 @@
 #include "include/tsnctrld.hpp"
 
 #include <ifaddrs.h>
-#include <net/if.h>
-#include <netpacket/packet.h>
 
 #include <ctime>
 #include <iostream>
@@ -243,7 +241,6 @@ void fillGptNode(const GclConfig_t &hw_cfg, std::optional<libyang::DataNode> &to
                 "[FILL DATANODE] Oper data requested but not set, assume nothing TSN is configured and ignoring...");
         }
     }
-    return;
 }
 
 ietfInterface_t *tsnctrld::syncInterfaceFromSysrepo(sysrepo::Session &sess, const std::string &ifname,
@@ -512,6 +509,10 @@ void tsnctrld::syncHardwareToRunning() {
         m_sess.applyChanges();
         spdlog::debug("[SYNC] Datastore synchronized.");
     }
+
+    m_lldpDaemon = std::make_unique<LldpDaemon>(m_operSess);
+    m_lldpDaemon->syncInitialNeighbors();
+    m_lldpDaemon->startWatching();
 }
 
 sysrepo::ErrorCode tsnctrld::defaultOperCallback(sysrepo::Session sess, uint32_t subId, const std::string &moduleName,
@@ -886,7 +887,8 @@ void tsnctrld::setupSubscriptions() {
     spdlog::debug("[INIT] [SUBS] Registered oper callbacks...");
 }
 
-tsnctrld::tsnctrld() : m_sess(m_conn.sessionStart()) {
+tsnctrld::tsnctrld() : m_sess(m_conn.sessionStart()), m_operSess(m_conn.sessionStart()) {
+    m_operSess.switchDatastore(sysrepo::Datastore::Operational);
 }
 
 int main() {
