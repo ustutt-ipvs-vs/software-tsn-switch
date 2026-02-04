@@ -11,8 +11,11 @@
 #include "Inventory.h"
 
 int main() {
+    // Measure total execution time
+    auto startGlobal = std::chrono::high_resolution_clock::now();
+
     std::cout << "========================================" << std::endl;
-    std::cout << "      CNC NETWORK CONTROLLER v1.3       " << std::endl;
+    std::cout << "      CNC NETWORK CONTROLLER v1.4       " << std::endl;
     std::cout << "========================================" << std::endl;
 
     // 1. Hardcoded path to file 
@@ -43,6 +46,9 @@ int main() {
         return 1;
     }
 
+    // Build index for fast lookups
+    topology.buildIndex();
+
     if (topology.nodes.empty()) {
         std::cerr << "[FATAL] No nodes found in imported topology!" << std::endl;
         return 1;
@@ -56,6 +62,9 @@ int main() {
         std::cerr << "[FATAL] No inventory entries found!" << std::endl;
         return 1;
     }
+
+    // Measure time without json import
+    auto startGlobalwithoutJson = std::chrono::high_resolution_clock::now();
 
     // 4. Initialize Network Manager
     cnc::NetworkManager manager(topology);
@@ -71,13 +80,35 @@ int main() {
         return 1;
     }
 
+    // Measure connection time
+    auto durationConnect = std::chrono::high_resolution_clock::now() - startGlobal;
+    std::cout << "[INFO] Connection Phase completed in "
+              << std::chrono::duration_cast<std::chrono::microseconds>(durationConnect).count()
+              << " microseconds." << std::endl;
+
+    auto durationWithoutJson = std::chrono::high_resolution_clock::now() - startGlobalwithoutJson;
+    std::cout << "[INFO] Execution time without JSON import: "
+              << std::chrono::duration_cast<std::chrono::microseconds>(durationWithoutJson).count()
+              << " microseconds." << std::endl;
+
     // 6. Fetch LLDP Data
-    //std::cout << "\n[INFO] --- Fetching LLDP Data ---" << std::endl;
-    //manager.fetchLldpData();
+    std::cout << "\n[INFO] --- Fetching LLDP Data ---" << std::endl;
+    manager.fetchLldpData();
 
     // 7. Deployment (Create XML and send via Netconf)
     std::cout << "\n[INFO] --- Starting Deployment Phase ---" << std::endl;
     manager.deployConfigToAll();
+
+    // Measure deployment time
+    auto durationDeploy = std::chrono::high_resolution_clock::now() - startGlobal;
+    std::cout << "[INFO] Deployment Phase completed in "
+              << std::chrono::duration_cast<std::chrono::microseconds>(durationDeploy).count()
+              << " microseconds." << std::endl;
+
+    auto durationDeployWithoutJson = std::chrono::high_resolution_clock::now() - startGlobalwithoutJson;
+    std::cout << "[INFO] Execution time without JSON import: "
+              << std::chrono::duration_cast<std::chrono::microseconds>(durationDeployWithoutJson).count()
+              << " microseconds." << std::endl;
 
     // 8. Fetch Operational GCL Data for verification
     std::cout << "\n[INFO] --- Fetching Operational GCL Data for Verification ---" << std::endl;

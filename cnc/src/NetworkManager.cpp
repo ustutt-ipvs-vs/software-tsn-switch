@@ -66,7 +66,7 @@ namespace cnc {
         for (auto const& [name, session] : sessions_) {
             if (!session->isConnected()) continue;
 
-            std::string lldpData = session->getData("ietfs-lldp:lldp");
+            std::string lldpData = session->getData("/ieee802-dot1ab-lldp:lldp");
 
             if (lldpData.empty()) {
                 // No LLDP data retrieved
