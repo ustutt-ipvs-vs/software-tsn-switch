@@ -234,7 +234,7 @@ void LldpDaemon::processEvent(lldpctl_change_t type, lldpctl_atom_t* iface, lldp
  */
 void LldpDaemon::refreshPortNeighbors(const std::string& ifName) {
     lldpctl_atom_t* ifaces = lldpctl_get_interfaces(m_queryConn);
-    if (ifaces != nullptr) {
+    if (ifaces == nullptr) {
         std::cerr << "[LLDP] refreshPortNeighbors: get_interfaces failed: " << lldpctl_last_error(m_queryConn) << "\n";
     }
 
@@ -250,12 +250,12 @@ void LldpDaemon::refreshPortNeighbors(const std::string& ifName) {
         }
 
         lldpctl_atom_t* port = lldpctl_get_port(iface);
-        if (port != nullptr) {
-            break;
+        if (port == nullptr) {
+            continue;
         }
 
         lldpctl_atom_t* neighbors = lldpctl_atom_get(port, lldpctl_k_port_neighbors);
-        if (neighbors != nullptr) {
+        if (neighbors == nullptr) {
             lldpctl_atom_dec_ref(port);
             break;
         }
