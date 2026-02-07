@@ -63,10 +63,9 @@ bool JsonImporter::importFromFile(const std::string& filename, Topology& topolog
                         // Entries
                         if (gclItem.contains("entries") && gclItem["entries"].is_array()) {
                             auto entries = gclItem["entries"];
-                            gclConfig.adminControlListSize = static_cast<uint32_t>(entries.size());
 
-                            if (gclConfig.adminControlListSize > 0) {
-                                gclConfig.adminControlList = new GclEntry_t[gclConfig.adminControlListSize];
+                            if (!entries.empty()) {
+                                gclConfig.adminControlList.resize(entries.size());
 
                                 int idx = 0;
                                 for (const auto& entryItem : entries) {
@@ -82,8 +81,7 @@ bool JsonImporter::importFromFile(const std::string& filename, Topology& topolog
                                 }
                             }
                         } else {
-                            gclConfig.adminControlListSize = 0;
-                            gclConfig.adminControlList = nullptr;
+                            gclConfig.adminControlList.clear();  // No entries, empty list
                         }
                     }
                     node.interfaces.push_back(iface);

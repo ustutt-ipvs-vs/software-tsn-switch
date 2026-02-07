@@ -147,7 +147,7 @@ int main() {
             const auto& gcl = iface.bridgePort.gateParameterTable;
 
             // We show it only if entries were found
-            if (gcl.operControlListSize > 0) {
+            if (!gcl.operControlList.empty()) {
                 anyGclFound = true;
                 std::cout << "  [MATCH] Node: " << node.hostName << " | Iface: " << iface.name << std::endl;
 
@@ -160,11 +160,11 @@ int main() {
                           << "ns" << std::endl;
 
                 // iterate over the list of GCL entries
-                std::cout << "    Gate Control List (" << gcl.operControlListSize << " entries):" << std::endl;
+                std::cout << "    Gate Control List (" << gcl.operControlList.size() << " entries):" << std::endl;
                 std::cout << "      Index | Interval (ns) | Gate Mask (Hex)" << std::endl;
                 std::cout << "      ------+---------------+----------------" << std::endl;
 
-                for (uint32_t i = 0; i < gcl.operControlListSize; ++i) {
+                for (uint32_t i = 0; i < gcl.operControlList.size(); ++i) {
                     const auto& entry = gcl.operControlList[i];
                     std::cout << "      " << std::setw(5) << i << " | " << std::setw(13) << entry.timeIntervalValue
                               << " | 0x" << std::hex << std::uppercase << (int)entry.gateStatesValue

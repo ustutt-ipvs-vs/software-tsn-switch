@@ -92,14 +92,14 @@ void GclXmlBuilder::appendPtpTime(std::stringstream& ss, const PtpTime_t time, c
 
 void GclXmlBuilder::appendControlList(std::stringstream& ss, const GclConfig_t config) {
     // Check pointer validity
-    if (config.adminControlList == nullptr || config.adminControlListSize == 0) {
+    if (config.adminControlList.empty()) {
         return;  // No control list to append
     }
 
     // ss << "<admin-control-list>";
     ss << "<admin-control-list xmlns:nc=\"urn:ietf:params:xml:ns:netconf:base:1.0\" nc:operation=\"replace\">";
 
-    for (uint32_t i = 0; i < config.adminControlListSize; ++i) {
+    for (uint32_t i = 0; i < config.adminControlList.size(); ++i) {
         const GclEntry_t& entry = config.adminControlList[i];
         ss << "<gate-control-entry>";
         ss << "<index>" << entry.index << "</index>";

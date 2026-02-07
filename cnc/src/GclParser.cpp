@@ -142,18 +142,12 @@ void GclParser::parseInterfaceGcl(const void* xmlNodePtr, ietfInterface_t& iface
             }
         }
 
-        // 2. Clear old memory
-        if (gclConfig.operControlList != nullptr) {
-            delete[] gclConfig.operControlList;
-            gclConfig.operControlList = nullptr;
-            gclConfig.operControlListSize = 0;
-        }
+        // 2. Clear old memory  
+        gclConfig.operControlList.clear();
+        gclConfig.operControlList.resize(entries.size());
 
         // 3. Write new data
         if (!entries.empty()) {
-            gclConfig.operControlListSize = static_cast<uint32_t>(entries.size());
-            gclConfig.operControlList = new GclEntry_t[gclConfig.operControlListSize];
-
             for (size_t i = 0; i < entries.size(); ++i) {
                 pugi::xml_node entryNode = entries[i];
                 GclEntry_t& entry = gclConfig.operControlList[i];
