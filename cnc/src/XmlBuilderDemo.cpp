@@ -1,5 +1,6 @@
 #include <iostream>
 #include <vector>
+
 #include "CncTypes.h"
 #include "GclXmlBuilder.h"
 
@@ -15,7 +16,7 @@ int main() {
 
     // 2. Create a dummy interface with GCL data
     ietfInterface_t iface;
-    iface.name = "sw0p1"; // Important: The port name
+    iface.name = "sw0p1";  // Important: The port name
 
     // 3. Now simulate the GCL config (the complex structure)
     // Access gateParameterTable in BridgePort
@@ -32,18 +33,18 @@ int main() {
     // Gate Control List (Create the array)
     // Simulating 2 entries
     gcl.adminControlListSize = 2;
-    gcl.adminControlList = new GclEntry_t[2]; // Allocate memory!
+    gcl.adminControlList = new GclEntry_t[2];  // Allocate memory!
 
     // Entry 0: All open (255) for 500us
     gcl.adminControlList[0].index = 0;
     gcl.adminControlList[0].operationName = "sched:set-gate-states";
-    gcl.adminControlList[0].gateStatesValue = 255; // 0xFF
+    gcl.adminControlList[0].gateStatesValue = 255;  // 0xFF
     gcl.adminControlList[0].timeIntervalValue = 500000;
 
     // Entry 1: All closed (0) for 500us
     gcl.adminControlList[1].index = 1;
     gcl.adminControlList[1].operationName = "sched:set-gate-states";
-    gcl.adminControlList[1].gateStatesValue = 0;   // 0x00
+    gcl.adminControlList[1].gateStatesValue = 0;  // 0x00
     gcl.adminControlList[1].timeIntervalValue = 500000;
 
     // Set config change flag

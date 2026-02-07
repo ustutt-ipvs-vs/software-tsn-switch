@@ -1,12 +1,13 @@
 #pragma once
 
-#include "CncTypes.h"
-#include <vector>
 #include <map>
 #include <string>
+#include <vector>
+
+#include "CncTypes.h"
 
 class Topology {
-public:
+   public:
     /**
      * @brief The main database storing all network nodes (Switches/End-Devices).
      * This vector owns the memory of the objects.
@@ -33,7 +34,7 @@ public:
      */
     ietfInterface_t* getInterface(const LldpNeighbor_t& neighborInfo);
 
-private:
+   private:
     /**
      * @brief Internal helper for fast lookups.
      * Avoids looping through the vector every time if searching for a node.

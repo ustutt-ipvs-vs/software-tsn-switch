@@ -1,14 +1,14 @@
-#include <iostream>
-#include <string>
-#include <fstream>
-#include <map>
 #include <filesystem>
+#include <fstream>
+#include <iostream>
+#include <map>
+#include <string>
 
 #include "CncTypes.h"
-#include "Topology.h"
+#include "Inventory.h"
 #include "JsonImporter.h"
 #include "NetworkManager.h"
-#include "Inventory.h"
+#include "Topology.h"
 
 int main() {
     // Time measurement variables (in microseconds)
@@ -25,7 +25,7 @@ int main() {
     std::cout << "      CNC NETWORK CONTROLLER v1.5       " << std::endl;
     std::cout << "========================================" << std::endl;
 
-    // 1. Hardcoded path to file 
+    // 1. Hardcoded path to file
     const std::string TOPOLOGY_FILE = "cnc/examples/simple_example_schedule_v3.json";
     const std::string INVENTORY_FILE = "cnc/config/inventory.json";
 
@@ -83,7 +83,7 @@ int main() {
     t_start_step = std::chrono::high_resolution_clock::now();
 
     bool connected = manager.connectAllNodes(inventoryMap);
-    
+
     if (!connected) {
         // TODO: Look more into which nodes failed
         std::cerr << "[FATAL] Could not connect to all nodes!" << std::endl;
@@ -110,9 +110,8 @@ int main() {
         for (const auto& iface : node.interfaces) {
             if (iface.lldpNeighbor.hasNeighbor) {
                 anyNeighborFound = true;
-                std::cout << "  [MATCH] Node: " << node.hostName 
-                          << " | Iface: " << iface.name 
-                          << " <--> Remote: " << iface.lldpNeighbor.systemName 
+                std::cout << "  [MATCH] Node: " << node.hostName << " | Iface: " << iface.name
+                          << " <--> Remote: " << iface.lldpNeighbor.systemName
                           << " (PortID: " << iface.lldpNeighbor.portId << ")" << std::endl;
             }
         }
@@ -150,16 +149,15 @@ int main() {
             // We show it only if entries were found
             if (gcl.operControlListSize > 0) {
                 anyGclFound = true;
-                std::cout << "  [MATCH] Node: " << node.hostName 
-                          << " | Iface: " << iface.name << std::endl;
+                std::cout << "  [MATCH] Node: " << node.hostName << " | Iface: " << iface.name << std::endl;
 
                 // display cycle time
-                std::cout << "    Cycle Time: " << gcl.operCycleTime.numerator 
-                          << " / " << gcl.operCycleTime.denominator << " ns" << std::endl;
+                std::cout << "    Cycle Time: " << gcl.operCycleTime.numerator << " / " << gcl.operCycleTime.denominator
+                          << " ns" << std::endl;
 
                 // display base time (optional, for safety)
-                std::cout << "    Base Time:  " << gcl.operBaseTime.seconds 
-                          << "s " << gcl.operBaseTime.nanoseconds << "ns" << std::endl;
+                std::cout << "    Base Time:  " << gcl.operBaseTime.seconds << "s " << gcl.operBaseTime.nanoseconds
+                          << "ns" << std::endl;
 
                 // iterate over the list of GCL entries
                 std::cout << "    Gate Control List (" << gcl.operControlListSize << " entries):" << std::endl;
@@ -168,9 +166,9 @@ int main() {
 
                 for (uint32_t i = 0; i < gcl.operControlListSize; ++i) {
                     const auto& entry = gcl.operControlList[i];
-                    std::cout << "      " << std::setw(5) << i << " | "
-                              << std::setw(13) << entry.timeIntervalValue << " | 0x"
-                              << std::hex << std::uppercase << (int)entry.gateStatesValue << std::dec // Hex-Format für Maske
+                    std::cout << "      " << std::setw(5) << i << " | " << std::setw(13) << entry.timeIntervalValue
+                              << " | 0x" << std::hex << std::uppercase << (int)entry.gateStatesValue
+                              << std::dec  // Hex-Format für Maske
                               << std::endl;
                 }
                 std::cout << "----------------------------------------" << std::endl;
@@ -199,22 +197,20 @@ int main() {
     std::cout << "\n========================================" << std::endl;
     std::cout << "         PERFORMANCE METRICS            " << std::endl;
     std::cout << "========================================" << std::endl;
-    std::cout << std::left << std::setw(25) << "PHASE" 
-              << std::right << std::setw(12) << "TIME (µs)" << std::endl;
+    std::cout << std::left << std::setw(25) << "PHASE" << std::right << std::setw(12) << "TIME (µs)" << std::endl;
     std::cout << "----------------------------------------" << std::endl;
-    std::cout << std::left << std::setw(25) << "1. Initialization" 
-              << std::right << std::setw(12) << t_init << std::endl;
-    std::cout << std::left << std::setw(25) << "2. Connection (SSH)" 
-              << std::right << std::setw(12) << t_connect << std::endl;
-    std::cout << std::left << std::setw(25) << "3. Fetch LLDP" 
-              << std::right << std::setw(12) << t_lldp << std::endl;
-    std::cout << std::left << std::setw(25) << "4. Deploy Config" 
-              << std::right << std::setw(12) << t_deploy << std::endl;
-    std::cout << std::left << std::setw(25) << "5. Verify (GCL Fetch)" 
-              << std::right << std::setw(12) << t_verify << std::endl;
+    std::cout << std::left << std::setw(25) << "1. Initialization" << std::right << std::setw(12) << t_init
+              << std::endl;
+    std::cout << std::left << std::setw(25) << "2. Connection (SSH)" << std::right << std::setw(12) << t_connect
+              << std::endl;
+    std::cout << std::left << std::setw(25) << "3. Fetch LLDP" << std::right << std::setw(12) << t_lldp << std::endl;
+    std::cout << std::left << std::setw(25) << "4. Deploy Config" << std::right << std::setw(12) << t_deploy
+              << std::endl;
+    std::cout << std::left << std::setw(25) << "5. Verify (GCL Fetch)" << std::right << std::setw(12) << t_verify
+              << std::endl;
     std::cout << "----------------------------------------" << std::endl;
-    std::cout << std::left << std::setw(25) << "TOTAL EXECUTION" 
-              << std::right << std::setw(12) << durTotal << std::endl;
+    std::cout << std::left << std::setw(25) << "TOTAL EXECUTION" << std::right << std::setw(12) << durTotal
+              << std::endl;
     std::cout << "========================================" << std::endl;
 
     return 0;

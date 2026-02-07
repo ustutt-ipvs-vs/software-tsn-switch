@@ -1,16 +1,16 @@
-#include <iostream>
-#include <string>
+#include <chrono>  // For sleep (optional)
 #include <fstream>
+#include <iostream>
 #include <map>
-#include <thread> // For sleep (optional)
-#include <chrono> // For sleep (optional)
+#include <string>
+#include <thread>  // For sleep (optional)
 
 #include "../include/NetconfSession.h"
 
 std::map<std::string, std::string> loadConfig(const std::string& filename) {
     std::map<std::string, std::string> config;
     std::ifstream file(filename);
-    
+
     if (!file.is_open()) {
         std::cerr << "Could not find '" << filename << "'!" << std::endl;
         std::cerr << "Please create the file in the execution directory." << std::endl;
@@ -26,12 +26,12 @@ std::map<std::string, std::string> loadConfig(const std::string& filename) {
         if (delimiterPos != std::string::npos) {
             std::string key = line.substr(0, delimiterPos);
             std::string value = line.substr(delimiterPos + 1);
-            
-            // Remove potential trailing carriage return 
+
+            // Remove potential trailing carriage return
             if (!value.empty() && value.back() == '\r') {
                 value.pop_back();
             }
-            
+
             config[key] = value;
         }
     }
@@ -39,7 +39,7 @@ std::map<std::string, std::string> loadConfig(const std::string& filename) {
 }
 
 int main() {
-    std::cout<< "Netconf Wrapper Demo Application" << std::endl;
+    std::cout << "Netconf Wrapper Demo Application" << std::endl;
 
     // Load configuration
     auto config = loadConfig("../../config.txt");
@@ -61,10 +61,10 @@ int main() {
 
     if (session.connect(host, port, user, pass)) {
         std::cout << "SUCCESS: Connected to server!" << std::endl;
-        
+
         // Read & Print current state
         std::cout << "\n--- 1. Reading Current State (Running) ---" << std::endl;
-        std::string xpath_filter = "/data:data"; 
+        std::string xpath_filter = "/data:data";
         std::string initial_data = session.getData(xpath_filter);
 
         if (!initial_data.empty()) {
@@ -75,7 +75,7 @@ int main() {
 
         // Prepare for edit
         std::cout << "\n--- 2. Editing Data (Candidate) ---" << std::endl;
-        
+
         std::string changeXml = R"(<data xmlns="urn:examples:demo">
                 <numbers>
                     <name>Test3</name>
@@ -93,7 +93,7 @@ int main() {
 
         // Commit changes
         std::cout << "\n--- 3. Committing to 'Running' ---" << std::endl;
-        
+
         if (session.commit()) {
             std::cout << "-> Commit OK: Data is now live." << std::endl;
         } else {
@@ -108,6 +108,6 @@ int main() {
     } else {
         std::cerr << "ERROR: Connection failed." << std::endl;
     }
-    
+
     return 0;
 }
