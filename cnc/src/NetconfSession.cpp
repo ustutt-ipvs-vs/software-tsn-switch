@@ -4,7 +4,7 @@
 /*#ifndef NC_ENABLED_SSH_TlS
 #define NC_ENABLED_SSH_TLS
 #endif*/
-
+#include <cstdint>
 #include <libnetconf2/log.h>  // For logging functions
 #include <libnetconf2/session.h>
 #include <libnetconf2/session_client.h>
