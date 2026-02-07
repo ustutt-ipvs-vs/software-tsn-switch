@@ -32,8 +32,7 @@ int main() {
 
     // Gate Control List (Create the array)
     // Simulating 2 entries
-    gcl.adminControlListSize = 2;
-    gcl.adminControlList = new GclEntry_t[2];  // Allocate memory!
+    gcl.adminControlList.resize(2);  // Resize vector to hold 2 entries
 
     // Entry 0: All open (255) for 500us
     gcl.adminControlList[0].index = 0;
@@ -62,8 +61,7 @@ int main() {
     std::cout << xmlOutput << std::endl;
     std::cout << "\n=== GENERATED XML END ===\n" << std::endl;
 
-    // Cleanup (Important for raw pointers in struct!)
-    delete[] gcl.adminControlList;
+    // Cleanup handled automatically by std::vector
 
     return 0;
 }
