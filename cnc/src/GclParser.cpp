@@ -10,7 +10,8 @@ namespace cnc {
 static bool isNodeNameMatch(const pugi::xml_node& node, const std::string& targetName) {
     std::string name = node.name();
     // 1. Exact match
-    if (name == targetName) return true;
+    if (name == targetName) { return true;
+}
 
     // 2. Suffix Match (ignores namespace prefix)
     if (name.length() > targetName.length()) {
@@ -44,7 +45,8 @@ static std::string getVal(const pugi::xml_node& parent, const std::string& name,
 }
 
 bool GclParser::parseOperationalGclData(const std::string& xmlData, CncNode_t& node) {
-    if (xmlData.empty()) return false;
+    if (xmlData.empty()) { return false;
+}
 
     pugi::xml_document doc;
     pugi::xml_parse_result result = doc.load_string(xmlData.c_str());
@@ -93,7 +95,8 @@ void GclParser::parseInterfaceGcl(const void* xmlNodePtr, ietfInterface_t& iface
 
     // Navigation: Search recursively for gate-parameter-table
     pugi::xml_node gclNode = findNodeDeep(*ifnode, "gate-parameter-table");
-    if (!gclNode) return;
+    if (!gclNode) { return;
+}
 
     GclConfig_t& gclConfig = iface.bridgePort.gateParameterTable;
 

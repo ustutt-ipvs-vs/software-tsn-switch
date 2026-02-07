@@ -20,9 +20,10 @@ std::map<std::string, std::string> loadConfig(const std::string& filename) {
     std::string line;
     while (std::getline(file, line)) {
         // skip empty lines and comments
-        if (line.empty() || line[0] == '#') continue;
+        if (line.empty() || line[0] == '#') { continue;
+}
 
-        auto delimiterPos = line.find("=");
+        auto delimiterPos = line.find('=');
         if (delimiterPos != std::string::npos) {
             std::string key = line.substr(0, delimiterPos);
             std::string value = line.substr(delimiterPos + 1);

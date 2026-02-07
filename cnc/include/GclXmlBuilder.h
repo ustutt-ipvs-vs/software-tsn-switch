@@ -43,7 +43,7 @@ class GclXmlBuilder {
      * @param ss The stringstream to append the XML to.
      * @param config The GCL holding all necessary information for node.
      */
-    static void appendControlList(std::stringstream& ss, const GclConfig_t config);
+    static void appendControlList(std::stringstream& ss, GclConfig_t config);
 
     /**
      * @brief Appends the ptpTime to the Xml
@@ -51,6 +51,6 @@ class GclXmlBuilder {
      * @param time The ptp time.
      * @param tagName The name of the tag to use.
      */
-    static void appendPtpTime(std::stringstream& ss, const PtpTime_t time, const std::string& tagName);
+    static void appendPtpTime(std::stringstream& ss, PtpTime_t time, const std::string& tagName);
 };
 }  // namespace cnc

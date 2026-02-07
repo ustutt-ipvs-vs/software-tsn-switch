@@ -32,7 +32,7 @@ class NetconfSession {
      * @brief Checks if the NETCONF session is currently connected.
      * @return true if connected, false otherwise.
      */
-    bool isConnected() const;
+    [[nodiscard]] [[nodiscard]] bool isConnected() const;
 
     /**
      * @brief Retrieves data from the NETCONF server using the specified XPath filter.
