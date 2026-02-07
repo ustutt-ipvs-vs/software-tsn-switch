@@ -9,13 +9,17 @@
 #include <thread>
 
 /**
- * @brief This class provides methods to collect and process information provided by the lldp protocol, based on the IEEE 802.1AB lldp yang model.
+ * @brief This class provides methods to collect and process information provided by the lldp protocol, based on the
+ * IEEE 802.1AB lldp yang model.
  *
- * This class provides two main use cases. @ref syncInitialNeighbors() gathers the lldp neighbor information for all known interfaces.
- * This information is then processed into a IEEE 802.1AB yang model conform structure that is subsequently written into the operational data store.
- * With this, we produce an initial state that can then be updated once the topology of the network changes. To keep the topology consistent, @ref startWatching()
- * starts a background watcher thread, using a callback method from lldp, to watch for changes of all interface neighbors. Once a change occurs,
- * @ref processEvent() is called to process the event, either deleting or adding neighbor information inside the operational data store.
+ * This class provides two main use cases. @ref syncInitialNeighbors() gathers the lldp neighbor information for all
+ * known interfaces. This information is then processed into a IEEE 802.1AB yang model conform structure that is
+ * subsequently written into the operational data store. With this, we produce an initial state that can then be updated
+ * once the topology of the network changes. To keep the topology consistent, @ref startWatching() starts a background
+ * watcher thread, using a callback method from lldp, to watch for changes of all interface neighbors. Once a change
+ * occurs,
+ * @ref processEvent() is called to process the event, either deleting or adding neighbor information inside the
+ * operational data store.
  */
 class LldpDaemon {
    public:

@@ -8,8 +8,9 @@ namespace cnc {
 static bool isNodeNameMatch(const pugi::xml_node& node, const std::string& targetName) {
     std::string name = node.name();
     // 1. Exact Match
-    if (name == targetName) { return true;
-}
+    if (name == targetName) {
+        return true;
+    }
 
     // 2. Suffix Match (e.g., "ieee802...:lldp")
     if (name.length() > targetName.length()) {

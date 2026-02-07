@@ -163,7 +163,7 @@ struct GclConfig_t {
     uint32_t supportedCycleMaxDenominator = 1e9;
 };
 
-struct LldpNeighbor_t{
+struct LldpNeighbor_t {
     bool hasNeighbor = false;
     std::string chassisId;
     std::string portId;
@@ -203,7 +203,7 @@ struct ietfInterface_t {
     LldpNeighbor_t lldpNeighbor;
 };
 
-struct CncNode_t{
+struct CncNode_t {
     uint32_t id;
     std::string hostName;
     std::vector<ietfInterface_t> interfaces;

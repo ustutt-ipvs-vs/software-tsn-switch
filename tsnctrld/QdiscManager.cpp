@@ -109,7 +109,6 @@ void QdiscManager::setQdisc(NetlinkSocket& netlinkSocket, const std::string& ifn
         builder.addAttribute(sduId, TCA_TAPRIO_TC_ENTRY_FP, &entry.preemtible, sizeof(entry.preemtible));
     }
 
-
     netlinkSocket.sendMessage(&req.nh, req.nh.nlmsg_len);
 }
 

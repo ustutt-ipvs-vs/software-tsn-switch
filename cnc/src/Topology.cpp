@@ -20,8 +20,9 @@ CncNode_t* Topology::getNode(const std::string& nodeName) {
 ietfInterface_t* Topology::getInterface(const LldpNeighbor_t& neighborInfo) {
     CncNode_t* node = getNode(neighborInfo.systemName);
     // Check if the node exists
-    if (!node) { return nullptr;
-}
+    if (!node) {
+        return nullptr;
+    }
     // Loop through the interfaces to find a matching LLDP neighbor
     for (auto& iface : node->interfaces) {
         if (iface.name == neighborInfo.portId) {

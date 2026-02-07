@@ -23,7 +23,7 @@ struct TaprioSchedule {
 struct TaprioMaxSDU {
     uint32_t trafficClass;
     uint32_t queueMaxSdu;
-    uint32_t preemtible; // Either 1=TC_FP_EXPRESS or 2=TC_FP_PREEMPTIBLE
+    uint32_t preemtible;  // Either 1=TC_FP_EXPRESS or 2=TC_FP_PREEMPTIBLE
 };
 
 struct TaprioConfig {

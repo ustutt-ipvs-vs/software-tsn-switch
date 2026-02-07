@@ -7,6 +7,7 @@
 #include <linux/netlink.h>
 #include <linux/rtnetlink.h>
 #include <net/if.h>
+#include <spdlog/spdlog.h>
 #include <sys/socket.h>
 #include <unistd.h>
 
@@ -14,7 +15,6 @@
 #include <cstring>
 #include <iostream>
 #include <stdexcept>
-#include <spdlog/spdlog.h>
 
 /**
  * @brief Creates and returns a Netlink socket file descriptor.
