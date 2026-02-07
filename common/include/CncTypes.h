@@ -155,6 +155,7 @@ struct GclConfig_t {
 
     uint64_t currentTimeSeconds;
     uint32_t currentTimeNanoseconds;
+    int32_t clockId;
 
     uint32_t supportedListMax = 31;
     uint32_t supportedIntervalMax = 1e9;
