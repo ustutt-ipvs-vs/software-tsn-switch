@@ -1,19 +1,20 @@
-#include <iostream>
-#include <csignal>
 #include <unistd.h>
+
 #include <atomic>
+#include <csignal>
+#include <ctime>
+#include <iostream>
+#include <optional>
 #include <random>
 #include <thread>
-#include <ctime>
-#include <optional>
-#include <vector> // Required to hold multiple subscriptions
+#include <vector>  // Required to hold multiple subscriptions
 
 // Sysrepo-cpp bindings
+#include <sysrepo-cpp/Changes.hpp>  // Required for ChangeCollection
 #include <sysrepo-cpp/Connection.hpp>
-#include <sysrepo-cpp/Session.hpp>
-#include <sysrepo-cpp/Subscription.hpp> // Required for ChangeCollection
-#include <sysrepo-cpp/Changes.hpp> // Required for ChangeCollection
 #include <sysrepo-cpp/Enum.hpp>
+#include <sysrepo-cpp/Session.hpp>
+#include <sysrepo-cpp/Subscription.hpp>  // Required for ChangeCollection
 
 // Libyang-cpp bindings
 #include <libyang-cpp/Context.hpp>
@@ -45,11 +46,9 @@ void print_change(const libyang::DataNode& node) {
 /*
  * CALLBACK 1: CANDIDATE LOGGER
  */
-sysrepo::ErrorCode candidate_log_cb(sysrepo::Session session, uint32_t /*sub_id*/,
-                                    const std::string& /*module_name*/,
-                                    const std::optional<std::string>& /*sub_xpath*/,
-                                    sysrepo::Event event, uint32_t /*request_id*/)
-{
+sysrepo::ErrorCode candidate_log_cb(sysrepo::Session session, uint32_t /*sub_id*/, const std::string& /*module_name*/,
+                                    const std::optional<std::string>& /*sub_xpath*/, sysrepo::Event event,
+                                    uint32_t /*request_id*/) {
     if (event == sysrepo::Event::Done) {
         std::cout << "[CANDIDATE] User has modified the candidate store." << std::endl;
     }
@@ -59,14 +58,11 @@ sysrepo::ErrorCode candidate_log_cb(sysrepo::Session session, uint32_t /*sub_id*
 /*
  * CALLBACK 2: RUNNING COMMIT HANDLER
  */
-sysrepo::ErrorCode running_commit_cb(sysrepo::Session session, uint32_t /*sub_id*/,
-                                     const std::string& module_name,
-                                     const std::optional<std::string>& /*sub_xpath*/,
-                                     sysrepo::Event event, uint32_t /*request_id*/)
-{
+sysrepo::ErrorCode running_commit_cb(sysrepo::Session session, uint32_t /*sub_id*/, const std::string& module_name,
+                                     const std::optional<std::string>& /*sub_xpath*/, sysrepo::Event event,
+                                     uint32_t /*request_id*/) {
     // PHASE 1: VALIDATION & STARTUP
     if (event == sysrepo::Event::Change || event == sysrepo::Event::Enabled) {
-
         std::string mode = (event == sysrepo::Event::Change) ? "COMMIT" : "STARTUP";
         std::cout << "[" << mode << "] Applying configuration to hardware..." << std::endl;
 
@@ -103,13 +99,10 @@ sysrepo::ErrorCode running_commit_cb(sysrepo::Session session, uint32_t /*sub_id
 /*
  * CALLBACK 3: OPERATIONAL DATA PROVIDER
  */
-sysrepo::ErrorCode oper_data_cb(sysrepo::Session session, uint32_t /*sub_id*/,
-                                const std::string& /*module_name*/,
+sysrepo::ErrorCode oper_data_cb(sysrepo::Session session, uint32_t /*sub_id*/, const std::string& /*module_name*/,
                                 const std::optional<std::string>& /*sub_xpath*/,
-                                const std::optional<std::string>& /*request_xpath*/,
-                                uint32_t /*request_id*/,
-                                std::optional<libyang::DataNode>& parent)
-{
+                                const std::optional<std::string>& /*request_xpath*/, uint32_t /*request_id*/,
+                                std::optional<libyang::DataNode>& parent) {
     std::cout << "[OPER-DATA] Request received." << std::endl;
 
     // Get current time string
@@ -117,7 +110,7 @@ sysrepo::ErrorCode oper_data_cb(sysrepo::Session session, uint32_t /*sub_id*/,
     char* time_c_str = std::ctime(&now);
     if (time_c_str) {
         std::string time_str(time_c_str);
-        if (!time_str.empty()) time_str.pop_back(); // Remove newline
+        if (!time_str.empty()) time_str.pop_back();  // Remove newline
 
         // Create the data node
         if (parent) {
@@ -147,34 +140,23 @@ int main() {
         std::cout << "Subscribing to 'example-demo'..." << std::endl;
 
         // 1. Subscribe to RUNNING
-        subs.push_back(session.onModuleChange(
-            "example-demo",
-            running_commit_cb,
-            std::nullopt, // sub_xpath
-            0,            // priority
-            sysrepo::SubscribeOptions::Enabled | sysrepo::SubscribeOptions::DoneOnly
-            ));
+        subs.push_back(
+            session.onModuleChange("example-demo", running_commit_cb,
+                                   std::nullopt,  // sub_xpath
+                                   0,             // priority
+                                   sysrepo::SubscribeOptions::Enabled | sysrepo::SubscribeOptions::DoneOnly));
 
         // 2. Subscribe to CANDIDATE
         // We create a temporary session for candidate access,
         // but the subscription is returned and stored in 'subs'.
         auto sess_cand = conn.sessionStart(sysrepo::Datastore::Candidate);
 
-        subs.push_back(sess_cand.onModuleChange(
-            "example-demo",
-            candidate_log_cb,
-            std::nullopt,
-            0,
-            sysrepo::SubscribeOptions::Default
-            ));
+        subs.push_back(sess_cand.onModuleChange("example-demo", candidate_log_cb, std::nullopt, 0,
+                                                sysrepo::SubscribeOptions::Default));
 
         // 3. Subscribe to OPERATIONAL data
-        subs.push_back(session.onOperGet(
-            "example-demo",
-            oper_data_cb,
-            "/example-demo:data/current-time",
-            sysrepo::SubscribeOptions::Default
-            ));
+        subs.push_back(session.onOperGet("example-demo", oper_data_cb, "/example-demo:data/current-time",
+                                         sysrepo::SubscribeOptions::Default));
 
         std::cout << "App running successfully. Ctrl+C to stop." << std::endl;
 

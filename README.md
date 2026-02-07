@@ -4,6 +4,10 @@ This repository contains the source code for the development project **"Software
 
 The goal of this project is the realization of a deterministic real-time network connection (Time-Sensitive Networking) for Linux end devices, virtual machines, and containers. The system consists of a software switch component (tsnctrld) and a central controller (cnc).
 
+## Documentation
+For end-users: [User Documentation](http://enpro-switch-64df46.gitlab-pages-vs.informatik.uni-stuttgart.de/docs-user)  
+For developers: [Developer Documentation](http://enpro-switch-64df46.gitlab-pages-vs.informatik.uni-stuttgart.de/docs-dev)
+
 ## Project Structure
 
 The repository is organized as a monorepo containing the following components:
@@ -29,6 +33,5 @@ The repository is organized as a monorepo containing the following components:
 * **`cmake/`:**
     Helper modules for the build system (e.g., to locate libraries like libnetconf2).
 
-## Getting Started
-
-In order to compile the code, various libraries are needed, the steps needed are written in [steps_for_installing_updating.txt] (TODO:Cleanup).
+## Building & Checking
+Please view the corresponding guide in the [developer documentation](http://enpro-switch-64df46.gitlab-pages-vs.informatik.uni-stuttgart.de/docs-dev/howto-build-check.html)!

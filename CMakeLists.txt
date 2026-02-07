@@ -33,6 +33,9 @@ set(ENV{PKG_CONFIG_PATH} "$ENV{PKG_CONFIG_PATH}:/usr/local/lib/pkgconfig:/usr/li
 
 find_package(PkgConfig REQUIRED)
 
+# Find C++ Libraries
+pkg_check_modules(SPDLOG REQUIRED spdlog IMPORTED_TARGET)
+
 # Find C++ Bindings
 pkg_check_modules(SYSREPO_CPP REQUIRED sysrepo-cpp IMPORTED_TARGET)
 pkg_check_modules(LIBYANG_CPP REQUIRED libyang-cpp IMPORTED_TARGET)
@@ -42,7 +45,7 @@ pkg_check_modules(LIBNETCONF2_CPP REQUIRED libnetconf2-cpp IMPORTED_TARGET)
 pkg_check_modules(SYSREPO REQUIRED sysrepo IMPORTED_TARGET)
 pkg_check_modules(LIBYANG REQUIRED libyang IMPORTED_TARGET)
 pkg_check_modules(LIBNETCONF2 REQUIRED libnetconf2 IMPORTED_TARGET)
-
+pkg_check_modules(LLDPCTL REQUIRED lldpctl IMPORTED_TARGET)
 
 
 # ==============================================================================
@@ -71,11 +74,65 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # --- Yang ---
 add_executable(yang_demo tsnctrld/sysrepo_connection/yang_demo.c)
-target_link_libraries(yang_demo PkgConfig::SYSREPO PkgConfig::LIBYANG)
+target_link_libraries(
+    yang_demo
+    PkgConfig::SYSREPO
+    PkgConfig::LIBYANG
+    PkgConfig::SPDLOG
+)
 # --- Yang ---
 add_executable(yang_demo_cpp tsnctrld/sysrepo_connection/yang_demo_cpp.cpp)
-target_link_libraries(yang_demo_cpp PkgConfig::SYSREPO_CPP PkgConfig::LIBYANG_CPP)
+target_link_libraries(
+    yang_demo_cpp
+    PkgConfig::SYSREPO_CPP
+    PkgConfig::LIBYANG_CPP
+    PkgConfig::SPDLOG
+)
+# --- Interfaces demo ---
+add_executable(interface_demo tsnctrld/sysrepo_connection/interface_demo.cpp)
+target_link_libraries(
+    interface_demo
+    PkgConfig::SYSREPO_CPP
+    PkgConfig::LIBYANG_CPP
+    PkgConfig::SPDLOG
+)
+# --- Interfaces demo ---
+add_executable(interface_demo2 tsnctrld/sysrepo_connection/interface_demo2.cpp)
+target_link_libraries(
+    interface_demo2
+    PkgConfig::SYSREPO_CPP
+    PkgConfig::LIBYANG_CPP
+    PkgConfig::SPDLOG
+)
+
+add_executable(tsncrld tsnctrld/tsnctrld.cpp)
+target_link_libraries(
+    tsncrld
+    PUBLIC
+    PkgConfig::SYSREPO_CPP
+    PkgConfig::LIBYANG_CPP
+    PkgConfig::SPDLOG
+)
+target_link_libraries(tsncrld PRIVATE tsnctrld_lib)
 
 # --- Netlink ---
-add_executable(enpro-switch tsnctrld/QdiscManager.cpp)
-target_link_libraries(enpro-switch PRIVATE tsnctrld_lib)
+#add_executable(enpro-switch tsnctrld/QdiscManager.cpp)
+#target_link_libraries(enpro-switch PRIVATE tsnctrld_lib)
+
+
+
+# ==============================================================================
+# 5. TESTS
+# ==============================================================================
+include(FetchContent)
+FetchContent_Declare(
+    googletest
+    URL https://github.com/google/googletest/archive/refs/tags/v1.17.0.zip
+    DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+)
+# For Windows: prevent overriding parent project's compiler/linker settings
+set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+FetchContent_MakeAvailable(googletest)
+enable_testing()
+
+add_subdirectory(tsnctrld/tests)

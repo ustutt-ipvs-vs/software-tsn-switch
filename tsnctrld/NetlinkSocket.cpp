@@ -2,30 +2,36 @@
  * In part taken from @kupkabn implementation
  */
 #include "NetlinkSocket.h"
-#include <cstring>
-#include <unistd.h>
+
 #include <arpa/inet.h>
 #include <linux/netlink.h>
 #include <linux/rtnetlink.h>
 #include <net/if.h>
 #include <sys/socket.h>
-#include <stdexcept>
-#include <cstdlib>
-#include <iostream>
+#include <unistd.h>
 
+#include <cstdlib>
+#include <cstring>
+#include <iostream>
+#include <stdexcept>
+#include <spdlog/spdlog.h>
+
+/**
+ * @brief Creates and returns a Netlink socket file descriptor.
+ *
+ * @return int The socket file descriptor, or <0 on failure
+ */
 int NetlinkSocket::connectSocket() {
     return socket(AF_NETLINK, SOCK_RAW, NETLINK_ROUTE);
 }
 
 /**
- * @brief Initialization of the NetlinkSocket class with member initialization socket_fd with the return value of connect_socket()
- * @param 
- * @return
+ * @brief Initialization of the NetlinkSocket class with member initialization socket_fd with the return value of
+ * connect_socket()
  */
-NetlinkSocket::NetlinkSocket(): socketFd(connectSocket()) {
-    if(this->socketFd < 0) {
-        std::cerr << "Error creating netlink socket." << std::endl;
-	exit(-1);
+NetlinkSocket::NetlinkSocket() : socketFd(connectSocket()) {
+    if (this->socketFd < 0) {
+        throw std::runtime_error("Error creating netlink socket.");
     }
 
     sockaddr_nl sa;
@@ -33,12 +39,16 @@ NetlinkSocket::NetlinkSocket(): socketFd(connectSocket()) {
     sa.nl_family = AF_NETLINK;
 
     if (bind(socketFd, (struct sockaddr *)&sa, sizeof(sa)) < 0) {
-        std::cerr << "Error binding Netlink socket" << std::endl;
         close(socketFd);
-        exit(-1);
+        throw std::runtime_error("Error binding Netlink socket");
     }
 }
 
+/**
+ * @brief Destructor for NetlinkSocket.
+ *
+ * Clears any saved kernel responses and closes the socket.
+ */
 NetlinkSocket::~NetlinkSocket() {
     this->clearResponse();
     close(this->socketFd);
@@ -53,7 +63,8 @@ NetlinkSocket::~NetlinkSocket() {
  * @param The length of the added attribute
  * @return A pointer to the attributes of the netlink message
  */
-rtattr* NetlinkSocket::addRtaAttribute(nlmsghdr *nlh, const int maxlen, const int type, const void *data, const int len) {
+rtattr *NetlinkSocket::addRtaAttribute(nlmsghdr *nlh, const int maxlen, const int type, const void *data,
+                                       const int len) {
     struct rtattr *rta = NLMSG_TAIL(nlh);
     int rtalen = RTA_LENGTH(len);
 
@@ -64,35 +75,39 @@ rtattr* NetlinkSocket::addRtaAttribute(nlmsghdr *nlh, const int maxlen, const in
     rta->rta_type = type;
     rta->rta_len = rtalen;
 
-    if(data != nullptr) memcpy(RTA_DATA(rta), data, len);
+    if (data != nullptr) memcpy(RTA_DATA(rta), data, len);
 
     nlh->nlmsg_len = NLMSG_ALIGN(nlh->nlmsg_len) + RTA_ALIGN(rtalen);
     return rta;
 }
 
 /**
- * @brief Sends the constructed Netlink Message to the kernel
+ * @brief Send a Netlink message to the kernel.
+ *
+ * Sends the constructed netlink message to the kernel and saves the response.
+ * Exits the program if sending fails.
+ *
  * @param nlh Pointer to the netlink message header
- * @param len length of the message
- * @return 
+ * @param len Length of the message in bytes
  */
-
 void NetlinkSocket::sendMessage(nlmsghdr *nlh, const size_t len) {
     nlh->nlmsg_flags |= NLM_F_ACK;
-    struct iovec iov = { nlh, len };
-    struct sockaddr_nl kernel = { .nl_family = AF_NETLINK };
-    struct msghdr msg = { &kernel, sizeof(kernel), &iov, 1, NULL, 0, 0 };
+    struct iovec iov = {nlh, len};
+    struct sockaddr_nl kernel = {.nl_family = AF_NETLINK};
+    struct msghdr msg = {&kernel, sizeof(kernel), &iov, 1, NULL, 0, 0};
 
     if (sendmsg(socketFd, &msg, 0) < 0) {
-        std::cerr << "Failed to send message to kernel" << std::endl;
-        exit(-1);
+        throw std::runtime_error("Failed to send message to kernel");
     }
 
     this->saveResponse();
 }
 
 /**
- * @brief Saves the response provided by the kernel
+ * @brief Receive and store responses from the kernel.
+ *
+ * Reads all available messages from the kernel and saves them internally.
+ * Handles NLMSG_DONE and NLMSG_ERROR messages.
  */
 void NetlinkSocket::saveResponse() {
     char buffer[BUFFER_SIZE_REC];
@@ -100,7 +115,7 @@ void NetlinkSocket::saveResponse() {
 
     this->clearResponse();
 
-    while ((len = recv(this->socketFd, buffer, sizeof(buffer), 0)) > 0) {
+    while ((len = recv(this->socketFd, buffer, sizeof(buffer), MSG_DONTWAIT)) > 0) {
         struct nlmsghdr *nlh = (struct nlmsghdr *)buffer;
 
         for (; NLMSG_OK(nlh, len); nlh = NLMSG_NEXT(nlh, len)) {
@@ -110,37 +125,40 @@ void NetlinkSocket::saveResponse() {
 
             if (nlh->nlmsg_type == NLMSG_ERROR) {
                 struct nlmsgerr *error = (struct nlmsgerr *)NLMSG_DATA(nlh);
-
-                if(error->error == 0) {
-                    return;
+                if (error->error == 0) {
+                    spdlog::debug("Netlink Message accepted");
                 } else {
-                    std::cerr << "Error in received message with code: " << error->error << std::endl;
-                    exit(-1);
+                    throw std::runtime_error("Error in received message with code: " + std::to_string(error->error));
                 }
             }
-
             struct nlmsghdr *nlh_save = (nlmsghdr *)std::malloc(nlh->nlmsg_len);
             std::memcpy(nlh_save, nlh, nlh->nlmsg_len);
-
             this->response.emplace_back(nlh_save);
         }
+    }
+
+    if (len < 0 && errno != EAGAIN && errno != EWOULDBLOCK) {
+        perror("recv failed");
     }
 }
 
 /**
- * @brief Clears the response data structure
+ * @brief Clear all saved kernel responses.
+ *
+ * Frees allocated memory and clears the internal response vector.
  */
 void NetlinkSocket::clearResponse() {
-    for(nlmsghdr* nlh : this->response) {
+    for (nlmsghdr *nlh : this->response) {
         std::free(nlh);
     }
     this->response.clear();
 }
 
 /**
- * @brief Getter for the saved response
+ * @brief Get the saved kernel responses.
+ *
+ * @return std::vector<nlmsghdr *> Vector of pointers to nlmsghdr structures
  */
-std::vector<nlmsghdr *> NetlinkSocket::getResponse() {
+std::vector<nlmsghdr *> NetlinkSocket::getResponse() const {
     return this->response;
 }
-
