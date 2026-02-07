@@ -5,25 +5,41 @@
 #include <string>
 
 namespace cnc {
-    static pugi::xml_node findChild(const pugi::xml_node& parent, const char* childName) {
-        pugi::xml_node child = parent.child(childName);
-        if (child) return child;
-
-        for (pugi::xml_node c : parent.children()) {
-            std::string cName = c.name();
-            // Check if name ends with the desired child name (to ignore namespaces)
-            if (cName.length() >= strlen(childName)) {
-                if (cName.compare(cName.length() - strlen(childName), strlen(childName), childName) == 0) {
-                    return c;
+    // Helper function to check if node name matches target, considering namespaces
+    static bool isNodeNameMatch(const pugi::xml_node& node, const std::string& targetName) {
+        std::string name = node.name();
+        // 1. Exact match
+        if (name == targetName) return true;
+        
+        // 2. Suffix Match (ignores namespace prefix)
+        if (name.length() > targetName.length()) {
+            if (name.compare(name.length() - targetName.length(), targetName.length(), targetName) == 0) {
+                // Check if there is a colon before the suffix (e.g., "ietf:lldp")
+                if (name[name.length() - targetName.length() - 1] == ':') {
+                    return true;
                 }
             }
         }
-        return pugi::xml_node(); // Return empty node if not found
+        return false;
     }
 
-    static std::string getVal(const pugi::xml_node& parent, const char* name, const char* def = "") {
-        pugi::xml_node child = findChild(parent, name);
-        return child ? child.child_value() : def;
+    // Helper function to find node recursively by name, considering namespaces
+    static pugi::xml_node findNodeDeep(const pugi::xml_node& parent, const std::string& targetName) {
+        if (isNodeNameMatch(parent, targetName)) return parent;
+
+        for (pugi::xml_node child : parent.children()) {
+            pugi::xml_node found = findNodeDeep(child, targetName);
+            if (found) return found;
+        }
+        return pugi::xml_node();
+    }
+
+    // Helper function to read value
+    static std::string getVal(const pugi::xml_node& parent, const std::string& name, const char* def = "") {
+        for (pugi::xml_node child : parent.children()) {
+            if (isNodeNameMatch(child, name)) return child.child_value();
+        }
+        return def;
     }
 
     bool GclParser::parseOperationalGclData(const std::string& xmlData, CncNode_t& node) {
@@ -38,8 +54,7 @@ namespace cnc {
         }
 
         // 1. Locate the root node containing interfaces
-        pugi::xml_node root = findChild(doc, "interfaces");
-        if (!root) root = findChild(doc.child("data"), "interface");
+        pugi::xml_node root = findNodeDeep(doc, "interfaces");
 
         if (!root) {
             std::cerr << "No interfaces found in GCL data." << std::endl;
@@ -48,6 +63,9 @@ namespace cnc {
 
         // 2. Iterate over each interface
         for (pugi::xml_node ifaceNode : root.children()) {
+            // Make sure it's an interface node
+            if (!isNodeNameMatch(ifaceNode, "interface")) continue;
+
             // Name of the interface
             std::string ifaceName = getVal(ifaceNode, "name");
             if (ifaceName.empty()) continue;
@@ -72,11 +90,8 @@ namespace cnc {
     void GclParser::parseInterfaceGcl(const void* xmlNodePtr, ietfInterface_t& iface) {
         const pugi::xml_node* ifnode = static_cast<const pugi::xml_node*>(xmlNodePtr);
 
-        // Navigation: interface -> bridge-port -> gate-parameter-table
-        pugi::xml_node bridgePortNode = findChild(*ifnode, "bridge-port");
-        if (!bridgePortNode) return;
-
-        pugi::xml_node gclNode = findChild(bridgePortNode, "gate-parameter-table");
+        // Navigation: Search recursively for gate-parameter-table
+        pugi::xml_node gclNode = findNodeDeep(*ifnode, "gate-parameter-table");
         if (!gclNode) return;
 
         GclConfig_t& gclConfig = iface.bridgePort.gateParameterTable;
@@ -88,7 +103,8 @@ namespace cnc {
         }
 
         // oper-cycle-time
-        pugi::xml_node operCycleTimeNode = findChild(gclNode, "oper-cycle-time");
+        // not in datastore --> create maybe fallback to admin time since admin is now running
+        pugi::xml_node operCycleTimeNode = findNodeDeep(gclNode, "oper-cycle-time");
         if (operCycleTimeNode) {
             std::string numStr = getVal(operCycleTimeNode, "numerator");
             std::string denStr = getVal(operCycleTimeNode, "denominator");
@@ -99,7 +115,7 @@ namespace cnc {
         }
 
         // oper-base-time
-        pugi::xml_node operBaseTimeNode = findChild(gclNode, "oper-base-time");
+        pugi::xml_node operBaseTimeNode = findNodeDeep(gclNode, "oper-base-time");
         if (operBaseTimeNode) {
             std::string secStr = getVal(operBaseTimeNode, "seconds");
             std::string nsecStr = getVal(operBaseTimeNode, "nanoseconds");
@@ -110,42 +126,52 @@ namespace cnc {
         }
 
         // oper-control-list
-        pugi::xml_node operControlListNode = findChild(gclNode, "oper-control-list");
+        pugi::xml_node operControlListNode = findNodeDeep(gclNode, "oper-control-list");
+        
         if (operControlListNode) {
-            // First, count entries
+            // 1. Collect all gate-control-entry nodes
             std::vector<pugi::xml_node> entries;
             for (pugi::xml_node entryNode : operControlListNode.children()) {
-                std::string name = entryNode.name();
-                if (name.find("gate-control-entry") != std::string::npos) {
+                // We check prefix-blind for "gate-control-entry"
+                if (isNodeNameMatch(entryNode, "gate-control-entry")) {
                     entries.push_back(entryNode);
                 }
             }
 
-            // Remove old array if exists
+            // 2. Clear old memory
             if (gclConfig.operControlList != nullptr) {
                 delete[] gclConfig.operControlList;
                 gclConfig.operControlList = nullptr;
                 gclConfig.operControlListSize = 0;
             }
 
-            // Allocate new array
+            // 3. Write new data
             if (!entries.empty()) {
                 gclConfig.operControlListSize = static_cast<uint32_t>(entries.size());
                 gclConfig.operControlList = new GclEntry_t[gclConfig.operControlListSize];
 
-                // Parse each entry
                 for (size_t i = 0; i < entries.size(); ++i) {
                     pugi::xml_node entryNode = entries[i];
                     GclEntry_t& entry = gclConfig.operControlList[i];
 
-                    entry.index = i; // or parse from XML if available?
+                    // Read index
+                    std::string idxStr = getVal(entryNode, "index");
+                    // Fallback to loop index if empty
+                    entry.index = idxStr.empty() ? (uint32_t)i : (uint32_t)std::stoul(idxStr);
 
+                    // Gate States
                     std::string gateStatesStr = getVal(entryNode, "gate-states-value");
-                    if (!gateStatesStr.empty()) entry.gateStatesValue = static_cast<uint8_t>(std::stoi(gateStatesStr));
+                    if (!gateStatesStr.empty()) {
+                        entry.gateStatesValue = static_cast<uint8_t>(std::stoi(gateStatesStr));
+                    }
 
+                    // Time Interval
                     std::string timeIntervalStr = getVal(entryNode, "time-interval-value");
-                    if (!timeIntervalStr.empty()) entry.timeIntervalValue = static_cast<uint32_t>(std::stoul(timeIntervalStr));
+                    if (!timeIntervalStr.empty()) {
+                        entry.timeIntervalValue = static_cast<uint32_t>(std::stoul(timeIntervalStr));
+                    }
 
+                    // Operation Name
                     entry.operationName = getVal(entryNode, "operation-name", "sched:set-gate-states");
                 }
             }

@@ -6,7 +6,7 @@
             "type": "cppdbg",
             "request": "launch",
             // Cmake Tools extension variable to get the path to the built target
-            "program": "${command:cmake.launchTargetPath}",
+            "program": "${workspaceFolder}/build/cnc/cnc_app",
             "args": [],
             "stopAtEntry": false,
             // Set the working directory to the workspace root
