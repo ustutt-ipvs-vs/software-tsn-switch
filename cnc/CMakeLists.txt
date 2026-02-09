@@ -61,6 +61,7 @@ target_link_libraries(cnc_lib PUBLIC
     common_lib
     nlohmann_json::nlohmann_json
     pugixml::pugixml
+    PkgConfig::SPDLOG
 )
 
 # 3. Executables (Apps & Tests)
