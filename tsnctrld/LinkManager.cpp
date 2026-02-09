@@ -1,8 +1,11 @@
 #include "LinkManager.h"
 
+#include <linux/ethtool_netlink.h>
 #include <linux/rtnetlink.h>
+#include <linux/sockios.h>
 #include <net/if.h>
 #include <spdlog/spdlog.h>
+#include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <unistd.h>
 
@@ -88,9 +91,14 @@ void LinkManager::getAllInterfaces(NetlinkSocket& netlinkSocket) {
 
     // 3. Send and Handle Response
     netlinkSocket.sendMessage(&req.nlh, req.nlh.nlmsg_len);
-    printLinkResponse(netlinkSocket);
 }
 
+/**
+ * @brief Query the host for information about a single interface.
+ * @param netlinkSocket The NetlinkSocket used to communicate with the kernel. The response must be read from this
+ * instance.
+ * @param ifindex The index of the desired interface.
+ */
 void LinkManager::getInterface(NetlinkSocket& netlinkSocket, int ifindex) {
     struct {
         struct nlmsghdr nlh;
@@ -113,101 +121,20 @@ void LinkManager::getInterface(NetlinkSocket& netlinkSocket, int ifindex) {
 
     // 3. Send and Handle Response
     netlinkSocket.sendMessage(&req.nlh, req.nlh.nlmsg_len);
-    printLinkResponse(netlinkSocket);
 }
 
-void LinkManager::printLinkResponse(const NetlinkSocket& sock) {
-    for (const nlmsghdr* nlh : sock.getResponse()) {
-        if (nlh->nlmsg_type != RTM_NEWLINK) continue;
-
-        struct ifinfomsg* ifm = (struct ifinfomsg*)NLMSG_DATA(nlh);
-
-        // --- 1. Basic Info ---
-        int index = ifm->ifi_index;
-        bool isUp = (ifm->ifi_flags & IFF_UP);
-        bool isRunning = (ifm->ifi_flags & IFF_RUNNING);  // Cable plugged in
-
-        printf("\n[Interface Index: %d]\n", index);
-        printf("  State: %s (%s)\n", isUp ? "UP" : "DOWN", isRunning ? "Carrier Detected" : "No Carrier");
-
-        // --- 2. Attribute Parsing ---
-        int len = nlh->nlmsg_len - NLMSG_LENGTH(sizeof(*ifm));
-        struct rtattr* rta = (struct rtattr*)(((char*)ifm) + NLMSG_ALIGN(sizeof(*ifm)));
-
-        std::string name;
-        std::string kind;
-        int masterIndex = 0;
-
-        for (; RTA_OK(rta, len); rta = RTA_NEXT(rta, len)) {
-            switch (rta->rta_type) {
-                case IFLA_IFNAME:
-                    name = (char*)RTA_DATA(rta);
-                    printf("  Name: %s\n", name.c_str());
-                    break;
-
-                case IFLA_ADDRESS: {
-                    unsigned char* mac = (unsigned char*)RTA_DATA(rta);
-                    // Assuming standard 6-byte MAC
-                    printf("  MAC: %02x:%02x:%02x:%02x:%02x:%02x\n", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
-                    break;
-                }
-
-                case IFLA_MTU: {
-                    unsigned int mtu = *reinterpret_cast<unsigned int*>(RTA_DATA(rta));
-                    printf("  MTU: %u\n", mtu);
-                    break;
-                }
-
-                case IFLA_OPERSTATE: {
-                    // RFC 2863 Operational Status (more detailed than flags)
-                    uint8_t state = *reinterpret_cast<uint8_t*>(RTA_DATA(rta));
-                    printf("  OperState: %d ", state);
-                    // 6=UP, 2=DOWN, 5=DORMANT, etc.
-                    if (state == IF_OPER_UP)
-                        printf("(UP)\n");
-                    else
-                        printf("(Not Fully UP)\n");
-                    break;
-                }
-
-                // --- 3. Hardware Capabilities (Replaces getifaddrs logic) ---
-                case IFLA_NUM_TX_QUEUES: {
-                    unsigned int num_tx = *reinterpret_cast<unsigned int*>(RTA_DATA(rta));
-                    printf("  Tx Queues: %u (Traffic Class Support: %s)\n", num_tx, (num_tx > 1 ? "Yes" : "No"));
-                    break;
-                }
-
-                // --- 4. Master/Slave Check (Replaces /sys/.../master readlink) ---
-                case IFLA_MASTER: {
-                    masterIndex = *reinterpret_cast<unsigned int*>(RTA_DATA(rta));
-                    // Convert Index to Name if needed
-                    char masterName[IF_NAMESIZE];
-                    if (if_indextoname(masterIndex, masterName)) {
-                        printf("  Master Bridge: %s (Index %d)\n", masterName, masterIndex);
-                    }
-                    break;
-                }
-
-                // --- 5. Interface Type (Replaces /sys/.../bridge check) ---
-                case IFLA_LINKINFO: {
-                    kind = getLinkKindRaw((rtattr*)RTA_DATA(rta), RTA_PAYLOAD(rta));
-                    printf("  Type/Kind: %s\n", kind.c_str());
-                    break;
-                }
-            }
-        }
-
-        // --- Logic Summary ---
-        if (kind == "bridge") {
-            printf("  => Logic: This is a Bridge Device.\n");
-        } else if (masterIndex > 0) {
-            printf("  => Logic: This is a Port on a Bridge.\n");
-        } else {
-            printf("  => Logic: This is a Standalone Interface.\n");
-        }
-    }
-}
-
+/**
+ * @brief Takes a @ref NetlinkSocket with a stored response and fills the provided @ref interfacesMap with the parsed
+ * interfaces.
+ *
+ * Only some of the attributes returned by netlink are currently parsed, but extendability should be self-explanatory
+ * and relatively simple. Make sure to adjust the definition of the @ref ietfInterface_t struct as needed as well.
+ * @param sock The NetlinkSocket that contains the response of a previous communication with the kernel.
+ * @param interfacesMap A map from interface-index to an @ref ietfInterface_t struct. This map is filled with the
+ * interfaces present in the response, creating new instances of the struct as needed.
+ * @param currentReqId RequestId as received from sysrepo. Used to ensure that only one `RTM_GETLINK` dump request is
+ * made per request to sysrepo, no matter how many callbacks activate.
+ */
 void LinkManager::getInterfacesInResponse(const NetlinkSocket& sock, std::map<int, ietfInterface_t>& interfacesMap,
                                           uint32_t currentReqId) {
     for (const nlmsghdr* nlh : sock.getResponse()) {
@@ -294,4 +221,29 @@ void LinkManager::getInterfacesInResponse(const NetlinkSocket& sock, std::map<in
             current.type = IfType::ETHERNET;  // Physical hardware
         }
     }
+}
+
+/**
+ * @brief Uses a simple socket to query the kernel how many queues are active for the interface given by @ref iface.
+ * @param sock A socket created via `socket(AF_INET, SOCK_DGRAM, 0);`
+ * @param iface An @ref ietfInterface_t struct with the `name` set. This instance will be modified and
+ * `numActiveTxQueues` will be set to the correct number.
+ */
+void LinkManager::getActiveQueues(int sock, ietfInterface_t& iface) {
+    uint32_t active = 1;
+    struct ethtool_channels channels = {};
+    struct ifreq ifr = {};
+
+    channels.cmd = ETHTOOL_GCHANNELS;
+    strncpy(ifr.ifr_name, iface.name.c_str(), IFNAMSIZ - 1);
+    ifr.ifr_data = (char*)&channels;
+
+    if (ioctl(sock, SIOCETHTOOL, &ifr) < 0) {
+        spdlog::debug("[LM] [Active TX Qs] Interface {} does not support GCHANNELS, assuming 1 queue", iface.name);
+        iface.numActiveTxQueues = active;
+        return;
+    }
+
+    active = (channels.combined_count > 0) ? channels.combined_count : channels.tx_count;
+    iface.numActiveTxQueues = active;
 }

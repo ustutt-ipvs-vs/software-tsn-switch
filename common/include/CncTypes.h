@@ -199,6 +199,7 @@ struct ietfInterface_t {
 
     // --- Capabilities / Logic ---
     uint32_t numTxQueues = 1;  // Derived from IFLA_NUM_TX_QUEUES (Crucial for TSN)
+    uint32_t numActiveTxQueues = 1;
 
     BridgePort_t bridgePort;
     LldpNeighbor_t lldpNeighbor;

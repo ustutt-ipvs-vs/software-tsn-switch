@@ -39,20 +39,26 @@ std::string extractListKey(const std::string &xpath, const std::string &listName
 }
 
 void printSingleInterface(const ietfInterface_t &iface) {
-    spdlog::debug("Interface: {} [{}]", iface.name, iface.adminEnabled ? " UP" : " DOWN");
-    spdlog::debug("  #TX-Queues: {}", iface.numTxQueues);
-    spdlog::debug("  Bridge: {}", iface.bridgePort.bridgeName);
+    spdlog::debug("Interface: {} [{}]", iface.name, iface.adminEnabled ? "UP" : "DOWN");
+    spdlog::debug("  #TX-Queues: {}", iface.numActiveTxQueues);
+    spdlog::debug("  Bridge: {}", !iface.bridgePort.bridgeName.empty() ? iface.bridgePort.bridgeName : "N/A");
 
     const auto &gcl = iface.bridgePort.gateParameterTable;
+
+    spdlog::debug("    MaxSduTable ({}):", gcl.queueMaxSduTable.size());
+    for (const auto &entry : gcl.queueMaxSduTable) {
+        spdlog::debug("      TC: {} | MaxSDU: {}", entry.trafficClass, entry.queueMaxSdu);
+    }
+
     spdlog::debug("    GCL Admin Entries ({}):", gcl.adminControlList.size());
     for (const auto &entry : gcl.adminControlList) {
-        spdlog::debug("      Idx: {} | States: {} | Interval: {}ns", entry.index, (int)entry.gateStatesValue,
-                      entry.timeIntervalValue);
+        spdlog::debug("      Idx: {} | States: 0x{:02x}={:08b} | Interval: {}ns", entry.index, entry.gateStatesValue,
+                      entry.gateStatesValue, entry.timeIntervalValue);
     }
     spdlog::debug("    GCL Oper Entries ({}):", gcl.operControlList.size());
     for (const auto &entry : gcl.operControlList) {
-        spdlog::debug("      Idx: {} | States: {} | Interval: {}ns", entry.index, (int)entry.gateStatesValue,
-                      entry.timeIntervalValue);
+        spdlog::debug("      Idx: {} | States: 0x{:02x}={:08b} | Interval: {}ns", entry.index, entry.gateStatesValue,
+                      entry.gateStatesValue, entry.timeIntervalValue);
     }
 }
 
@@ -99,7 +105,7 @@ void printTaprioConfig(const TaprioConfig &cfg) {
     }
 
     spdlog::debug(" SDU: ");
-    for (size_t i = 0; i < cfg.maxSDUs.size(); ++i) {
+    for (size_t i = 0; i < cfg.numTc; ++i) {
         spdlog::debug("  tc={}, max={}, pre={}", cfg.maxSDUs[i].trafficClass, cfg.maxSDUs[i].queueMaxSdu,
                       cfg.maxSDUs[i].preemtible);
     }
@@ -122,6 +128,10 @@ void printTaprioConfig(const TaprioConfig &cfg) {
     spdlog::debug("--------------------------------------------");
 }
 
+/**
+ * @brief Called to set the leaf given by @param xpath in the RUNNING datastore to false
+ * @param xpath
+ */
 void tsnctrld::resetTriggerLeaf(const std::string &xpath) {
     std::thread([this, xpath]() {
         try {
@@ -156,6 +166,8 @@ T tsnctrld::getLeaf(const std::optional<libyang::DataNode> &node, const std::str
 }
 
 /**
+ * @brief Given a list of @ref GclEntry_t struct, these are used to fill the @ref libyang::DataNode representing a
+ * `sched-gate-control-entries` grouping in the yang model.
  *
  * @param entries List of `GclEntry_t`s to be added to the datanode
  * @param listToFill A DataNode representing either oper-control-list or admin-control-list
@@ -176,6 +188,8 @@ void fillControlList(const std::vector<GclEntry_t> &entries, std::optional<libya
 }
 
 /**
+ * @brief Given a @ref GclConfig_t and @ref GclFillOptions, this function fills the @param toFill in an appropriate
+ * manner.
  *
  * @param hw_cfg The configuration to be written to the datastore. The `*DataSet` variables can be used to declare which
  * set of variables contains valid data.
@@ -241,6 +255,17 @@ void fillGptNode(const GclConfig_t &hw_cfg, std::optional<libyang::DataNode> &to
     }
 }
 
+/**
+ * @brief Get the interface with a given name from the cache and fill its struct with all relevant data from the
+ * datastore.
+ *
+ * Most data is always present in the datastore, for potentially missing data we use sensible defaults.
+ *
+ * @param sess
+ * @param ifname
+ * @param requestId
+ * @return The interface struct filled with all necessary data.
+ */
 ietfInterface_t *tsnctrld::syncInterfaceFromSysrepo(sysrepo::Session &sess, const std::string &ifname,
                                                     uint32_t requestId) {
     static const uint8_t ieee8021q_default_tc_map[8][8] = {// TC count: 1  2  3  4  5  6  7  8
@@ -254,7 +279,7 @@ ietfInterface_t *tsnctrld::syncInterfaceFromSysrepo(sysrepo::Session &sess, cons
                                                            /* P7 */ {0, 1, 2, 3, 4, 5, 6, 7}};
 
     m_ifcache.setCurrentRequestId(requestId);
-    m_ifcache.ensureFullLinkData(m_sock);
+    m_ifcache.ensureFullLinkData(m_sock, m_ethtool_sock);
 
     ietfInterface_t *iface_ptr = m_ifcache.getInterface(ifname);
     if (!iface_ptr) {
@@ -265,6 +290,9 @@ ietfInterface_t *tsnctrld::syncInterfaceFromSysrepo(sysrepo::Session &sess, cons
     ietfInterface_t &iface = *iface_ptr;
     BridgePort_t &bp = iface.bridgePort;
     GclConfig_t &gcl = bp.gateParameterTable;
+
+    gcl.adminControlList.clear();  // Reuse the vector's capacity!
+    gcl.queueMaxSduTable.clear();
 
     // 2. Fetch the subtree once
     std::string basePath = "/ietf-interfaces:interfaces/interface[name='" + ifname +
@@ -282,6 +310,14 @@ ietfInterface_t *tsnctrld::syncInterfaceFromSysrepo(sysrepo::Session &sess, cons
     spdlog::debug("  -> [SYSREPO->STRUCT] [DEBUG] Data forest:\n {}",
                   bpData->printStr(libyang::DataFormat::XML, libyang::PrintFlags::Siblings).value());
 
+    auto gclData = bpData->findPath("ieee802-dot1q-sched-bridge:gate-parameter-table");
+    gcl.gateEnabled = getLeaf<bool>(gclData, "gate-enabled");
+    if (!gcl.gateEnabled) {
+        spdlog::debug(
+            "[SYSREPO->STRUCT] [DEBUG] gate-enabled is false, skipping fetch of remaining (irrelevant) data...");
+        return &iface;
+    }
+
     auto tcData = bpData->findPath("traffic-class/traffic-class-table");
     spdlog::debug(
         "  -> [SYSREPO->STRUCT] [DEBUG] tcData:\n {}",
@@ -291,9 +327,21 @@ ietfInterface_t *tsnctrld::syncInterfaceFromSysrepo(sysrepo::Session &sess, cons
             .value_or("Missing"));
 
     bp.trafficClassData.mapDataSet = true;
+    bool useDsConfig = false;
+    uint8_t numTCs = 1;
     if (tcData.has_value() && tcData->child().has_value()) {
         spdlog::debug("[SYSREPO->STRUCT] [DEBUG] found traffic-class/traffic-class-table...");
-        bp.trafficClassData.numTrafficClasses = getLeaf<uint8_t>(tcData, "number-of-traffic-classes");
+        numTCs = getLeaf<uint8_t>(tcData, "number-of-traffic-classes");
+        if (numTCs <= iface.numActiveTxQueues) {
+            useDsConfig = true;
+        } else {
+            spdlog::warn("Datastore has more traffic classes configured than interface has active: {}>{}", numTCs,
+                         iface.numActiveTxQueues);
+        }
+    }
+    if (useDsConfig) {
+        spdlog::debug("[SYSREPO->STRUCT] [DEBUG] traffic-class/traffic-class-table is valid, using it...");
+        bp.trafficClassData.numTrafficClasses = numTCs;
         bp.trafficClassData.priorityMap[0] = getLeaf<uint8_t>(tcData, "priority0");
         bp.trafficClassData.priorityMap[1] = getLeaf<uint8_t>(tcData, "priority1");
         bp.trafficClassData.priorityMap[2] = getLeaf<uint8_t>(tcData, "priority2");
@@ -303,20 +351,15 @@ ietfInterface_t *tsnctrld::syncInterfaceFromSysrepo(sysrepo::Session &sess, cons
         bp.trafficClassData.priorityMap[6] = getLeaf<uint8_t>(tcData, "priority6");
         bp.trafficClassData.priorityMap[7] = getLeaf<uint8_t>(tcData, "priority7");
     } else {
-        // Commented code to create invalid config
         spdlog::debug(
-            "[SYSREPO->STRUCT] [DEBUG] traffic-class/traffic-class-table not found or empty, using defaults based on "
-            "number of tx-queues...");
-        bp.trafficClassData.numTrafficClasses = iface.numTxQueues < 8 ? iface.numTxQueues : 8;
+            "[SYSREPO->STRUCT] [DEBUG] traffic-class/traffic-class-table not found, empty or configured number of "
+            "tx-queues larger than number of active tx-queues, using defaults based on number of tx-queues...");
+        bp.trafficClassData.numTrafficClasses = iface.numActiveTxQueues < 8 ? iface.numActiveTxQueues : 8;
         uint8_t colIndex = bp.trafficClassData.numTrafficClasses - 1;
         for (int priority = 0; priority < 8; ++priority) {
             bp.trafficClassData.priorityMap[priority] = ieee8021q_default_tc_map[priority][colIndex];
         }
     }
-
-    auto gclData = bpData->findPath("ieee802-dot1q-sched-bridge:gate-parameter-table");
-    // Update members directly in the cache (No copy of the whole struct)
-    gcl.gateEnabled = getLeaf<bool>(gclData, "gate-enabled");
 
     gcl.adminCycleTime.numerator = getLeaf<uint32_t>(gclData, "admin-cycle-time/numerator");
     gcl.adminCycleTime.denominator = getLeaf<uint32_t>(gclData, "admin-cycle-time/denominator");
@@ -324,7 +367,6 @@ ietfInterface_t *tsnctrld::syncInterfaceFromSysrepo(sysrepo::Session &sess, cons
                   gcl.adminCycleTime.denominator);
 
     // 4. Update the Control List (The expensive part)
-    gcl.adminControlList.clear();  // Reuse the vector's capacity!
     auto entries = gclData->findXPath("admin-control-list/gate-control-entry");
 
     for (const auto &entryNode : entries) {
@@ -337,17 +379,19 @@ ietfInterface_t *tsnctrld::syncInterfaceFromSysrepo(sysrepo::Session &sess, cons
         e.timeIntervalValue = getLeaf<uint32_t>(entryNode, "time-interval-value");
         e.operationName = entryNode.findPath("operation-name")->asTerm().valueStr();
     }
-    // Todo: Remove fake gclData, get from DS instead
-    static queueMaxSduEntry_t queueMaxSduTable[8] = {
-        {.trafficClass = 0, .queueMaxSdu = 1500, .transmissionOverrun = 0},
-        {.trafficClass = 1, .queueMaxSdu = 1500, .transmissionOverrun = 0},
-        {.trafficClass = 2, .queueMaxSdu = 1500, .transmissionOverrun = 0},
-        {.trafficClass = 3, .queueMaxSdu = 1500, .transmissionOverrun = 0},
-        {.trafficClass = 4, .queueMaxSdu = 1500, .transmissionOverrun = 0},
-        {.trafficClass = 5, .queueMaxSdu = 1500, .transmissionOverrun = 0},
-        {.trafficClass = 6, .queueMaxSdu = 1500, .transmissionOverrun = 0},
-        {.trafficClass = 7, .queueMaxSdu = 1500, .transmissionOverrun = 0}};
-    gcl.queueMaxSduTable.assign(queueMaxSduTable, queueMaxSduTable + bp.trafficClassData.numTrafficClasses);
+
+    auto sduEntries = gclData->findXPath("queue-max-sdu-table");
+    if (sduEntries.size() == bp.trafficClassData.numTrafficClasses) {
+        for (const auto &entryNode : sduEntries) {
+            auto &e = gcl.queueMaxSduTable.emplace_back();
+            e.trafficClass = getLeaf<uint32_t>(entryNode, "traffic-class");
+            e.queueMaxSdu = getLeaf<uint8_t>(entryNode, "queue-max-sdu");
+        }
+    } else {
+        for (uint8_t tcIndex = 0; tcIndex < bp.trafficClassData.numTrafficClasses; ++tcIndex) {
+            gcl.queueMaxSduTable.push_back((queueMaxSduEntry_t){.trafficClass = tcIndex, .queueMaxSdu = 0});
+        }
+    }
 
     gcl.adminBaseTime.seconds = getLeaf<uint64_t>(gclData, "admin-base-time/seconds");
     gcl.adminBaseTime.nanoseconds = getLeaf<uint32_t>(gclData, "admin-base-time/nanoseconds");
@@ -359,6 +403,9 @@ ietfInterface_t *tsnctrld::syncInterfaceFromSysrepo(sysrepo::Session &sess, cons
 
 /**
  * @brief Ensure a clean slate and initialize
+ *
+ * First delete all top-level trees from the datastore for which this daemon should be considered the ultimate authority
+ * on the current host. Afterwards the datastore is repopulated and callbacks are initialized.
  */
 void tsnctrld::initialize() {
     // m_lm.getAllInterfaces(m_sock);
@@ -392,7 +439,7 @@ void tsnctrld::syncHardwareToRunning() {
     std::optional<libyang::DataNode> forest;
 
     m_ifcache.setCurrentRequestId(0);
-    m_ifcache.ensureFullLinkData(m_sock);
+    m_ifcache.ensureFullLinkData(m_sock, m_ethtool_sock);
     m_ifcache.ensureFullQdiscData(m_sock);
 
     spdlog::debug("[SYNC] Iterating over interfaces...");
@@ -511,6 +558,17 @@ void tsnctrld::syncHardwareToRunning() {
     m_lldpDaemon->startWatching();
 }
 
+/**
+ * @brief Most basic callback for operational data, only prints the parameters.
+ * @param sess
+ * @param subId
+ * @param moduleName
+ * @param subXPath
+ * @param requestXPath
+ * @param requestId
+ * @param parent
+ * @return
+ */
 sysrepo::ErrorCode tsnctrld::defaultOperCallback(sysrepo::Session sess, uint32_t subId, const std::string &moduleName,
                                                  const std::optional<std::string> &subXPath,
                                                  const std::optional<std::string> &requestXPath, uint32_t requestId,
@@ -529,6 +587,10 @@ sysrepo::ErrorCode tsnctrld::defaultOperCallback(sysrepo::Session sess, uint32_t
 }
 
 /**
+ * @brief Callback for getting the operational data of interfaces.
+ *
+ * First, this function ensures that it has the current data regarding the interfaces and any taprio qdiscs. It then
+ * iterates over all found interfaces and populates the provided @param parent with the data from these structs.
  *
  * @param sess
  * @param subId
@@ -551,7 +613,7 @@ sysrepo::ErrorCode tsnctrld::operInterfaceCallback(sysrepo::Session sess, uint32
     spdlog::debug("[CB_OPER] [IF] Refreshing interface status...");
 
     m_ifcache.setCurrentRequestId(requestId);
-    m_ifcache.ensureFullLinkData(m_sock);
+    m_ifcache.ensureFullLinkData(m_sock, m_ethtool_sock);
     m_ifcache.ensureFullQdiscData(m_sock);
 
     auto ctx = sess.getContext();
@@ -607,7 +669,7 @@ sysrepo::ErrorCode tsnctrld::operBridgeCallback(sysrepo::Session sess, uint32_t 
     spdlog::debug("[CB_OPER] [BR] Scanning interfaces for bridge members...");
 
     m_ifcache.setCurrentRequestId(requestId);
-    m_ifcache.ensureFullLinkData(m_sock);
+    m_ifcache.ensureFullLinkData(m_sock, m_ethtool_sock);
     const auto &allIfaces = m_ifcache.getAllInterfaces();
 
     auto ctx = sess.getContext();
@@ -645,6 +707,17 @@ sysrepo::ErrorCode tsnctrld::operBridgeCallback(sysrepo::Session sess, uint32_t 
     return sysrepo::ErrorCode::Ok;
 }
 
+/**
+ * @brief A callback for getting operational data related to lldp. May be unused and could possibly be removed.
+ * @param sess
+ * @param subId
+ * @param moduleName
+ * @param subXPath
+ * @param requestXPath
+ * @param requestId
+ * @param parent
+ * @return
+ */
 sysrepo::ErrorCode tsnctrld::operLldpCallback(sysrepo::Session sess, uint32_t subId, const std::string &moduleName,
                                               const std::optional<std::string> &subXPath,
                                               const std::optional<std::string> &requestXPath, uint32_t requestId,
@@ -657,6 +730,18 @@ sysrepo::ErrorCode tsnctrld::operLldpCallback(sysrepo::Session sess, uint32_t su
     return sysrepo::ErrorCode::Ok;
 }
 
+/**
+ * @brief The default callback for changes in the datastore. Only prints basic information about the callback and
+ * accepts any changes.
+ *
+ * @param sess
+ * @param subId
+ * @param moduleName
+ * @param subXPath
+ * @param event
+ * @param requestId
+ * @return
+ */
 sysrepo::ErrorCode tsnctrld::defaultChangeCallback(sysrepo::Session sess, uint32_t subId, const std::string &moduleName,
                                                    const std::optional<std::string> &subXPath, sysrepo::Event event,
                                                    uint32_t requestId) {
@@ -668,6 +753,23 @@ sysrepo::ErrorCode tsnctrld::defaultChangeCallback(sysrepo::Session sess, uint32
     return sysrepo::ErrorCode::Ok;
 }
 
+/**
+ * @brief Callback when a change on any node under the `ietf-interfaces` module is attempted.
+ *
+ * This callback checks for each attempted change if the changed node actually belongs to the `ietf-interfaces` module
+ * and does not block any changes that do not belong. Any changes to nodes on a whitelist (currently only the
+ * non-existent "TEMP") are also not blocked. If any change is not allowed by the two previous conditions, the entire
+ * attempt is blocked.
+ * This is used to restrict changes only to explicitly supported nodes.
+ *
+ * @param sess
+ * @param subId
+ * @param moduleName
+ * @param subXPath
+ * @param event
+ * @param requestId
+ * @return
+ */
 sysrepo::ErrorCode tsnctrld::changeInterfaceCallback(sysrepo::Session sess, uint32_t subId,
                                                      const std::string &moduleName,
                                                      const std::optional<std::string> &subXPath, sysrepo::Event event,
@@ -700,6 +802,23 @@ sysrepo::ErrorCode tsnctrld::changeInterfaceCallback(sysrepo::Session sess, uint
     return sysrepo::ErrorCode::Ok;
 }
 
+/**
+ * @brief Callback when a change on any node under the `ieee802-dot1q-bridge` module is attempted.
+ *
+ * This callback checks for each attempted change if the changed node actually belongs to the `ieee802-dot1q-bridge`
+ * module and does not block any changes that do not belong. Any changes to nodes on a whitelist (currently only the
+ * non-existent "TEMP") are also not blocked. If any change is not allowed by the two previous conditions, the entire
+ * attempt is blocked.
+ * This is used to restrict changes only to explicitly supported nodes.
+ *
+ * @param sess
+ * @param subId
+ * @param moduleName
+ * @param subXPath
+ * @param event
+ * @param requestId
+ * @return
+ */
 sysrepo::ErrorCode tsnctrld::changeBridgeCallback(sysrepo::Session sess, uint32_t subId, const std::string &moduleName,
                                                   const std::optional<std::string> &subXPath, sysrepo::Event event,
                                                   uint32_t requestId) {
@@ -730,7 +849,27 @@ sysrepo::ErrorCode tsnctrld::changeBridgeCallback(sysrepo::Session sess, uint32_
     spdlog::debug("[CB] [BR-CONFIG] [ALLOW] All attempted chages were allowed, accepting");
     return sysrepo::ErrorCode::Ok;
 }
-
+/**
+ * @brief The most important callback, listens for changes in the `gate-parameter-table` and sets/modifies or removes
+ * the qdisc on an interface when the `config-change` node is set to true.
+ *
+ * This callback checks if `config-change` is changed to true for any interface, and for all interfaces where it is
+ * changed to true, an attempt, to change the corresponding qdisc as intended, is started.
+ * For that, the current state of the interfaces is cached and all relevant data is read from the datastore and used to
+ * populate the @ref ietfInterface_t struct as received prepopulated from the cache. Depending on if the `gate-enabled`
+ * node in the datastore is true or false, the qdisc is set/modified or deleted respectively.
+ * Since we interpret the `config-change` node as a trigger, we need to reset it once all callbacks successfully
+ * returned for the CHANGE event. This happens in the DONE event triggered by sysrepo after all changes were
+ * successful.
+ *
+ * @param sess
+ * @param subId
+ * @param moduleName
+ * @param subXPath
+ * @param event
+ * @param requestId
+ * @return
+ */
 sysrepo::ErrorCode tsnctrld::changeGptCallback(sysrepo::Session sess, uint32_t subId, const std::string &moduleName,
                                                const std::optional<std::string> &subXPath, sysrepo::Event event,
                                                uint32_t requestId) {
@@ -769,10 +908,11 @@ sysrepo::ErrorCode tsnctrld::changeGptCallback(sysrepo::Session sess, uint32_t s
                     // This function should be the one we optimized earlier (Zero-Copy)
                     spdlog::debug("[CB_CHANGE] [GPT] Getting data from sysrepo ");
                     ietfInterface_t *iface = this->syncInterfaceFromSysrepo(sess, ifname, requestId);
-                    spdlog::debug("[CB_CHANGE] [GPT] Returned data:");
-                    printSingleInterface(*iface);
 
                     if (iface) {
+                        spdlog::debug("[CB_CHANGE] [GPT] Returned data:");
+                        printSingleInterface(*iface);
+
                         if (iface->bridgePort.gateParameterTable.gateEnabled) {
                             spdlog::debug("[CB_CHANGE] [GPT] Gate is enabled, setting qdisc:");
                             spdlog::debug("[CB_CHANGE] [GPT] Converting to TaprioConfig struct:");
@@ -886,9 +1026,29 @@ void tsnctrld::setupSubscriptions() {
 
     spdlog::debug("[INIT] [SUBS] Registered oper callbacks...");
 }
-
+/**
+ * @brief Instantiates the tsnctrld daemon.
+ *
+ * Instances of @ref sysrepo::Session cannot be created "empty", so we instantiate them directly from a new session of
+ * the connection. Additionally, we need the @ref m_ethtool_sock for calls to @ref LinkManager::getActiveQueues, so we
+ * open this socket directly in the beginning.
+ */
 tsnctrld::tsnctrld() : m_sess(m_conn.sessionStart()), m_operSess(m_conn.sessionStart()) {
     m_operSess.switchDatastore(sysrepo::Datastore::Operational);
+    m_ethtool_sock = socket(AF_INET, SOCK_DGRAM, 0);
+    if (m_ethtool_sock < 0) {
+        throw std::runtime_error("Could not open ethtool socket");
+    }
+}
+
+/**
+ * Makes sure to close the socket when destroying the daemon.
+ */
+tsnctrld::~tsnctrld() {
+    // Close the socket when the tsnctrld is destroyed
+    if (m_ethtool_sock >= 0) {
+        close(m_ethtool_sock);
+    }
 }
 
 int main() {

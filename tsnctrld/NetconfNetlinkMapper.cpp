@@ -55,7 +55,7 @@ TaprioConfig NetconfNetlinkMapper::mapToTaprio(const ietfInterface_t& iface) {
     const GclConfig_t& gcl = bp.gateParameterTable;
 
     TaprioConfig taprioConf{};
-    taprioConf.numTxQs = iface.numTxQueues;
+    taprioConf.numTxQs = iface.numActiveTxQueues;
     taprioConf.numTc = bp.trafficClassData.numTrafficClasses;
 
     for (uint8_t i = 0; i < 8; ++i) {

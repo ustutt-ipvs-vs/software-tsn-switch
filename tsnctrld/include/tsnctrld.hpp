@@ -29,8 +29,16 @@ inline bool operator&(GclFillOptions a, GclFillOptions b) {
     return static_cast<uint32_t>(a) & static_cast<uint32_t>(b);
 }
 
+/**
+ * @brief The main class of the "tsnctrld" control daemon for bridging the gap between sysrepo and kernel.
+ *
+ * Use this class by instantiating it and calling @ref initialize() on this instance. This reads the state of the system
+ * and places the relevant data into the `RUNNING` datastore. Afterwards, all necessary callbacks are started. Make sure
+ * the program keeps running, eg by starting an infinite while-loop.
+ */
 class tsnctrld {
    private:
+    int m_ethtool_sock;
     NetlinkSocket m_sock;
     QdiscManager m_qm;
     LinkManager m_lm;
@@ -95,6 +103,7 @@ class tsnctrld {
 
    public:
     tsnctrld();
+    ~tsnctrld();
     void initialize();
 };
 

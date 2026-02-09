@@ -5,6 +5,13 @@
 #include "LinkManager.h"
 #include "QdiscManager.h"
 
+/**
+ * @brief Must be called before trying to ensure freshness of the cache or accessing any interface.
+ *
+ * Does nothing if the requestID is the same as the cached one, but invalidates the cache if the requestID is different.
+ *
+ * @param reqId The requestID as received from the sysrepo callback
+ */
 void InterfacesCache::setCurrentRequestId(uint32_t reqId) {
     if (reqId != m_currentRequestId) {
         m_currentRequestId = reqId;
@@ -13,18 +20,32 @@ void InterfacesCache::setCurrentRequestId(uint32_t reqId) {
     }
 }
 
+/**
+ * @brief Get a pointer to the @ref ietfInterface_t with a given ifindex present in the cache. nullptr if not found.
+ *
+ * @param ifindex The index of the interface which is to be retrieved from the cache.
+ * @return A pointer to the interface with the given name. Returns a nullptr if the index was not found.
+ */
 ietfInterface_t* InterfacesCache::getInterface(int ifindex) {
     auto it = m_interfaces.find(ifindex);
     return (it != m_interfaces.end()) ? &it->second : nullptr;
 }
-
+/**
+ * @brief Get a pointer to the @ref ietfInterface_t with a given name present in the cache. nullptr if not found.
+ *
+ * @param name The name of the interface which is to be retrieved from the cache.
+ * @return A pointer to the interface with the given name. Returns a nullptr if the name was not found.
+ */
 ietfInterface_t* InterfacesCache::getInterface(const std::string& name) {
     for (auto& [idx, iface] : m_interfaces) {
         if (iface.name == name) return &iface;
     }
     return nullptr;
 }
-
+/**
+ * @brief Returns all interfaces currently in the cache.
+ * @return A reference to the entire cached map of interface-index to @ref ietfInterface_t struct
+ */
 std::map<int, ietfInterface_t>& InterfacesCache::getAllInterfaces() {
     return m_interfaces;
 }
@@ -60,9 +81,14 @@ std::map<int, ietfInterface_t>& InterfacesCache::getAllInterfaces() {
 
 /**
  * @brief Ensure Link Data is fresh for ALL interfaces.
+ *
  * Performs a Full Dump and PRUNES interfaces that no longer exist.
+ * Must only be called after @ref setCurrentRequestId().
+ *
+ * @param sock An instance of a @ref NetlinkSocket which is used to send the message and retrieve the response.
+ * @param ethtool_sock A simple socket used to query the kernel for the number of active TX-queues of an interface.
  */
-void InterfacesCache::ensureFullLinkData(NetlinkSocket& sock) {
+void InterfacesCache::ensureFullLinkData(NetlinkSocket& sock, int ethtool_sock) {
     if (m_fullLinkDumpDone) return;
 
     // 1. Mark all as stale
@@ -86,6 +112,10 @@ void InterfacesCache::ensureFullLinkData(NetlinkSocket& sock) {
         } else {
             ++it;
         }
+    }
+
+    for (auto& [id, iface] : m_interfaces) {
+        LinkManager::getActiveQueues(ethtool_sock, iface);
     }
 
     m_fullLinkDumpDone = true;
@@ -123,6 +153,10 @@ void InterfacesCache::ensureFullLinkData(NetlinkSocket& sock) {
 
 /**
  * @brief Ensure QDisc Data is fresh for ALL interfaces.
+ *
+ * Must only be called after @ref setCurrentRequestId().
+ *
+ * @param sock An instance of a @ref NetlinkSocket which is used to send the message and retrieve the response.
  */
 void InterfacesCache::ensureFullQdiscData(NetlinkSocket& sock) {
     if (m_fullQdiscDumpDone) return;
