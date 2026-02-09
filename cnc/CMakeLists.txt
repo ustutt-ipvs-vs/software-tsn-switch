@@ -12,6 +12,7 @@ include(FetchContent)
 FetchContent_Declare(
     json
     URL https://github.com/nlohmann/json/releases/download/v3.11.2/json.tar.xz
+    DOWNLOAD_EXTRACT_TIMESTAMP TRUE
 )
 FetchContent_MakeAvailable(json)
 
@@ -19,6 +20,7 @@ FetchContent_MakeAvailable(json)
 FetchContent_Declare(
     pugixml
     URL https://github.com/zeux/pugixml/releases/download/v1.14/pugixml-1.14.tar.gz
+    DOWNLOAD_EXTRACT_TIMESTAMP TRUE
 )
 FetchContent_MakeAvailable(pugixml)
 
