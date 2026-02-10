@@ -46,6 +46,7 @@ pkg_check_modules(SYSREPO REQUIRED sysrepo IMPORTED_TARGET)
 pkg_check_modules(LIBYANG REQUIRED libyang IMPORTED_TARGET)
 pkg_check_modules(LIBNETCONF2 REQUIRED libnetconf2 IMPORTED_TARGET)
 pkg_check_modules(LLDPCTL REQUIRED lldpctl IMPORTED_TARGET)
+pkg_check_modules(LIBSYSTEMD REQUIRED libsystemd IMPORTED_TARGET)
 
 
 # ==============================================================================
@@ -79,6 +80,7 @@ target_link_libraries(
     PkgConfig::SYSREPO_CPP
     PkgConfig::LIBYANG_CPP
     PkgConfig::SPDLOG
+    PkgConfig::LIBSYSTEMD
 )
 target_link_libraries(tsnctrld_app PRIVATE tsnctrld_lib)
 

@@ -3,6 +3,7 @@
 #include <ifaddrs.h>
 #include <spdlog/fmt/ostr.h>
 #include <spdlog/spdlog.h>
+#include <systemd/sd-bus.h>
 
 #include <ctime>
 #include <iostream>
@@ -412,7 +413,16 @@ void tsnctrld::initialize() {
     // m_lm.getInterfacesInResponse(m_sock, m_interfaces);
     // exit(1337);
 
-    spdlog::debug("[INIT] Initializing tsnctrld...");
+    spdlog::info("[INIT] Initializing tsnctrld...");
+
+    static const std::vector<std::string> SERVICES_TO_START = {"netopeer2-server.service", "lldpd.service"};
+    int r = ensureRunningDaemons(SERVICES_TO_START);
+    if (r != 0) {
+        spdlog::critical(
+            "A required daemon could not be started. Ensure no non-service instances of the daemon are already "
+            "running");
+        exit(EXIT_FAILURE);
+    }
 
     // In order for our program to be the source of truth, start with an empty datastore.
     spdlog::debug("[INIT] [DEBUG] Cleaning interfaces from datastore ");
@@ -428,11 +438,125 @@ void tsnctrld::initialize() {
 }
 
 /**
+ * @brief Uses libsystemd to ensure the necessary daemons are running on the system.
+ */
+int tsnctrld::ensureRunningDaemons(const std::vector<std::string> &services) {
+    spdlog::info("Ensuring running daemon services...");
+    sd_bus *bus = nullptr;
+    sd_bus_message *m = nullptr;  // Incoming message
+    std::map<std::string, std::string> pendingJobs;
+    bool globalSuccess = true;
+    int r;
+
+    // 1. Connect to System Bus
+    r = sd_bus_default_system(&bus);
+    if (r < 0) {
+        spdlog::error("Failed to connect to system bus: {}", strerror(-r));
+    }
+
+    // 2. Add a "Match" rule
+    // We tell the bus: "Send us a copy of all 'JobRemoved' signals from systemd"
+    // We do this BEFORE starting the unit so we don't miss the signal if it's very fast.
+    r = sd_bus_add_match(bus, nullptr,
+                         "type='signal',"
+                         "sender='org.freedesktop.systemd1',"
+                         "interface='org.freedesktop.systemd1.Manager',"
+                         "member='JobRemoved'",
+                         nullptr, nullptr);
+    if (r < 0) {
+        spdlog::error("Failed to add match rule: {}", strerror(-r));
+    }
+
+    // 3. Start the Unit
+    for (const auto &service : services) {
+        spdlog::debug("Requesting start for {}...", service);
+        sd_bus_error error = SD_BUS_ERROR_NULL;
+        sd_bus_message *reply = nullptr;  // Reply from StartUnit call
+        const char *jobPath = nullptr;
+        r = sd_bus_call_method(bus,
+                               "org.freedesktop.systemd1",          // Service
+                               "/org/freedesktop/systemd1",         // Object Path
+                               "org.freedesktop.systemd1.Manager",  // Interface
+                               "StartUnit",                         // Method
+                               &error,                              // Error return
+                               &reply,                              // Reply (contains Job Path)
+                               "ss",                                // Signature (string, string)
+                               service.c_str(), "replace");
+
+        if (r < 0) {
+            spdlog::error("Failed to queue unit: {}", error.message);
+            sd_bus_error_free(&error);
+            globalSuccess = false;
+        } else {
+            // 4. Get our specific Job Path from the reply
+            // The signature is "o" (Object Path)
+            r = sd_bus_message_read(reply, "o", &jobPath);
+            if (r < 0) {
+                spdlog::error("Failed parsing StartUnit reply: {}", strerror(-r));
+            }
+            pendingJobs[jobPath] = service;
+            spdlog::debug("Job queued, waiting for completion: {}", jobPath);
+        }
+        sd_bus_message_unref(reply);
+    }
+
+    if (pendingJobs.empty()) {
+        spdlog::debug("No jobs started (or all failed immediately).");
+        sd_bus_unref(bus);
+        return globalSuccess ? 0 : 1;
+    }
+
+    while (!pendingJobs.empty()) {
+        // Process requests/signals in the queue
+        // Returns >0 if a message was processed, 0 if queue empty
+        r = sd_bus_wait(bus, (uint64_t)-1);
+        if (r < 0) {
+            spdlog::error("Failed waiting on bus: {}", strerror(-r));
+        }
+        sd_bus_message *m = nullptr;
+        while ((r = sd_bus_process(bus, &m)) > 0) {
+            if (sd_bus_message_is_signal(m, "org.freedesktop.systemd1.Manager", "JobRemoved")) {
+                uint32_t id;
+                const char *path;
+                const char *unit;
+                const char *result;
+
+                sd_bus_message_read(m, "uoss", &id, &path, &unit, &result);
+
+                // Is this a job we are tracking?
+                auto it = pendingJobs.find(path);
+                if (it != pendingJobs.end()) {
+                    std::string svc_name = it->second;
+
+                    if (strcmp(result, "done") == 0) {
+                        spdlog::debug("SUCCESS: Service {} started.", svc_name);
+                    } else {
+                        spdlog::error("FAILURE: Service {} failed to start with reason {}.", svc_name, result);
+                        globalSuccess = false;
+                    }
+
+                    // Remove from tracking
+                    pendingJobs.erase(it);
+                }
+            }
+            sd_bus_message_unref(m);
+        }
+        if (r < 0) {
+            spdlog::error("Failed processing bus: {}", strerror(-r));
+        }
+    }
+
+    sd_bus_unref(bus);
+    return globalSuccess ? 0 : 1;
+}
+
+/**
  * @brief Fills the "running" datastore with the current values as received from the kernel, builds the "ground truth"
  * of this program
  *
  */
 void tsnctrld::syncHardwareToRunning() {
+    spdlog::info("[SYNC] Reading info from kernel and writing to RUNNING datastore");
     spdlog::debug("[SYNC] Populating internal list m_interfaces from kernel");
     m_sess.switchDatastore(sysrepo::Datastore::Running);
     auto ctx = m_sess.getContext();
@@ -990,6 +1114,7 @@ sysrepo::ErrorCode tsnctrld::changeLldpCallback(sysrepo::Session sess, uint32_t 
  * `std::bind_front` to fake static-ness of our member-functions
  */
 void tsnctrld::setupSubscriptions() {
+    spdlog::info("[INIT] [SUBS] Initializing callbacks...");
     spdlog::debug("[INIT] [SUBS] Registering granular callbacks...");
     auto defaultChangeCb = std::bind_front(&tsnctrld::defaultChangeCallback, this);
 
