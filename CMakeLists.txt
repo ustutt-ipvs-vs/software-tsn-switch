@@ -72,15 +72,15 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # ==============================================================================
 # --- RUNNABLE FILES ---
 
-add_executable(tsnctrld tsnctrld/tsnctrld.cpp)
+add_executable(tsnctrld_app tsnctrld/tsnctrld.cpp)
 target_link_libraries(
-    tsnctrld
+    tsnctrld_app
     PUBLIC
     PkgConfig::SYSREPO_CPP
     PkgConfig::LIBYANG_CPP
     PkgConfig::SPDLOG
 )
-target_link_libraries(tsnctrld PRIVATE tsnctrld_lib)
+target_link_libraries(tsnctrld_app PRIVATE tsnctrld_lib)
 
 # --- Netlink ---
 #add_executable(enpro-switch tsnctrld/QdiscManager.cpp)
