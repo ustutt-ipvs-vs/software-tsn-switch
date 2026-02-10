@@ -1,3 +1,4 @@
+#include "spdlog/spdlog.h"
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -21,35 +22,35 @@ int main() {
     auto startTotal = std::chrono::high_resolution_clock::now();
     auto t_start_step = std::chrono::high_resolution_clock::now();
 
-    std::cout << "========================================" << std::endl;
-    std::cout << "      CNC NETWORK CONTROLLER v1.5       " << std::endl;
-    std::cout << "========================================" << std::endl;
+    spdlog::info("========================================");
+    spdlog::info("      CNC NETWORK CONTROLLER v1.5       ");
+    spdlog::info("========================================");
 
     // 1. Hardcoded path to file
     const std::string TOPOLOGY_FILE = "cnc/examples/simple_example_schedule_v3.json";
     const std::string INVENTORY_FILE = "cnc/config/inventory.json";
 
-    std::cout << "[INFO] Topology File:  " << TOPOLOGY_FILE << std::endl;
-    std::cout << "[INFO] Inventory File: " << INVENTORY_FILE << std::endl;
+    spdlog::info("[INFO] Topology File:  {}", TOPOLOGY_FILE);
+    spdlog::info("[INFO] Inventory File: {}", INVENTORY_FILE);
 
     // Check if files exist
     if (!std::filesystem::exists(TOPOLOGY_FILE)) {
-        std::cerr << "[FATAL] File not found: " << TOPOLOGY_FILE << std::endl;
-        std::cerr << "        CWD: " << std::filesystem::current_path() << std::endl;
+        spdlog::error("[FATAL] File not found: {}", TOPOLOGY_FILE);
+        spdlog::error("        CWD: {}", std::filesystem::current_path().string());
         return 1;
     }
 
     if (!std::filesystem::exists(INVENTORY_FILE)) {
-        std::cerr << "[FATAL] File not found: " << INVENTORY_FILE << std::endl;
+        spdlog::error("[FATAL] File not found: {}", INVENTORY_FILE);
         return 1;
     }
 
     // 2. Create Topology and Import from JSON
     Topology topology;
-    std::cout << "[INFO] Importing topology... " << std::endl;
+    spdlog::info("[INFO] Importing topology... ");
 
     if (!cnc::JsonImporter::importFromFile(TOPOLOGY_FILE, topology)) {
-        std::cerr << "[FATAL] Failed to import topology from JSON!" << std::endl;
+        spdlog::error("[FATAL] Failed to import topology from JSON!");
         return 1;
     }
 
@@ -57,16 +58,16 @@ int main() {
     topology.buildIndex();
 
     if (topology.nodes.empty()) {
-        std::cerr << "[FATAL] No nodes found in imported topology!" << std::endl;
+        spdlog::error("[FATAL] No nodes found in imported topology!");
         return 1;
     }
 
     // 3. Import Inventory (Device Credentials)
-    std::cout << "[INFO] Importing inventory ..." << std::endl;
+    spdlog::info("[INFO] Importing inventory ...");
     auto inventoryMap = cnc::JsonImporter::importInventory(INVENTORY_FILE);
 
     if (inventoryMap.empty()) {
-        std::cerr << "[FATAL] No inventory entries found!" << std::endl;
+        spdlog::error("[FATAL] No inventory entries found!");
         return 1;
     }
 
@@ -78,7 +79,7 @@ int main() {
     cnc::NetworkManager manager(topology);
 
     // 5. Connect to all nodes
-    std::cout << "\n[INFO] --- Starting Connection Phase ---" << std::endl;
+    spdlog::info("[INFO] --- Starting Connection Phase ---");
 
     t_start_step = std::chrono::high_resolution_clock::now();
 
@@ -86,7 +87,7 @@ int main() {
 
     if (!connected) {
         // TODO: Look more into which nodes failed
-        std::cerr << "[FATAL] Could not connect to all nodes!" << std::endl;
+        spdlog::error("[FATAL] Could not connect to all nodes!");
         return 1;
     }
 
@@ -94,7 +95,7 @@ int main() {
     t_connect = std::chrono::duration_cast<std::chrono::microseconds>(t_end_step - t_start_step).count();
 
     // 6. Fetch LLDP Data
-    std::cout << "\n[INFO] --- Fetching LLDP Data ---" << std::endl;
+    spdlog::info("[INFO] --- Fetching LLDP Data ---");
 
     t_start_step = std::chrono::high_resolution_clock::now();
 
@@ -104,25 +105,24 @@ int main() {
     t_lldp = std::chrono::duration_cast<std::chrono::microseconds>(t_end_step - t_start_step).count();
 
     // Print LLDP neighbor information for verification
-    std::cout << "\n[VERIFICATION] LLDP Neighbor Check:" << std::endl;
+    spdlog::info("[VERIFICATION] LLDP Neighbor Check:");
     bool anyNeighborFound = false;
     for (const auto& node : topology.nodes) {
         for (const auto& iface : node.interfaces) {
             if (iface.lldpNeighbor.hasNeighbor) {
                 anyNeighborFound = true;
-                std::cout << "  [MATCH] Node: " << node.hostName << " | Iface: " << iface.name
-                          << " <--> Remote: " << iface.lldpNeighbor.systemName
-                          << " (PortID: " << iface.lldpNeighbor.portId << ")" << std::endl;
+                spdlog::info("  [MATCH] Node: {} | Iface: {} <--> Remote: {} (PortID: {})",
+                             node.hostName, iface.name, iface.lldpNeighbor.systemName, iface.lldpNeighbor.portId);
             }
         }
     }
     if (!anyNeighborFound) {
-        std::cout << "  [WARN] No LLDP neighbors found in topology data." << std::endl;
+        spdlog::warn("  [WARN] No LLDP neighbors found in topology data.");
     }
-    std::cout << "----------------------------------------" << std::endl;
+    spdlog::info("----------------------------------------");
 
     // 7. Deployment (Create XML and send via Netconf)
-    std::cout << "\n[INFO] --- Starting Deployment Phase ---" << std::endl;
+    spdlog::info("[INFO] --- Starting Deployment Phase ---");
 
     t_start_step = std::chrono::high_resolution_clock::now();
 
@@ -132,13 +132,13 @@ int main() {
     t_deploy = std::chrono::duration_cast<std::chrono::microseconds>(t_end_step - t_start_step).count();
 
     // 8. Fetch Operational GCL Data for verification
-    std::cout << "\n[INFO] --- Fetching Operational GCL Data for Verification ---" << std::endl;
+    spdlog::info("[INFO] --- Fetching Operational GCL Data for Verification ---");
 
     t_start_step = std::chrono::high_resolution_clock::now();
 
     manager.fetchOperationGcl();
 
-    std::cout << "\n[VERIFICATION] Operational GCL Data Check:" << std::endl;
+    spdlog::info("[VERIFICATION] Operational GCL Data Check:");
     bool anyGclFound = false;
 
     for (const auto& node : topology.nodes) {
@@ -149,69 +149,72 @@ int main() {
             // We show it only if entries were found
             if (!gcl.operControlList.empty()) {
                 anyGclFound = true;
-                std::cout << "  [MATCH] Node: " << node.hostName << " | Iface: " << iface.name << std::endl;
+                spdlog::info("  [MATCH] Node: {} | Iface: {}", node.hostName, iface.name);
 
                 // display cycle time
-                std::cout << "    Cycle Time: " << gcl.operCycleTime.numerator << " / " << gcl.operCycleTime.denominator
-                          << " ns" << std::endl;
+                spdlog::info("    Cycle Time: {} / {} ns", gcl.operCycleTime.numerator, gcl.operCycleTime.denominator);
 
                 // display base time (optional, for safety)
-                std::cout << "    Base Time:  " << gcl.operBaseTime.seconds << "s " << gcl.operBaseTime.nanoseconds
-                          << "ns" << std::endl;
+                spdlog::info("    Base Time:  {}s {}ns", gcl.operBaseTime.seconds, gcl.operBaseTime.nanoseconds);
 
                 // iterate over the list of GCL entries
-                std::cout << "    Gate Control List (" << gcl.operControlList.size() << " entries):" << std::endl;
-                std::cout << "      Index | Interval (ns) | Gate Mask (Hex)" << std::endl;
-                std::cout << "      ------+---------------+----------------" << std::endl;
+                spdlog::info("    Gate Control List ({} entries):", gcl.operControlList.size());
+                spdlog::info("      Index | Interval (ns) | Gate Mask (Hex)");
+                spdlog::info("      ------+---------------+----------------");
 
                 for (uint32_t i = 0; i < gcl.operControlList.size(); ++i) {
                     const auto& entry = gcl.operControlList[i];
-                    std::cout << "      " << std::setw(5) << i << " | " << std::setw(13) << entry.timeIntervalValue
-                              << " | 0x" << std::hex << std::uppercase << (int)entry.gateStatesValue
-                              << std::dec  // Hex-Format für Maske
-                              << std::endl;
+                    
+                    // HIER IST DER MAGISCHE TEIL:
+                    spdlog::info("      {:5} | {:13} | 0x{:X}", 
+                                i, 
+                                entry.timeIntervalValue, 
+                                static_cast<int>(entry.gateStatesValue)); 
                 }
-                std::cout << "----------------------------------------" << std::endl;
+                
+                spdlog::info("----------------------------------------");
             }
         }
     }
 
     if (!anyGclFound) {
-        std::cout << "  [WARN] No Operational GCL data found in structs." << std::endl;
-        std::cout << "         (Check if XML names match Interface names!)" << std::endl;
+        spdlog::warn("  [WARN] No Operational GCL data found in structs.");
+        spdlog::warn("         (Check if XML names match Interface names!)");
     }
-    std::cout << "----------------------------------------" << std::endl;
+    spdlog::info("----------------------------------------");
 
     t_end_step = std::chrono::high_resolution_clock::now();
     t_verify = std::chrono::duration_cast<std::chrono::microseconds>(t_end_step - t_start_step).count();
 
     // 9. Finish
-    std::cout << "\n========================================" << std::endl;
-    std::cout << "      CNC OPERATION FINISHED            " << std::endl;
-    std::cout << "========================================" << std::endl;
+    spdlog::info("========================================");
+    spdlog::info("      CNC OPERATION FINISHED            ");
+    spdlog::info("========================================");
 
     // --- FINAL TIMING SUMMARY ---
     auto endTotal = std::chrono::high_resolution_clock::now();
     auto durTotal = std::chrono::duration_cast<std::chrono::microseconds>(endTotal - startTotal).count();
 
-    std::cout << "\n========================================" << std::endl;
-    std::cout << "         PERFORMANCE METRICS            " << std::endl;
-    std::cout << "========================================" << std::endl;
-    std::cout << std::left << std::setw(25) << "PHASE" << std::right << std::setw(12) << "TIME (µs)" << std::endl;
-    std::cout << "----------------------------------------" << std::endl;
-    std::cout << std::left << std::setw(25) << "1. Initialization" << std::right << std::setw(12) << t_init
-              << std::endl;
-    std::cout << std::left << std::setw(25) << "2. Connection (SSH)" << std::right << std::setw(12) << t_connect
-              << std::endl;
-    std::cout << std::left << std::setw(25) << "3. Fetch LLDP" << std::right << std::setw(12) << t_lldp << std::endl;
-    std::cout << std::left << std::setw(25) << "4. Deploy Config" << std::right << std::setw(12) << t_deploy
-              << std::endl;
-    std::cout << std::left << std::setw(25) << "5. Verify (GCL Fetch)" << std::right << std::setw(12) << t_verify
-              << std::endl;
-    std::cout << "----------------------------------------" << std::endl;
-    std::cout << std::left << std::setw(25) << "TOTAL EXECUTION" << std::right << std::setw(12) << durTotal
-              << std::endl;
-    std::cout << "========================================" << std::endl;
+    // Kleiner Trick: Leere Info für Abstand, falls gewünscht
+    spdlog::info(""); 
+    spdlog::info("========================================");
+    spdlog::info("{:^40}", "PERFORMANCE METRICS"); // Automatisch zentriert!
+    spdlog::info("========================================");
+    
+    // Header: Phase links (25), Time rechts (12)
+    spdlog::info("{:<25}{:>12}", "PHASE", "TIME (us)");
+    spdlog::info("----------------------------------------");
+
+    // Werte
+    spdlog::info("{:<25}{:>12}", "1. Initialization", t_init);
+    spdlog::info("{:<25}{:>12}", "2. Connection (SSH)", t_connect);
+    spdlog::info("{:<25}{:>12}", "3. Fetch LLDP", t_lldp);
+    spdlog::info("{:<25}{:>12}", "4. Deploy Config", t_deploy);
+    spdlog::info("{:<25}{:>12}", "5. Verify (GCL Fetch)", t_verify);
+
+    spdlog::info("----------------------------------------");
+    spdlog::info("{:<25}{:>12}", "TOTAL EXECUTION", durTotal);
+    spdlog::info("========================================");
 
     return 0;
 }
