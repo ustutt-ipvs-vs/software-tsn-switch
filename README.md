@@ -25,10 +25,10 @@ The repository is organized as a monorepo containing the following components:
     The Single-Source-of-Truth for all used YANG models (IEEE 802.1Qbv, LLDP) serving as interface definitions.
 
 * **`tools/`:**
-    Scripts for setting up the test environment (Linux namespaces, veth pairs) and infrastructure helpers.
+    Various scripts for setting up dependencies, setting up test environments, and to perform automated formatting.
 
 * **`doc/`:**
-    Project documentation, requirements specifications (Lastenheft), and architecture diagrams.
+    Project documentation files for end-users (`user/`) and developers (`dev/`).
 
 * **`cmake/`:**
     Helper modules for the build system (e.g., to locate libraries like libnetconf2).

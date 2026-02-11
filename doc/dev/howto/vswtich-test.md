@@ -1,4 +1,4 @@
-# Test Network Environment Documentation
+# Setting up a test network environment {#howto-test-network-env}
 
 This document describes the setup for a lightweight testing environment consisting of two isolated network namespaces connected via a virtual switch (vSwitch). This architecture is designed to facilitate controlled traffic simulation.
 
