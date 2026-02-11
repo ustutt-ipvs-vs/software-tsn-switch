@@ -1,3 +1,7 @@
 # Architecture {#arch-index}
 
-Nothing here yet...
+## Tsnctrld Class Diagram
+![tsnctrld class diagram](fig/tsnctrld.png)
+
+## CNC Class Diagram
+![cnc class diagram](fig/cnc.png)
