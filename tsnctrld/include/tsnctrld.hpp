@@ -14,7 +14,7 @@
 #include "NetlinkSocket.h"
 #include "QdiscManager.h"
 
-enum class GclFillOptions : uint32_t {
+enum class GclFillOptions : uint8_t {
     OnlyDefault = 0b00,
     FillAdmin = 0b01,
     FillOper = 0b10,
@@ -23,10 +23,10 @@ enum class GclFillOptions : uint32_t {
 
 // Bitwise boilerplate
 inline GclFillOptions operator|(GclFillOptions a, GclFillOptions b) {
-    return static_cast<GclFillOptions>(static_cast<uint32_t>(a) | static_cast<uint32_t>(b));
+    return static_cast<GclFillOptions>(static_cast<uint8_t>(a) | static_cast<uint8_t>(b));
 }
 inline bool operator&(GclFillOptions a, GclFillOptions b) {
-    return static_cast<uint32_t>(a) & static_cast<uint32_t>(b);
+    return (static_cast<uint8_t>(a) & static_cast<uint8_t>(b)) != 0;
 }
 
 /**

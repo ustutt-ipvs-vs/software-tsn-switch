@@ -129,7 +129,7 @@ void NetlinkSocket::saveResponse() {
             if (nlh->nlmsg_type == NLMSG_ERROR) {
                 struct nlmsgerr *error = (struct nlmsgerr *)NLMSG_DATA(nlh);
                 if (error->error == 0) {
-                    spdlog::debug("Netlink Message accepted");
+                    SPDLOG_DEBUG("Netlink Message accepted");
                 } else {
                     std::string extendedError = "";
 

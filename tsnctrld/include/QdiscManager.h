@@ -41,10 +41,10 @@ class QdiscManager {
     static void parsePriomap(const rtattr* rta, ietfInterface_t& ifToFill);
 
    public:
-    static void setQdisc(NetlinkSocket& netlink_socket, const std::string& ifname, TaprioConfig& taprioConfig);
-    static void removeQdisc(NetlinkSocket& netlink_socket, const std::string& ifname);
-    static void getQdiscInfo(NetlinkSocket& netlink_socket, const std::string& ifname);
-    static void getAllQdiscInfo(NetlinkSocket& netlink_socket);
+    static void setQdisc(NetlinkSocket& netlinkSocket, const std::string& ifname, TaprioConfig& taprioConfig);
+    static void removeQdisc(NetlinkSocket& netlinkSocket, const std::string& ifname);
+    static void getQdiscInfo(NetlinkSocket& netlinkSocket, const std::string& ifname);
+    static void getAllQdiscInfo(NetlinkSocket& netlinkSocket);
     static void getInterfacesInResponse(const NetlinkSocket& sock, std::map<int, ietfInterface_t>& interfacesMap,
                                         uint32_t currentReqId);
 };

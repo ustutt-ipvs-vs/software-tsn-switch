@@ -5,7 +5,10 @@
 #include <optional>
 #include <string>
 #include <vector>
-
+/**
+ * @brief Enum that represents the operational status of an interface, as given by the IFLA_OPERSTATE netlink attribute
+ * and required by the oper-status leaf of the ietf-interfaces yang model.
+ */
 enum class OperStatus : uint8_t {
     UP = 1,
     DOWN = 2,
@@ -50,7 +53,11 @@ inline const std::optional<std::string>& operStatusToYangString(OperStatus statu
     }
 }
 
-enum class IfType {
+/**
+ * @brief Enum that represents the iana-if-type of an interface, interpreted from the IFLA_INFO_KIND netlink attribute
+ * and required for the mandatory type leaf of the ietf-interfaces model.
+ */
+enum class IfType : uint8_t{
     ETHERNET,  // iana-if-type:ethernetCsmacd (Default)
     BRIDGE,    // iana-if-type:bridge
     LAG,       // iana-if-type:ieee8023adLag
@@ -79,6 +86,11 @@ inline const std::optional<std::string>& ifTypeToIanaString(IfType type) {
     }
 }
 
+/**
+ * @brief Struct to represent the traffic-class/traffic-class-table container of the ieee802-dot1q-bridge model.
+ *
+ * Includes the metadata @ref mapDataSet to indicate if the values are initialized.
+ */
 struct TrafficClassData_t {
     bool mapDataSet = false;
     uint8_t numTrafficClasses = 1;
@@ -88,7 +100,10 @@ struct TrafficClassData_t {
     std::array<uint8_t, 8> priorityMap = {0};
 };
 
-// Single entry for the Gate Control List
+/**
+ * @brief Struct to represent a single gate-control-entry in a base-gate-control-entries grouping (aka the
+ * admin-control-list or oper-control-list container) of the ieee802-dot1q-sched model.
+ */
 struct GclEntry_t {
     uint32_t index;
     uint8_t gateStatesValue;                              // Bitmask: 0=Closed, 1=Open (Bit 0 = TC0)
@@ -96,25 +111,38 @@ struct GclEntry_t {
     std::string operationName = "sched:set-gate-states";  // Default operation (maybe unnÃ¶tig)
 };
 
-// For admin-cycle-time (numerator/denominator)
+/**
+ * @brief Struct to represent an ieee802:rational-grouping.
+ */
 struct RationalTime_t {
     uint32_t numerator;
     uint32_t denominator;  // Usually 1,000,000,000 for seconds
 };
 
-// PTP Timestamp for base-time
+/**
+ * @brief Struct to represent an ieee802:ptp-time-grouping.
+ */
 struct PtpTime_t {
     uint64_t seconds;
     uint32_t nanoseconds;
 };
 
+/**
+ * @brief Struct to represent a single entry of the queue-max-sdu-table list of the ieee802-dot1q-sched model.
+ */
 struct queueMaxSduEntry_t {
     uint8_t trafficClass;
     uint32_t queueMaxSdu;
     uint64_t transmissionOverrun;  // RO
 };
 
-// Main Configuration Struct (mapped to sched-parameters)
+/**
+ * @brief Struct to hold information about the gate-parameter-table of an interface, according to the
+ * ieee802-dot1q-sched yang model.
+ *
+ * Includes the metadata variables @ref operDataSet and @ref adminDataSet to indicate which fields of this instance are
+ * actually populated and usable.
+ */
 struct GclConfig_t {
     // Metadata variables to be set by netlink parser
     // Used determine which variables make sense to read
@@ -151,7 +179,7 @@ struct GclConfig_t {
     bool configPending;          // RO
     uint64_t configChangeError;  // RO: Counter
 
-    uint32_t tickGranularity;
+    uint32_t tickGranularity = 10'000;  // RO: Resolution of shaper in tenths of nanoseconds, using 1us for simplicity
 
     uint64_t currentTimeSeconds;
     uint32_t currentTimeNanoseconds;
@@ -172,14 +200,25 @@ struct LldpNeighbor_t {
     uint32_t ttl;
     std::string managementIp;
 };
-
+/**
+ * @brief Struct to hold information about and interfaces bridge-port, as defined by the ieee802-dot1q-bridge yang
+ * model.
+ *
+ *
+ */
 struct BridgePort_t {
     std::string bridgeName;
     int masterIndex = 0;
     TrafficClassData_t trafficClassData;
     GclConfig_t gateParameterTable;
 };
-
+/**
+ * @brief Struct to hold information about an interface, inspired by the ietf-interfaces yang model.
+ *
+ * Contains @ref ifindex and @ref name for identification, and more values following the ietf-interfaces model.
+ * @ref lastLinkUpdateId and @ref lastQdiscUpdateId contain the sysrepo request-id of the last update of this struct,
+ * and are used to ensure refreshes as needed.
+ */
 struct ietfInterface_t {
     int ifindex;
     std::string name;
@@ -198,8 +237,8 @@ struct ietfInterface_t {
     uint32_t mtu = 0;  // Derived from IFLA_MTU
 
     // --- Capabilities / Logic ---
-    uint32_t numTxQueues = 1;  // Derived from IFLA_NUM_TX_QUEUES (Crucial for TSN)
-    uint32_t numActiveTxQueues = 1;
+    uint32_t numTxQueues = 1;        // Derived from IFLA_NUM_TX_QUEUES, contains the maximum supported number of queues
+    uint32_t numActiveTxQueues = 1;  // Derived via ethtools, contains the number of active queues
 
     BridgePort_t bridgePort;
     LldpNeighbor_t lldpNeighbor;

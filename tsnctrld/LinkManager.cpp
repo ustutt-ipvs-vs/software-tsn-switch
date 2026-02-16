@@ -239,7 +239,7 @@ void LinkManager::getActiveQueues(int sock, ietfInterface_t& iface) {
     ifr.ifr_data = (char*)&channels;
 
     if (ioctl(sock, SIOCETHTOOL, &ifr) < 0) {
-        spdlog::debug("[LM] [Active TX Qs] Interface {} does not support GCHANNELS, assuming 1 queue", iface.name);
+        SPDLOG_DEBUG("[LM] [Active TX Qs] Interface {} does not support GCHANNELS, assuming 1 queue", iface.name);
         iface.numActiveTxQueues = active;
         return;
     }

@@ -1,3 +1,4 @@
+#define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_TRACE
 #include "include/tsnctrld.hpp"
 
 #include <ifaddrs.h>
@@ -9,67 +10,124 @@
 #include <iostream>
 #include <thread>
 
+static constexpr std::array IEEE8021Q_DEFAULT_TC_MAP = {
+    // TC count:                    1  2  3  4  5  6  7  8
+    /* P0 */ std::array<uint8_t, 8>{0, 0, 0, 0, 0, 1, 1, 1},
+    /* P1 */ std::array<uint8_t, 8>{0, 0, 0, 0, 0, 0, 0, 0},
+    /* P2 */ std::array<uint8_t, 8>{0, 0, 0, 1, 1, 2, 2, 2},
+    /* P3 */ std::array<uint8_t, 8>{0, 0, 0, 1, 1, 2, 3, 3},
+    /* P4 */ std::array<uint8_t, 8>{0, 1, 1, 2, 2, 3, 4, 4},
+    /* P5 */ std::array<uint8_t, 8>{0, 1, 1, 2, 2, 3, 4, 5},
+    /* P6 */ std::array<uint8_t, 8>{0, 1, 2, 3, 3, 4, 5, 6},
+    /* P7 */ std::array<uint8_t, 8>{0, 1, 2, 3, 4, 5, 6, 7}};
+
 // Utils
+/**
+ * @brief Allows formatting sysrepo::Events for logging using spdlog/fmt
+ */
 template <>
-struct fmt::formatter<sysrepo::Event> : fmt::ostream_formatter {};
+struct fmt::formatter<sysrepo::Event> : ostream_formatter {};
 
-std::string mac_to_string(unsigned char *sll_addr, int len, char separator) {
+/**
+ * @brief Helper to convert a byte-array into the string representation of the MAC address it represents
+ * @param sll_addr Pointer to the byte-array containing the supposed MAC address
+ * @param len Length of the supposed MAC address.
+ * @param separator Separator to use between each byte, e.g. IEEE (aka ieee802-dot1q-bridge) uses '-', and IETF (aka
+ * ieft-interfaces) uses ':'.
+ * @return The string representation of the byte-array. If it is not a regular 6 byte address, every octet is "00".
+ */
+std::string mac_to_string(const unsigned char *sll_addr, const int len, char separator) {
     if (len != 6) {
-        char empty[18];
-        snprintf(empty, sizeof(empty), "00%c00%c00%c00%c00%c00", separator, separator, separator, separator, separator);
-        return {empty};
+        return separator == ':' ? "00:00:00:00:00:00" : "00-00-00-00-00-00";
     }
-    char buf[18];
-    snprintf(buf, sizeof(buf), "%02x%c%02x%c%02x%c%02x%c%02x%c%02x", sll_addr[0], separator, sll_addr[1], separator,
-             sll_addr[2], separator, sll_addr[3], separator, sll_addr[4], separator, sll_addr[5]);
-    return {buf};
+    return fmt::format("{:02x}{}{:02x}{}{:02x}{}{:02x}{}{:02x}{}{:02x}", sll_addr[0], separator, sll_addr[1], separator,
+                       sll_addr[2], separator, sll_addr[3], separator, sll_addr[4], separator, sll_addr[5]);
 }
 
-std::string extractListKey(const std::string &xpath, const std::string &listName, const std::string &keyName) {
-    // Search for "interface[name='" specifically
-    std::string searchPattern = listName + "[" + keyName + "='";
+/**
+ * @brief Helper to find the key of an element in a list in a given XPath.
+ *
+ * Only the key-value in lists that are both named @ref listName and have the (first) key @ref keyName are found.
+ *
+ * @param xpath The actual XPath to search for
+ * @param listName The list in which to search for the value of the key @ref keyName
+ * @param keyName The key to search for in the list @listName
+ * @return The value of the key defined by @ref listName and @ref keyName
+ */
+std::string extractListKey(std::string_view xpath, const std::string_view listName, const std::string_view keyName) {
+    size_t pos = xpath.find(listName);
 
-    size_t start = xpath.find(searchPattern);
-    if (start == std::string::npos) return "";
+    while (pos != std::string_view::npos) {
+        // 1. Ensure we didn't just find a SUBSTRING of a longer name
+        // (e.g., finding "eth" inside "ethernet")
+        if (pos == 0 || xpath[pos - 1] == '/' || xpath[pos - 1] == ':') {
+            // 2. Sequence Check: Must be directly followed by "[keyName='"
+            if (std::string_view sub = xpath.substr(pos + listName.size()); sub.starts_with('[')) {
+                sub.remove_prefix(1);
+                if (sub.starts_with(keyName)) {
+                    sub.remove_prefix(keyName.size());
+                    if (sub.starts_with("='")) {
+                        sub.remove_prefix(2);
 
-    start += searchPattern.length();
-    size_t end = xpath.find("']", start);
-    if (end == std::string::npos) return "";
+                        if (const size_t valEnd = sub.find("']"); valEnd != std::string_view::npos) {
+                            // This is the ONLY allocation in the whole process
+                            return std::string(sub.substr(0, valEnd));
+                        }
+                    }
+                }
+            }
+        }
 
-    return xpath.substr(start, end - start);
+        // 3. Jump Optimization:
+        // Search for the next listName starting immediately after this one
+        pos = xpath.find(listName, pos + listName.size());
+    }
+    return "";
 }
 
+/**
+ * @brief Helper to print a single interface
+ * @param iface The interface to print
+ */
 void printSingleInterface(const ietfInterface_t &iface) {
-    spdlog::debug("Interface: {} [{}]", iface.name, iface.adminEnabled ? "UP" : "DOWN");
-    spdlog::debug("  #TX-Queues: {}", iface.numActiveTxQueues);
-    spdlog::debug("  Bridge: {}", !iface.bridgePort.bridgeName.empty() ? iface.bridgePort.bridgeName : "N/A");
+    SPDLOG_DEBUG("Interface: {} [{}]", iface.name, iface.adminEnabled ? "UP" : "DOWN");
+    SPDLOG_DEBUG("  #TX-Queues: {}", iface.numActiveTxQueues);
+    SPDLOG_DEBUG("  Bridge: {}", !iface.bridgePort.bridgeName.empty() ? iface.bridgePort.bridgeName : "N/A");
 
     const auto &gcl = iface.bridgePort.gateParameterTable;
 
-    spdlog::debug("    MaxSduTable ({}):", gcl.queueMaxSduTable.size());
+    SPDLOG_DEBUG("    MaxSduTable ({}):", gcl.queueMaxSduTable.size());
     for (const auto &entry : gcl.queueMaxSduTable) {
-        spdlog::debug("      TC: {} | MaxSDU: {}", entry.trafficClass, entry.queueMaxSdu);
+        SPDLOG_DEBUG("      TC: {} | MaxSDU: {}", entry.trafficClass, entry.queueMaxSdu);
     }
 
-    spdlog::debug("    GCL Admin Entries ({}):", gcl.adminControlList.size());
+    SPDLOG_DEBUG("    GCL Admin Entries ({}):", gcl.adminControlList.size());
     for (const auto &entry : gcl.adminControlList) {
-        spdlog::debug("      Idx: {} | States: 0x{:02x}={:08b} | Interval: {}ns", entry.index, entry.gateStatesValue,
-                      entry.gateStatesValue, entry.timeIntervalValue);
+        SPDLOG_DEBUG("      Idx: {} | States: 0x{:02x}={:08b} | Interval: {}ns", entry.index, entry.gateStatesValue,
+                     entry.gateStatesValue, entry.timeIntervalValue);
     }
-    spdlog::debug("    GCL Oper Entries ({}):", gcl.operControlList.size());
+    SPDLOG_DEBUG("    GCL Oper Entries ({}):", gcl.operControlList.size());
     for (const auto &entry : gcl.operControlList) {
-        spdlog::debug("      Idx: {} | States: 0x{:02x}={:08b} | Interval: {}ns", entry.index, entry.gateStatesValue,
-                      entry.gateStatesValue, entry.timeIntervalValue);
+        SPDLOG_DEBUG("      Idx: {} | States: 0x{:02x}={:08b} | Interval: {}ns", entry.index, entry.gateStatesValue,
+                     entry.gateStatesValue, entry.timeIntervalValue);
     }
 }
 
+/**
+ * @brief Helper to print multiple interfaces, uses @ref printSingleInterface internally in a loop.
+ * @param interfaces A list of interfaces to print
+ */
 void print_interfaces(const std::vector<ietfInterface_t> &interfaces) {
     for (const auto &iface : interfaces) {
         printSingleInterface(iface);
     }
 }
 
-// Helper to translate clockid to string
+/**
+ * @brief Helper
+ * @param clk The id of a clock
+ * @return The string representation of the clock id
+ */
 std::string getClockName(__clockid_t clk) {
     switch (clk) {
         case CLOCK_REALTIME:
@@ -85,48 +143,52 @@ std::string getClockName(__clockid_t clk) {
     }
 }
 
+/**
+ * @brief Helper to print a @ref TaprioConfig struct, the struct used to configure a Qdisc.
+ * @param cfg The TaprioConfig struct to print.
+ */
 void printTaprioConfig(const TaprioConfig &cfg) {
-    spdlog::debug("============================================");
-    spdlog::debug("          TAPRIO CONFIGURATION              ");
-    spdlog::debug("============================================");
+    SPDLOG_DEBUG("============================================");
+    SPDLOG_DEBUG("          TAPRIO CONFIGURATION              ");
+    SPDLOG_DEBUG("============================================");
 
     // 1. Basic Parameters
-    spdlog::debug("Traffic Classes (numTc): {}", cfg.numTc);
+    SPDLOG_DEBUG("Traffic Classes (numTc): {}", cfg.numTc);
     ;
-    spdlog::debug("Hardware Queues (numTxQs): {}", cfg.numTxQs);
+    SPDLOG_DEBUG("Hardware Queues (numTxQs): {}", cfg.numTxQs);
     ;
-    spdlog::debug("Admin Clock Source:            {}", getClockName(cfg.admin.clockid));
-    spdlog::debug("Admin Base Time (ns):          {}", cfg.admin.baseTime);
-    spdlog::debug("Admin Cycle Time (ns):         {}", cfg.admin.cycleTime);
+    SPDLOG_DEBUG("Admin Clock Source:            {}", getClockName(cfg.admin.clockid));
+    SPDLOG_DEBUG("Admin Base Time (ns):          {}", cfg.admin.baseTime);
+    SPDLOG_DEBUG("Admin Cycle Time (ns):         {}", cfg.admin.cycleTime);
     // 2. Priority to Traffic Class Mapping
-    spdlog::debug("Priority-to-TC Mapping:");
-    spdlog::debug("  Prio | TC ");
+    SPDLOG_DEBUG("Priority-to-TC Mapping:");
+    SPDLOG_DEBUG("  Prio | TC ");
     for (size_t i = 0; i < cfg.prioTc.size(); ++i) {
-        spdlog::debug("  {:2} | {}", i, cfg.prioTc[i]);
+        SPDLOG_DEBUG("  {:2} | {}", i, cfg.prioTc[i]);
     }
 
-    spdlog::debug(" SDU: ");
+    SPDLOG_DEBUG(" SDU: ");
     for (size_t i = 0; i < cfg.numTc; ++i) {
-        spdlog::debug("  tc={}, max={}, pre={}", cfg.maxSDUs[i].trafficClass, cfg.maxSDUs[i].queueMaxSdu,
-                      cfg.maxSDUs[i].preemtible);
+        SPDLOG_DEBUG("  tc={}, max={}, pre={}", cfg.maxSDUs[i].trafficClass, cfg.maxSDUs[i].queueMaxSdu,
+                     cfg.maxSDUs[i].preemtible);
     }
 
     // 3. The Schedule (Gate Control List)
-    spdlog::debug("Admin Gate Control List (Schedule):");
-    spdlog::debug("--------------------------------------------");
-    spdlog::debug(" Index | Command | Gate Mask | Interval (ns) ");
-    spdlog::debug("-------|---------|-----------|---------------");
+    SPDLOG_DEBUG("Admin Gate Control List (Schedule):");
+    SPDLOG_DEBUG("--------------------------------------------");
+    SPDLOG_DEBUG(" Index | Command | Gate Mask | Interval (ns) ");
+    SPDLOG_DEBUG("-------|---------|-----------|---------------");
 
     if (cfg.admin.entries.empty()) {
-        spdlog::debug("          [ Schedule is empty ]             ");
+        SPDLOG_DEBUG("          [ Schedule is empty ]             ");
     } else {
         int idx = 0;
         for (const auto &entry : cfg.admin.entries) {
-            spdlog::debug(" {:5} |   {:5} |     0x{:02x}    | {:13}", idx++, (int)entry.command, (int)entry.gateMask,
-                          entry.interval);
+            SPDLOG_DEBUG(" {:5} |   {:5} |     0x{:02x}    | {:13}", idx++, (int)entry.command, (int)entry.gateMask,
+                         entry.interval);
         }
     }
-    spdlog::debug("--------------------------------------------");
+    SPDLOG_DEBUG("--------------------------------------------");
 }
 
 /**
@@ -147,13 +209,21 @@ void tsnctrld::resetTriggerLeaf(const std::string &xpath) {
             sess.setItem(xpath, "false");
             sess.applyChanges();
 
-            spdlog::debug("[RESET] Successfully reset {} to false.", xpath);
+            SPDLOG_DEBUG("[RESET] Successfully reset {} to false.", xpath);
         } catch (const std::exception &e) {
             spdlog::error("[RESET] [ERROR] {}.", e.what());
         }
     }).detach();  // Fire and forget
 }
 
+/**
+ * @brief Helper to get the value of type @ref T of a leaf with XPath @ref path relative to the DataNode @ref node.
+ *
+ * @tparam T The type of the desired value.
+ * @param node The DataNode relative to which the leaf at Xpath @ref path is located.
+ * @param path An XPath pointing to the desired leaf.
+ * @return The value of the leaf pointed to by the combination of @ref node and @ref path, casted to type @ref T.
+ */
 template <typename T>
 T tsnctrld::getLeaf(const std::optional<libyang::DataNode> &node, const std::string &path) {
     if (!node) {
@@ -174,14 +244,24 @@ T tsnctrld::getLeaf(const std::optional<libyang::DataNode> &node, const std::str
  * @param listToFill A DataNode representing either oper-control-list or admin-control-list
  */
 void fillControlList(const std::vector<GclEntry_t> &entries, std::optional<libyang::DataNode> &listToFill) {
-    spdlog::debug("[FILL CONTROLLIST] Filling of values from passed control list to passed datanode...");
+    if (!listToFill.has_value()) {
+        spdlog::warn(
+            "[FILL CONTROLLIST] Parameter listToFill of type std::optional has no value, makes no sense, returning...");
+        return;
+    }
+    SPDLOG_DEBUG("[FILL CONTROLLIST] Filling of values from passed control list to passed datanode...");
     for (const auto &entry : entries) {
-        spdlog::debug("[FILL CONTROLLIST] Current entry: idx={}, gsv={}, intr={}, opr={}", entry.index,
-                      entry.gateStatesValue, entry.timeIntervalValue, entry.operationName);
+        SPDLOG_DEBUG("[FILL CONTROLLIST] Current entry: idx={}, gsv={}, interval={}, opr={}", entry.index,
+                     entry.gateStatesValue, entry.timeIntervalValue, entry.operationName);
 
-        auto entry_res =
-            listToFill->newPath2("gate-control-entry[index='" + std::to_string(entry.index) + "']", std::nullopt);
+        auto entry_res = listToFill->newPath2(fmt::format("gate-control-entry[index='{}']", entry.index), std::nullopt);
         auto entry_node = entry_res.createdNode;
+        if (!entry_node.has_value()) {
+            spdlog::warn(
+                "[FILL CONTROLLIST] createdNode entry_node of type std::optional has no value, makes no sense, "
+                "returning...");
+            return;
+        }
         entry_node->newPath2("operation-name", entry.operationName);
         entry_node->newPath2("time-interval-value", std::to_string(entry.timeIntervalValue));
         entry_node->newPath2("gate-states-value", std::to_string(entry.gateStatesValue));
@@ -200,9 +280,14 @@ void fillControlList(const std::vector<GclEntry_t> &entries, std::optional<libya
  */
 void fillGptNode(const GclConfig_t &hw_cfg, std::optional<libyang::DataNode> &toFill,
                  GclFillOptions options = GclFillOptions::OnlyDefault) {
+    if (!toFill.has_value()) {
+        spdlog::warn(
+            "[FILL DATANODE] Parameter listToFill of type std::optional has no value, makes no sense, returning...");
+        return;
+    }
     if (options & GclFillOptions::FillAdmin) {
-        spdlog::debug("[FILL DATANODE] Filling of Admin data requested...");
-        spdlog::debug("[FILL DATANODE] Writing \"supported-*\" nodes...");
+        SPDLOG_DEBUG("[FILL DATANODE] Filling of Admin data requested...");
+        SPDLOG_DEBUG("[FILL DATANODE] Writing \"supported-*\" nodes...");
         toFill->newPath2("supported-list-max", std::to_string(hw_cfg.supportedListMax));
         toFill->newPath2("supported-cycle-max/numerator", std::to_string(hw_cfg.supportedCycleMaxNumerator));
         toFill->newPath2("supported-cycle-max/denominator", std::to_string(hw_cfg.supportedCycleMaxDenominator));
@@ -210,18 +295,18 @@ void fillGptNode(const GclConfig_t &hw_cfg, std::optional<libyang::DataNode> &to
 
         toFill->newPath2("gate-enabled", hw_cfg.gateEnabled ? "true" : "false");
         if (hw_cfg.operDataSet && !hw_cfg.adminDataSet) {
-            spdlog::debug("[FILL DATANODE] Admin data not set, but Oper data is, using that...");
+            SPDLOG_DEBUG("[FILL DATANODE] Admin data not set, but Oper data is, using that...");
             toFill->newPath2("admin-base-time/seconds", std::to_string(hw_cfg.operBaseTime.seconds));
             toFill->newPath2("admin-base-time/nanoseconds", std::to_string(hw_cfg.operBaseTime.nanoseconds));
             auto admin_res = toFill->newPath2("admin-control-list", std::nullopt);
             auto admin_node = admin_res.createdNode;
             fillControlList(hw_cfg.operControlList, admin_node);
 
-            spdlog::debug("[FILL DATANODE] Using operCycleTime for mandatory adminCycleTime...");
+            SPDLOG_DEBUG("[FILL DATANODE] Using operCycleTime for mandatory adminCycleTime...");
             toFill->newPath2("admin-cycle-time/numerator", std::to_string(hw_cfg.operCycleTime.numerator));
             toFill->newPath2("admin-cycle-time/denominator", std::to_string(hw_cfg.operCycleTime.denominator));
         } else if (hw_cfg.adminDataSet) {
-            spdlog::debug("[FILL DATANODE] Admin data is set, using that...");
+            SPDLOG_DEBUG("[FILL DATANODE] Admin data is set, using that...");
 
             toFill->newPath2("admin-base-time/seconds", std::to_string(hw_cfg.adminBaseTime.seconds));
             toFill->newPath2("admin-base-time/nanoseconds", std::to_string(hw_cfg.adminBaseTime.nanoseconds));
@@ -229,21 +314,21 @@ void fillGptNode(const GclConfig_t &hw_cfg, std::optional<libyang::DataNode> &to
             auto admin_node = admin_res.createdNode;
             fillControlList(hw_cfg.adminControlList, admin_node);
 
-            spdlog::debug("[FILL DATANODE] Using set adminCycleTime for mandatory element...");
+            SPDLOG_DEBUG("[FILL DATANODE] Using set adminCycleTime for mandatory element...");
             toFill->newPath2("admin-cycle-time/numerator", std::to_string(hw_cfg.adminCycleTime.numerator));
             toFill->newPath2("admin-cycle-time/denominator", std::to_string(hw_cfg.adminCycleTime.denominator));
         } else {
-            spdlog::debug("[FILL DATANODE] Neither admin nor oper is set, assume nothing TSN is configured...");
-            spdlog::debug("[FILL DATANODE] Using default adminCycleTime for mandatory adminCycleTime...");
+            SPDLOG_DEBUG("[FILL DATANODE] Neither admin nor oper is set, assume nothing TSN is configured...");
+            SPDLOG_DEBUG("[FILL DATANODE] Using default adminCycleTime for mandatory adminCycleTime...");
             toFill->newPath2("admin-cycle-time/numerator", std::to_string(hw_cfg.adminCycleTime.numerator));
             toFill->newPath2("admin-cycle-time/denominator", std::to_string(hw_cfg.adminCycleTime.denominator));
         }
     }
 
     if (options & GclFillOptions::FillOper) {
-        spdlog::debug("[FILL DATANODE] Filling of Oper data requested...");
+        SPDLOG_DEBUG("[FILL DATANODE] Filling of Oper data requested...");
         if (hw_cfg.operDataSet) {
-            spdlog::debug("[FILL DATANODE] Oper data is set, using that...");
+            SPDLOG_DEBUG("[FILL DATANODE] Oper data is set, using that...");
             toFill->newPath2("oper-base-time/seconds", std::to_string(hw_cfg.operBaseTime.seconds));
             toFill->newPath2("oper-base-time/nanoseconds", std::to_string(hw_cfg.operBaseTime.nanoseconds));
             auto oper_res = toFill->newPath2("oper-control-list", std::nullopt);
@@ -253,6 +338,7 @@ void fillGptNode(const GclConfig_t &hw_cfg, std::optional<libyang::DataNode> &to
             spdlog::warn(
                 "[FILL DATANODE] Oper data requested but not set, assume nothing TSN is configured and ignoring...");
         }
+        toFill->newPath2("tick-granularity", std::to_string(hw_cfg.tickGranularity));
     }
 }
 
@@ -269,21 +355,11 @@ void fillGptNode(const GclConfig_t &hw_cfg, std::optional<libyang::DataNode> &to
  */
 ietfInterface_t *tsnctrld::syncInterfaceFromSysrepo(sysrepo::Session &sess, const std::string &ifname,
                                                     uint32_t requestId) {
-    static const uint8_t ieee8021q_default_tc_map[8][8] = {// TC count: 1  2  3  4  5  6  7  8
-                                                           /* P0 */ {0, 0, 0, 0, 0, 1, 1, 1},
-                                                           /* P1 */ {0, 0, 0, 0, 0, 0, 0, 0},
-                                                           /* P2 */ {0, 0, 0, 1, 1, 2, 2, 2},
-                                                           /* P3 */ {0, 0, 0, 1, 1, 2, 3, 3},
-                                                           /* P4 */ {0, 1, 1, 2, 2, 3, 4, 4},
-                                                           /* P5 */ {0, 1, 1, 2, 2, 3, 4, 5},
-                                                           /* P6 */ {0, 1, 2, 3, 3, 4, 5, 6},
-                                                           /* P7 */ {0, 1, 2, 3, 4, 5, 6, 7}};
-
     m_ifcache.setCurrentRequestId(requestId);
     m_ifcache.ensureFullLinkData(m_sock, m_ethtool_sock);
 
     ietfInterface_t *iface_ptr = m_ifcache.getInterface(ifname);
-    if (!iface_ptr) {
+    if (iface_ptr == nullptr) {
         spdlog::warn("[SYSREPO->STRUCT] [DEBUG] no interface found with name {}", ifname);
         return nullptr;
     }
@@ -296,9 +372,8 @@ ietfInterface_t *tsnctrld::syncInterfaceFromSysrepo(sysrepo::Session &sess, cons
     gcl.queueMaxSduTable.clear();
 
     // 2. Fetch the subtree once
-    std::string basePath = "/ietf-interfaces:interfaces/interface[name='" + ifname +
-                           "']/"
-                           "ieee802-dot1q-bridge:bridge-port";
+    std::string basePath =
+        fmt::format("/ietf-interfaces:interfaces/interface[name='{}']/ieee802-dot1q-bridge:bridge-port", ifname);
 
     // Use sess.getData() to get the proposed tree
     auto bpRoot = sess.getData(basePath);
@@ -307,31 +382,46 @@ ietfInterface_t *tsnctrld::syncInterfaceFromSysrepo(sysrepo::Session &sess, cons
         return nullptr;
     }
     auto bpData = bpRoot->findPath(basePath);
-    spdlog::debug("[SYSREPO->STRUCT] [DEBUG] after root->bpData...");
-    spdlog::debug("  -> [SYSREPO->STRUCT] [DEBUG] Data forest:\n {}",
-                  bpData->printStr(libyang::DataFormat::XML, libyang::PrintFlags::Siblings).value());
+
+    SPDLOG_DEBUG("[SYSREPO->STRUCT] [DEBUG] after root->bpData...");
+    if (!bpData.has_value()) {
+        spdlog::warn(
+            "[SYSREPO->STRUCT] [DEBUG] Parameter bpData of type std::optional has no value, makes no sense, "
+            "returning...");
+        return nullptr;
+    }
+
+    SPDLOG_TRACE("  -> [SYSREPO->STRUCT] [DEBUG] Data forest:\n {}",
+                 bpData->printStr(libyang::DataFormat::XML, libyang::PrintFlags::Siblings).value());
 
     auto gclData = bpData->findPath("ieee802-dot1q-sched-bridge:gate-parameter-table");
+    if (!gclData.has_value()) {
+        spdlog::warn(
+            "[SYSREPO->STRUCT] [DEBUG] Parameter gclData of type std::optional has no value, makes no sense, "
+            "returning...");
+        return nullptr;
+    }
     gcl.gateEnabled = getLeaf<bool>(gclData, "gate-enabled");
     if (!gcl.gateEnabled) {
-        spdlog::debug(
+        SPDLOG_DEBUG(
             "[SYSREPO->STRUCT] [DEBUG] gate-enabled is false, skipping fetch of remaining (irrelevant) data...");
         return &iface;
     }
 
     auto tcData = bpData->findPath("traffic-class/traffic-class-table");
-    spdlog::debug(
-        "  -> [SYSREPO->STRUCT] [DEBUG] tcData:\n {}",
-        tcData
-            ->printStr(libyang::DataFormat::XML, libyang::PrintFlags::Siblings | libyang::PrintFlags::EmptyContainers |
-                                                     libyang::PrintFlags::WithDefaultsAll)
-            .value_or("Missing"));
-
+    if (tcData.has_value()) {
+        SPDLOG_TRACE("  -> [SYSREPO->STRUCT] [DEBUG] tcData:\n {}",
+                     tcData
+                         ->printStr(libyang::DataFormat::XML, libyang::PrintFlags::Siblings |
+                                                                  libyang::PrintFlags::EmptyContainers |
+                                                                  libyang::PrintFlags::WithDefaultsAll)
+                         .value_or("Missing"));
+    }
     bp.trafficClassData.mapDataSet = true;
     bool useDsConfig = false;
     uint8_t numTCs = 1;
     if (tcData.has_value() && tcData->child().has_value()) {
-        spdlog::debug("[SYSREPO->STRUCT] [DEBUG] found traffic-class/traffic-class-table...");
+        SPDLOG_DEBUG("[SYSREPO->STRUCT] [DEBUG] found traffic-class/traffic-class-table...");
         numTCs = getLeaf<uint8_t>(tcData, "number-of-traffic-classes");
         if (numTCs <= iface.numActiveTxQueues) {
             useDsConfig = true;
@@ -341,7 +431,7 @@ ietfInterface_t *tsnctrld::syncInterfaceFromSysrepo(sysrepo::Session &sess, cons
         }
     }
     if (useDsConfig) {
-        spdlog::debug("[SYSREPO->STRUCT] [DEBUG] traffic-class/traffic-class-table is valid, using it...");
+        SPDLOG_DEBUG("[SYSREPO->STRUCT] [DEBUG] traffic-class/traffic-class-table is valid, using it...");
         bp.trafficClassData.numTrafficClasses = numTCs;
         bp.trafficClassData.priorityMap[0] = getLeaf<uint8_t>(tcData, "priority0");
         bp.trafficClassData.priorityMap[1] = getLeaf<uint8_t>(tcData, "priority1");
@@ -352,20 +442,20 @@ ietfInterface_t *tsnctrld::syncInterfaceFromSysrepo(sysrepo::Session &sess, cons
         bp.trafficClassData.priorityMap[6] = getLeaf<uint8_t>(tcData, "priority6");
         bp.trafficClassData.priorityMap[7] = getLeaf<uint8_t>(tcData, "priority7");
     } else {
-        spdlog::debug(
+        SPDLOG_DEBUG(
             "[SYSREPO->STRUCT] [DEBUG] traffic-class/traffic-class-table not found, empty or configured number of "
             "tx-queues larger than number of active tx-queues, using defaults based on number of tx-queues...");
         bp.trafficClassData.numTrafficClasses = iface.numActiveTxQueues < 8 ? iface.numActiveTxQueues : 8;
         uint8_t colIndex = bp.trafficClassData.numTrafficClasses - 1;
         for (int priority = 0; priority < 8; ++priority) {
-            bp.trafficClassData.priorityMap[priority] = ieee8021q_default_tc_map[priority][colIndex];
+            bp.trafficClassData.priorityMap[priority] = IEEE8021Q_DEFAULT_TC_MAP[priority][colIndex];
         }
     }
 
     gcl.adminCycleTime.numerator = getLeaf<uint32_t>(gclData, "admin-cycle-time/numerator");
     gcl.adminCycleTime.denominator = getLeaf<uint32_t>(gclData, "admin-cycle-time/denominator");
-    spdlog::debug("[SYSREPO->STRUCT] admin-cycle-time: {}/{}", gcl.adminCycleTime.numerator,
-                  gcl.adminCycleTime.denominator);
+    SPDLOG_DEBUG("[SYSREPO->STRUCT] admin-cycle-time: {}/{}", gcl.adminCycleTime.numerator,
+                 gcl.adminCycleTime.denominator);
 
     // 4. Update the Control List (The expensive part)
     auto entries = gclData->findXPath("admin-control-list/gate-control-entry");
@@ -378,7 +468,7 @@ ietfInterface_t *tsnctrld::syncInterfaceFromSysrepo(sysrepo::Session &sess, cons
         e.index = getLeaf<uint32_t>(entryNode, "index");
         e.gateStatesValue = getLeaf<uint8_t>(entryNode, "gate-states-value");
         e.timeIntervalValue = getLeaf<uint32_t>(entryNode, "time-interval-value");
-        e.operationName = entryNode.findPath("operation-name")->asTerm().valueStr();
+        e.operationName = getLeaf<std::string>(entryNode, "operation-name");
     }
 
     auto sduEntries = gclData->findXPath("queue-max-sdu-table");
@@ -425,11 +515,11 @@ void tsnctrld::initialize() {
     }
 
     // In order for our program to be the source of truth, start with an empty datastore.
-    spdlog::debug("[INIT] [DEBUG] Cleaning interfaces from datastore ");
+    SPDLOG_DEBUG("[INIT] [DEBUG] Cleaning interfaces from datastore ");
     m_sess.deleteItem("/ietf-interfaces:interfaces");
-    spdlog::debug("[INIT] [DEBUG] Cleaning bridges from datastore ");
+    SPDLOG_DEBUG("[INIT] [DEBUG] Cleaning bridges from datastore ");
     m_sess.deleteItem("/ieee802-dot1q-bridge:bridges");
-    spdlog::debug("[INIT] [DEBUG] Cleaning lldp from datastore ");
+    SPDLOG_DEBUG("[INIT] [DEBUG] Cleaning lldp from datastore ");
     m_sess.deleteItem("/ieee802-dot1ab-lldp:lldp");
     m_sess.applyChanges();
 
@@ -443,7 +533,6 @@ void tsnctrld::initialize() {
 int tsnctrld::ensureRunningDaemons(const std::vector<std::string> &services) {
     spdlog::info("Ensuring running daemon services...");
     sd_bus *bus = nullptr;
-    sd_bus_message *m = nullptr;  // Incoming message
     std::map<std::string, std::string> pendingJobs;
     bool globalSuccess = true;
     int r;
@@ -469,7 +558,7 @@ int tsnctrld::ensureRunningDaemons(const std::vector<std::string> &services) {
 
     // 3. Start the Unit
     for (const auto &service : services) {
-        spdlog::debug("Requesting start for {}...", service);
+        SPDLOG_DEBUG("Requesting start for {}...", service);
         sd_bus_error error = SD_BUS_ERROR_NULL;
         sd_bus_message *reply = nullptr;  // Reply from StartUnit call
         const char *jobPath = nullptr;
@@ -495,13 +584,13 @@ int tsnctrld::ensureRunningDaemons(const std::vector<std::string> &services) {
                 spdlog::error("Failed parsing StartUnit reply: {}", strerror(-r));
             }
             pendingJobs[jobPath] = service;
-            spdlog::debug("Job queued, waiting for completion: {}", jobPath);
+            SPDLOG_DEBUG("Job queued, waiting for completion: {}", jobPath);
         }
         sd_bus_message_unref(reply);
     }
 
     if (pendingJobs.empty()) {
-        spdlog::debug("No jobs started (or all failed immediately).");
+        SPDLOG_DEBUG("No jobs started (or all failed immediately).");
         sd_bus_unref(bus);
         return globalSuccess ? 0 : 1;
     }
@@ -515,7 +604,7 @@ int tsnctrld::ensureRunningDaemons(const std::vector<std::string> &services) {
         }
         sd_bus_message *m = nullptr;
         while ((r = sd_bus_process(bus, &m)) > 0) {
-            if (sd_bus_message_is_signal(m, "org.freedesktop.systemd1.Manager", "JobRemoved")) {
+            if (sd_bus_message_is_signal(m, "org.freedesktop.systemd1.Manager", "JobRemoved") != 0) {
                 uint32_t id;
                 const char *path;
                 const char *unit;
@@ -529,7 +618,7 @@ int tsnctrld::ensureRunningDaemons(const std::vector<std::string> &services) {
                     std::string svc_name = it->second;
 
                     if (strcmp(result, "done") == 0) {
-                        spdlog::debug("SUCCESS: Service {} started.", svc_name);
+                        SPDLOG_DEBUG("SUCCESS: Service {} started.", svc_name);
                     } else {
                         spdlog::error("FAILURE: Service {} failed to start with reason {}.", svc_name, result);
                         globalSuccess = false;
@@ -557,7 +646,7 @@ int tsnctrld::ensureRunningDaemons(const std::vector<std::string> &services) {
  */
 void tsnctrld::syncHardwareToRunning() {
     spdlog::info("[SYNC] Reading info from kernel and writing to RUNNING datastore");
-    spdlog::debug("[SYNC] Populating internal list m_interfaces from kernel");
+    SPDLOG_DEBUG("[SYNC] Populating internal list m_interfaces from kernel");
     m_sess.switchDatastore(sysrepo::Datastore::Running);
     auto ctx = m_sess.getContext();
     std::optional<libyang::DataNode> forest;
@@ -566,34 +655,36 @@ void tsnctrld::syncHardwareToRunning() {
     m_ifcache.ensureFullLinkData(m_sock, m_ethtool_sock);
     m_ifcache.ensureFullQdiscData(m_sock);
 
-    spdlog::debug("[SYNC] Iterating over interfaces...");
+    SPDLOG_DEBUG("[SYNC] Iterating over interfaces...");
 
     const auto &allIfaces = m_ifcache.getAllInterfaces();
     for (const auto &[idx, iface] : allIfaces) {
         printSingleInterface(iface);
     }
-    spdlog::debug("[SYNC] Print done...");
+    SPDLOG_DEBUG("[SYNC] Print done...");
 
     for (auto &[idx, current] : m_ifcache.getAllInterfaces()) {
         std::string &name = current.name;
 
-        spdlog::debug("[SYNC] Current interface: {}...", name);
+        SPDLOG_DEBUG("[SYNC] Current interface: {}...", name);
         // std::string mac_ietf = mac_to_string(s->sll_addr, s->sll_halen, ':');
         // std::string mac_ieee = mac_to_string(s->sll_addr, s->sll_halen, '-');
 
         // --- PASS 1: Bridges (Only if it's a bridge and NOT loopback) ---
         if (current.type == IfType::BRIDGE) {
-            spdlog::debug("[SYNC] [BR] Interface is bridge...");
-            std::string br_path = "/ieee802-dot1q-bridge:bridges/bridge[name='" + name + "']";
+            SPDLOG_DEBUG("[SYNC] [BR] Interface is bridge...");
+            std::string br_path = fmt::format("/ieee802-dot1q-bridge:bridges/bridge[name='{}']", name);
             auto br_res = forest ? forest->newPath2(br_path, std::nullopt) : ctx.newPath2(br_path, std::nullopt);
-            if (!forest && br_res.createdParent) forest = br_res.createdParent;
+            if (!forest && br_res.createdParent) {
+                forest = br_res.createdParent;
+            }
             auto br_node = br_res.createdNode;
 
             std::string mac_ieee = mac_to_string(current.physAddress.data(), 6, '-');
             br_node->newPath2("address", mac_ieee);
             br_node->newPath2("bridge-type", "ieee802-dot1q-bridge:customer-vlan-bridge");
 
-            auto comp_res = br_node->newPath2("component[name='" + name + "']", std::nullopt);
+            auto comp_res = br_node->newPath2(fmt::format("component[name='{}']", name), std::nullopt);
             auto comp_node = comp_res.createdNode;
             comp_node->newPath2("id", "1");
             comp_node->newPath2("type", "ieee802-dot1q-bridge:c-vlan-component");
@@ -602,9 +693,11 @@ void tsnctrld::syncHardwareToRunning() {
         // --- PASS 2: Interface Core ---
         std::string if_path = std::string("/ietf-interfaces:interfaces/interface[name='").append(name).append("']");
 
-        spdlog::debug("[SYNC] [IF] Creating \"root\" interface node...");
+        SPDLOG_DEBUG("[SYNC] [IF] Creating \"root\" interface node...");
         auto if_res = forest ? forest->newPath2(if_path, std::nullopt) : ctx.newPath2(if_path, std::nullopt);
-        if (!forest && if_res.createdParent) forest = if_res.createdParent;
+        if (!forest && if_res.createdParent) {
+            forest = if_res.createdParent;
+        }
         auto if_node = if_res.createdNode;
 
         if_node->newPath2("type", ifTypeToIanaString(current.type));
@@ -612,34 +705,46 @@ void tsnctrld::syncHardwareToRunning() {
 
         // --- PASS 3: Bridge-Port & TAS (Skip for Loopback) ---
         if (current.type == IfType::BRIDGE || current.type == IfType::ETHERNET) {
-            std::string bp_path = if_path + "/ieee802-dot1q-bridge:bridge-port";
-
             auto bp_res = if_node->newPath2("ieee802-dot1q-bridge:bridge-port", std::nullopt);
             auto bp_node = bp_res.createdNode;
 
             if (current.bridgePort.masterIndex > 0) {
-                spdlog::debug("[SYNC] [BR] Current interface \"{}\" is attached to bridge \"{}\" with id {}...",
-                              current.name, current.bridgePort.bridgeName, current.bridgePort.bridgeName);
+                SPDLOG_DEBUG("[SYNC] [BR] Current interface \"{}\" is attached to bridge \"{}\" with id {}...",
+                             current.name, current.bridgePort.bridgeName, current.bridgePort.bridgeName);
                 bp_node->newPath2("bridge-name", current.bridgePort.bridgeName);
                 bp_node->newPath2("component-name", current.bridgePort.bridgeName);
             }
+            auto tc_res = bp_node->newPath2("traffic-class/traffic-class-table", std::nullopt);
+            auto tc_node = tc_res.createdNode;
 
             if (current.bridgePort.trafficClassData.mapDataSet) {
-                spdlog::debug("[SYNC] [BR] Current interface \"{}\" has a priority map...", current.name);
-                auto tc_res = bp_node->newPath2("traffic-class/traffic-class-table", std::nullopt);
-                auto tc_node = tc_res.createdNode;
+                SPDLOG_DEBUG("[SYNC] [BR] Current interface \"{}\" has a priority map...", current.name);
 
-                tc_node->newPath2("number-of-traffic-classes",
-                                  std::to_string(current.bridgePort.trafficClassData.numTrafficClasses));
-                tc_node->newPath2("priority0", std::to_string(current.bridgePort.trafficClassData.priorityMap[0]));
-                tc_node->newPath2("priority1", std::to_string(current.bridgePort.trafficClassData.priorityMap[1]));
-                tc_node->newPath2("priority2", std::to_string(current.bridgePort.trafficClassData.priorityMap[2]));
-                tc_node->newPath2("priority3", std::to_string(current.bridgePort.trafficClassData.priorityMap[3]));
-                tc_node->newPath2("priority4", std::to_string(current.bridgePort.trafficClassData.priorityMap[4]));
-                tc_node->newPath2("priority5", std::to_string(current.bridgePort.trafficClassData.priorityMap[5]));
-                tc_node->newPath2("priority6", std::to_string(current.bridgePort.trafficClassData.priorityMap[6]));
-                tc_node->newPath2("priority7", std::to_string(current.bridgePort.trafficClassData.priorityMap[7]));
+            } else {
+                current.bridgePort.trafficClassData.mapDataSet = true;
+                current.bridgePort.trafficClassData.numTrafficClasses =
+                    current.numActiveTxQueues < 8 ? current.numActiveTxQueues : 8;
+                SPDLOG_DEBUG(
+                    "[SYNC] [BR] Current interface \"{}\" has no priority map, using defaults based on supported "
+                    "number of active TX queues ({}/{}/{})...",
+                    current.name, current.bridgePort.trafficClassData.numTrafficClasses, current.numActiveTxQueues,
+                    current.numTxQueues);
+                uint8_t colIndex = current.bridgePort.trafficClassData.numTrafficClasses - 1;
+                for (int priority = 0; priority < 8; ++priority) {
+                    current.bridgePort.trafficClassData.priorityMap[priority] =
+                        IEEE8021Q_DEFAULT_TC_MAP[priority][colIndex];
+                }
             }
+            tc_node->newPath2("number-of-traffic-classes",
+                              std::to_string(current.bridgePort.trafficClassData.numTrafficClasses));
+            tc_node->newPath2("priority0", std::to_string(current.bridgePort.trafficClassData.priorityMap[0]));
+            tc_node->newPath2("priority1", std::to_string(current.bridgePort.trafficClassData.priorityMap[1]));
+            tc_node->newPath2("priority2", std::to_string(current.bridgePort.trafficClassData.priorityMap[2]));
+            tc_node->newPath2("priority3", std::to_string(current.bridgePort.trafficClassData.priorityMap[3]));
+            tc_node->newPath2("priority4", std::to_string(current.bridgePort.trafficClassData.priorityMap[4]));
+            tc_node->newPath2("priority5", std::to_string(current.bridgePort.trafficClassData.priorityMap[5]));
+            tc_node->newPath2("priority6", std::to_string(current.bridgePort.trafficClassData.priorityMap[6]));
+            tc_node->newPath2("priority7", std::to_string(current.bridgePort.trafficClassData.priorityMap[7]));
 
             // Physical ports and Bridges get TAS capabilities to satisfy validation
             auto gpt_res = bp_node->newPath2("ieee802-dot1q-sched-bridge:gate-parameter-table", std::nullopt);
@@ -647,34 +752,33 @@ void tsnctrld::syncHardwareToRunning() {
 
             GclConfig_t &hw_cfg = current.bridgePort.gateParameterTable;
 
-            spdlog::debug("[SYNC] [BP] Filling DataNode of gate-parameter-table with values from GclConfig_t struct");
+            SPDLOG_DEBUG("[SYNC] [BP] Filling DataNode of gate-parameter-table with values from GclConfig_t struct");
             fillGptNode(hw_cfg, gpt_node, GclFillOptions::FillAdmin);
         }
 
         if (current.type == IfType::ETHERNET) {
             // TODO: Get real values
-            spdlog::debug("[SYNC] [LLDP] Enabling discovery on: {}", current.name);
-            std::string lldp_path =
-                "/ieee802-dot1ab-lldp:lldp/port[name='" + current.name + "'][dest-mac-address='01-80-c2-00-00-0e']";
+            SPDLOG_DEBUG("[SYNC] [LLDP] Enabling discovery on: {}", current.name);
+            std::string lldp_path = fmt::format(
+                "/ieee802-dot1ab-lldp:lldp/port[name='{}'][dest-mac-address='01-80-c2-00-00-0e']", current.name);
 
             auto lldp_res = forest->newPath2(lldp_path, std::nullopt);
             auto lldp_node = lldp_res.createdNode;
             lldp_node->newPath2("admin-status", "tx-and-rx");
         }
     }
-    // freeifaddrs(ifaddr);
 
     if (forest) {
-        spdlog::debug("[SYNC] Applying Batch to Datastore...");
-        spdlog::debug("[SYNC] Switching to first sibling...");
+        SPDLOG_DEBUG("[SYNC] Applying Batch to Datastore...");
+        SPDLOG_DEBUG("[SYNC] Switching to first sibling...");
         forest = forest->firstSibling();
-        spdlog::debug("  -> [SYNC DEBUG] Data forest:\n {}",
-                      forest->printStr(libyang::DataFormat::XML, libyang::PrintFlags::Siblings).value());
-        spdlog::debug("[SYNC] Editing batch...");
+        SPDLOG_TRACE("  -> [SYNC DEBUG] Data forest:\n {}",
+                     forest->printStr(libyang::DataFormat::XML, libyang::PrintFlags::Siblings).value());
+        SPDLOG_DEBUG("[SYNC] Editing batch...");
         m_sess.editBatch(*forest, sysrepo::DefaultOperation::Merge);
-        spdlog::debug("[SYNC] Applying changes...");
+        SPDLOG_DEBUG("[SYNC] Applying changes...");
         m_sess.applyChanges();
-        spdlog::debug("[SYNC] Datastore synchronized.");
+        SPDLOG_DEBUG("[SYNC] Datastore synchronized.");
     }
 
     m_lldpDaemon = std::make_unique<LldpDaemon>(m_operSess);
@@ -697,16 +801,16 @@ sysrepo::ErrorCode tsnctrld::defaultOperCallback(sysrepo::Session sess, uint32_t
                                                  const std::optional<std::string> &subXPath,
                                                  const std::optional<std::string> &requestXPath, uint32_t requestId,
                                                  std::optional<libyang::DataNode> &parent) {
-    spdlog::debug("[CB_OPER] [DEFAULT] Received oper callback for module {}...", moduleName);
-    spdlog::debug("[CB_OPER] [DEFAULT] subXPath {}...", subXPath.value_or("MISSING"));
-    spdlog::debug("[CB_OPER] [DEFAULT] requestXPath {}...", requestXPath.value_or("MISSING"));
-    spdlog::debug("[CB_OPER] [DEFAULT] requestId {}...", requestId);
+    SPDLOG_DEBUG("[CB_OPER] [DEFAULT] Received oper callback for module {}...", moduleName);
+    SPDLOG_DEBUG("[CB_OPER] [DEFAULT] subXPath {}...", subXPath.value_or("MISSING"));
+    SPDLOG_DEBUG("[CB_OPER] [DEFAULT] requestXPath {}...", requestXPath.value_or("MISSING"));
+    SPDLOG_DEBUG("[CB_OPER] [DEFAULT] requestId {}...", requestId);
     auto ctx = sess.getContext();
-    if (!parent)
-        spdlog::debug("[CB_OPER] [DEFAULT] parent is falsy...");
-    else
-        spdlog::debug("[CB_OPER] [DEFAULT] parent is truthy...");
-    this;
+    if (!parent) {
+        SPDLOG_DEBUG("[CB_OPER] [DEFAULT] parent is falsy...");
+    } else {
+        SPDLOG_DEBUG("[CB_OPER] [DEFAULT] parent is truthy...");
+    }
     return sysrepo::ErrorCode::Ok;
 }
 
@@ -729,42 +833,56 @@ sysrepo::ErrorCode tsnctrld::operInterfaceCallback(sysrepo::Session sess, uint32
                                                    const std::optional<std::string> &subXPath,
                                                    const std::optional<std::string> &requestXPath, uint32_t requestId,
                                                    std::optional<libyang::DataNode> &parent) {
-    spdlog::debug("[CB_OPER] [IF] Received oper callback for module {}...", moduleName);
-    spdlog::debug("[CB_OPER] [IF] subXPath {}...", subXPath.value_or("MISSING"));
-    spdlog::debug("[CB_OPER] [IF] requestXPath {}...", requestXPath.value_or("MISSING"));
-    spdlog::debug("[CB_OPER] [IF] requestId {}...", requestId);
+    SPDLOG_DEBUG("[CB_OPER] [IF] Received oper callback for module {}...", moduleName);
+    SPDLOG_DEBUG("[CB_OPER] [IF] subXPath {}...", subXPath.value_or("MISSING"));
+    SPDLOG_DEBUG("[CB_OPER] [IF] requestXPath {}...", requestXPath.value_or("MISSING"));
+    SPDLOG_DEBUG("[CB_OPER] [IF] requestId {}...", requestId);
 
-    spdlog::debug("[CB_OPER] [IF] Refreshing interface status...");
+    SPDLOG_DEBUG("[CB_OPER] [IF] Refreshing interface status...");
 
     m_ifcache.setCurrentRequestId(requestId);
     m_ifcache.ensureFullLinkData(m_sock, m_ethtool_sock);
     m_ifcache.ensureFullQdiscData(m_sock);
 
     auto ctx = sess.getContext();
-    spdlog::debug("[CB_OPER] [IF] Refreshing caches refreshed, start iterating...");
+    SPDLOG_DEBUG("[CB_OPER] [IF] Refreshing caches refreshed, start iterating...");
     for (auto &[idx, current] : m_ifcache.getAllInterfaces()) {
         std::string &name = current.name;
-        spdlog::debug("[CB_OPER] [IF] Current: {}", name);
+        SPDLOG_DEBUG("[CB_OPER] [IF] Current: {}", name);
 
-        std::string if_path = "/ietf-interfaces:interfaces/interface[name='" + name + "']";
+        std::string if_path = fmt::format("/ietf-interfaces:interfaces/interface[name='{}']", name);
 
         auto if_res = parent ? parent->newPath2(if_path, std::nullopt) : ctx.newPath2(if_path, std::nullopt);
-        if (!parent && if_res.createdParent) parent = if_res.createdParent;
+        if (!parent && if_res.createdParent) {
+            parent = if_res.createdParent;
+        }
         auto if_node = if_res.createdNode;
+        if (!if_node.has_value()) {
+            spdlog::warn("[CB_OPER] [IF] if_node of type std::optional has no value, makes no sense, returning...");
+            return sysrepo::ErrorCode::OperationFailed;
+        }
 
         if_node->newPath("oper-status", operStatusToYangString(current.operStatus));
         if (current.type == IfType::BRIDGE || current.type == IfType::ETHERNET) {
             if_node->newPath("phys-address", mac_to_string(current.physAddress.data(), 6, ':'));
             auto bp_res = if_node->newPath2("ieee802-dot1q-bridge:bridge-port", std::nullopt);
             auto bp_node = bp_res.createdNode;
+            if (!bp_node.has_value()) {
+                spdlog::warn("[CB_OPER] [IF] bp_node of type std::optional has no value, makes no sense, returning...");
+                return sysrepo::ErrorCode::OperationFailed;
+            }
             auto gpt_res = bp_node->newPath2("ieee802-dot1q-sched-bridge:gate-parameter-table", std::nullopt);
             auto gpt_node = gpt_res.createdNode;
+            if (!gpt_node.has_value()) {
+                spdlog::warn(
+                    "[CB_OPER] [IF] gpt_node of type std::optional has no value, makes no sense, returning...");
+                return sysrepo::ErrorCode::OperationFailed;
+            }
 
             GclConfig_t &hw_cfg = current.bridgePort.gateParameterTable;
             fillGptNode(hw_cfg, gpt_node, GclFillOptions::FillOper);
         }
     }
-    // freeifaddrs(ifaddr);
     return sysrepo::ErrorCode::Ok;
 }
 
@@ -785,12 +903,12 @@ sysrepo::ErrorCode tsnctrld::operBridgeCallback(sysrepo::Session sess, uint32_t 
                                                 const std::optional<std::string> &subXPath,
                                                 const std::optional<std::string> &requestXPath, uint32_t requestId,
                                                 std::optional<libyang::DataNode> &parent) {
-    spdlog::debug("[CB_OPER] [BR] Received oper callback for module {}...", moduleName);
-    spdlog::debug("[CB_OPER] [BR] subXPath {}...", subXPath.value_or("MISSING"));
-    spdlog::debug("[CB_OPER] [BR] requestXPath {}...", requestXPath.value_or("MISSING"));
-    spdlog::debug("[CB_OPER] [BR] requestId {}...", requestId);
+    SPDLOG_DEBUG("[CB_OPER] [BR] Received oper callback for module {}...", moduleName);
+    SPDLOG_DEBUG("[CB_OPER] [BR] subXPath {}...", subXPath.value_or("MISSING"));
+    SPDLOG_DEBUG("[CB_OPER] [BR] requestXPath {}...", requestXPath.value_or("MISSING"));
+    SPDLOG_DEBUG("[CB_OPER] [BR] requestId {}...", requestId);
 
-    spdlog::debug("[CB_OPER] [BR] Scanning interfaces for bridge members...");
+    SPDLOG_DEBUG("[CB_OPER] [BR] Scanning interfaces for bridge members...");
 
     m_ifcache.setCurrentRequestId(requestId);
     m_ifcache.ensureFullLinkData(m_sock, m_ethtool_sock);
@@ -809,17 +927,25 @@ sysrepo::ErrorCode tsnctrld::operBridgeCallback(sysrepo::Session sess, uint32_t 
     // 2. Iterate through bridges
     for (const auto &[bridgeIdx, slaveNamePtrs] : masterToSlaves) {
         auto *bridgeIface = m_ifcache.getInterface(bridgeIdx);
-        if (!bridgeIface) continue;
+        if (bridgeIface == nullptr) {
+            continue;
+        }
 
         const std::string &bridgeName = bridgeIface->name;
 
         // Path building - unfortunately some string manipulation is unavoidable
         // to create the XPath, but we keep it to one per bridge.
         std::string comp_path =
-            "/ieee802-dot1q-bridge:bridges/bridge[name='" + bridgeName + "']/component[name='" + bridgeName + "']";
+            fmt::format("/ieee802-dot1q-bridge:bridges/bridge[name='{}']/component[name='{}']", bridgeName, bridgeName);
         auto comp_res = parent ? parent->newPath2(comp_path, std::nullopt) : ctx.newPath2(comp_path, std::nullopt);
-        if (!parent && comp_res.createdParent) parent = comp_res.createdParent;
+        if (!parent && comp_res.createdParent) {
+            parent = comp_res.createdParent;
+        }
         auto comp_node = comp_res.createdNode;
+        if (!comp_node.has_value()) {
+            spdlog::warn("[CB_OPER] [BR] comp_node of type std::optional has no value, makes no sense, returning...");
+            return sysrepo::ErrorCode::OperationFailed;
+        }
 
         // 3. Add the leaf-list entries using the pointers
         for (const std::string *slaveName : slaveNamePtrs) {
@@ -846,10 +972,10 @@ sysrepo::ErrorCode tsnctrld::operLldpCallback(sysrepo::Session sess, uint32_t su
                                               const std::optional<std::string> &subXPath,
                                               const std::optional<std::string> &requestXPath, uint32_t requestId,
                                               std::optional<libyang::DataNode> &parent) {
-    spdlog::debug("[CB_OPER] [LLDP] Received oper callback for module {}...", moduleName);
-    spdlog::debug("[CB_OPER] [LLDP] subXPath {}...", subXPath.value_or("MISSING"));
-    spdlog::debug("[CB_OPER] [LLDP] requestXPath {}...", requestXPath.value_or("MISSING"));
-    spdlog::debug("[CB_OPER] [LLDP] requestId {}...", requestId);
+    SPDLOG_DEBUG("[CB_OPER] [LLDP] Received oper callback for module {}...", moduleName);
+    SPDLOG_DEBUG("[CB_OPER] [LLDP] subXPath {}...", subXPath.value_or("MISSING"));
+    SPDLOG_DEBUG("[CB_OPER] [LLDP] requestXPath {}...", requestXPath.value_or("MISSING"));
+    SPDLOG_DEBUG("[CB_OPER] [LLDP] requestId {}...", requestId);
 
     return sysrepo::ErrorCode::Ok;
 }
@@ -869,11 +995,10 @@ sysrepo::ErrorCode tsnctrld::operLldpCallback(sysrepo::Session sess, uint32_t su
 sysrepo::ErrorCode tsnctrld::defaultChangeCallback(sysrepo::Session sess, uint32_t subId, const std::string &moduleName,
                                                    const std::optional<std::string> &subXPath, sysrepo::Event event,
                                                    uint32_t requestId) {
-    spdlog::debug("[CB_CHANGE] [DEFAULT] Received change callback for module {}...", moduleName);
-    spdlog::debug("[CB_CHANGE] [DEFAULT] subXPath {}...", subXPath.value_or("MISSING"));
-    spdlog::debug("[CB_CHANGE] [DEFAULT] event {}...", event);
-    spdlog::debug("[CB_CHANGE] [DEFAULT] requestId {}...", requestId);
-    this;
+    SPDLOG_DEBUG("[CB_CHANGE] [DEFAULT] Received change callback for module {}...", moduleName);
+    SPDLOG_DEBUG("[CB_CHANGE] [DEFAULT] subXPath {}...", subXPath.value_or("MISSING"));
+    SPDLOG_DEBUG("[CB_CHANGE] [DEFAULT] event {}...", event);
+    SPDLOG_DEBUG("[CB_CHANGE] [DEFAULT] requestId {}...", requestId);
     return sysrepo::ErrorCode::Ok;
 }
 
@@ -898,22 +1023,24 @@ sysrepo::ErrorCode tsnctrld::changeInterfaceCallback(sysrepo::Session sess, uint
                                                      const std::string &moduleName,
                                                      const std::optional<std::string> &subXPath, sysrepo::Event event,
                                                      uint32_t requestId) {
-    spdlog::debug("[CB_CHANGE] [IF] Received change callback for module {}...", moduleName);
-    spdlog::debug("[CB_CHANGE] [IF] subXPath {}...", subXPath.value_or("MISSING"));
-    spdlog::debug("[CB_CHANGE] [IF] event {}...", event);
-    spdlog::debug("[CB_CHANGE] [IF] requestId {}...", requestId);
-    if (event != sysrepo::Event::Change) return sysrepo::ErrorCode::Ok;
+    SPDLOG_DEBUG("[CB_CHANGE] [IF] Received change callback for module {}...", moduleName);
+    SPDLOG_DEBUG("[CB_CHANGE] [IF] subXPath {}...", subXPath.value_or("MISSING"));
+    SPDLOG_DEBUG("[CB_CHANGE] [IF] event {}...", event);
+    SPDLOG_DEBUG("[CB_CHANGE] [IF] requestId {}...", requestId);
+    if (event != sysrepo::Event::Change) {
+        return sysrepo::ErrorCode::Ok;
+    }
 
     for (const auto &change : sess.getChanges("//.")) {
         std::string nodeModuleName = change.node.schema().module().name();
         std::string nodeName = change.node.schema().name();
 
         if (nodeModuleName != moduleName) {
-            spdlog::debug("[CB] [IF-CONFIG] [DEBUG] Change does not belong to this module, skipping");
+            SPDLOG_DEBUG("[CB] [IF-CONFIG] [DEBUG] Change does not belong to this module, skipping");
             continue;
         }
         if (nodeName == "TEMP") {
-            spdlog::debug("[CB] [IF-CONFIG] [ALLOW] Attempting to change whitelisted node, continuing for now");
+            SPDLOG_DEBUG("[CB] [IF-CONFIG] [ALLOW] Attempting to change whitelisted node, continuing for now");
             continue;
         }
         spdlog::error(
@@ -922,7 +1049,7 @@ sysrepo::ErrorCode tsnctrld::changeInterfaceCallback(sysrepo::Session sess, uint
             change.node.path());
         return sysrepo::ErrorCode::Unsupported;
     }
-    spdlog::debug("[CB] [IF-CONFIG] [ALLOW] All attempted chages were allowed, accepting");
+    SPDLOG_DEBUG("[CB] [IF-CONFIG] [ALLOW] All attempted changes were allowed, accepting");
     return sysrepo::ErrorCode::Ok;
 }
 
@@ -946,22 +1073,24 @@ sysrepo::ErrorCode tsnctrld::changeInterfaceCallback(sysrepo::Session sess, uint
 sysrepo::ErrorCode tsnctrld::changeBridgeCallback(sysrepo::Session sess, uint32_t subId, const std::string &moduleName,
                                                   const std::optional<std::string> &subXPath, sysrepo::Event event,
                                                   uint32_t requestId) {
-    spdlog::debug("[CB_CHANGE] [BR] Received change callback for module {}...", moduleName);
-    spdlog::debug("[CB_CHANGE] [BR] subXPath {}...", subXPath.value_or("MISSING"));
-    spdlog::debug("[CB_CHANGE] [BR] event {}...", event);
-    spdlog::debug("[CB_CHANGE] [BR] requestId {}...", requestId);
-    if (event != sysrepo::Event::Change) return sysrepo::ErrorCode::Ok;
+    SPDLOG_DEBUG("[CB_CHANGE] [BR] Received change callback for module {}...", moduleName);
+    SPDLOG_DEBUG("[CB_CHANGE] [BR] subXPath {}...", subXPath.value_or("MISSING"));
+    SPDLOG_DEBUG("[CB_CHANGE] [BR] event {}...", event);
+    SPDLOG_DEBUG("[CB_CHANGE] [BR] requestId {}...", requestId);
+    if (event != sysrepo::Event::Change) {
+        return sysrepo::ErrorCode::Ok;
+    }
 
     for (const auto &change : sess.getChanges("//.")) {
         std::string nodeModuleName = change.node.schema().module().name();
         std::string nodeName = change.node.schema().name();
 
         if (nodeModuleName != moduleName) {
-            spdlog::debug("[CB] [BR-CONFIG] [DEBUG] Change does not belong to this module, skipping");
+            SPDLOG_DEBUG("[CB] [BR-CONFIG] [DEBUG] Change does not belong to this module, skipping");
             continue;
         }
         if (nodeName == "TEMP") {
-            spdlog::debug("[CB] [BR-CONFIG] [ALLOW] Attempting to change whitelisted node, continuing for now");
+            SPDLOG_DEBUG("[CB] [BR-CONFIG] [ALLOW] Attempting to change whitelisted node, continuing for now");
             continue;
         }
         spdlog::error(
@@ -970,7 +1099,7 @@ sysrepo::ErrorCode tsnctrld::changeBridgeCallback(sysrepo::Session sess, uint32_
             change.node.path());
         return sysrepo::ErrorCode::Unsupported;
     }
-    spdlog::debug("[CB] [BR-CONFIG] [ALLOW] All attempted chages were allowed, accepting");
+    SPDLOG_DEBUG("[CB] [BR-CONFIG] [ALLOW] All attempted changes were allowed, accepting");
     return sysrepo::ErrorCode::Ok;
 }
 /**
@@ -997,13 +1126,13 @@ sysrepo::ErrorCode tsnctrld::changeBridgeCallback(sysrepo::Session sess, uint32_
 sysrepo::ErrorCode tsnctrld::changeGptCallback(sysrepo::Session sess, uint32_t subId, const std::string &moduleName,
                                                const std::optional<std::string> &subXPath, sysrepo::Event event,
                                                uint32_t requestId) {
-    spdlog::debug("[CB_CHANGE] [GPT] Received change callback for module {}...", moduleName);
-    spdlog::debug("[CB_CHANGE] [GPT] subXPath {}...", subXPath.value_or("MISSING"));
-    spdlog::debug("[CB_CHANGE] [GPT] event {}...", event);
-    spdlog::debug("[CB_CHANGE] [GPT] requestId {}...", requestId);
+    SPDLOG_DEBUG("[CB_CHANGE] [GPT] Received change callback for module {}...", moduleName);
+    SPDLOG_DEBUG("[CB_CHANGE] [GPT] subXPath {}...", subXPath.value_or("MISSING"));
+    SPDLOG_DEBUG("[CB_CHANGE] [GPT] event {}...", event);
+    SPDLOG_DEBUG("[CB_CHANGE] [GPT] requestId {}...", requestId);
 
     if (sess.getOriginatorName() == "tsnctrld-internal") {
-        spdlog::debug("[CB_CHANGE] [GPT] Whatever just happened, we did it, so we can trust it...");
+        SPDLOG_DEBUG("[CB_CHANGE] [GPT] Whatever just happened, we did it, so we can trust it...");
         return sysrepo::ErrorCode::Ok;
     }
 
@@ -1015,42 +1144,44 @@ sysrepo::ErrorCode tsnctrld::changeGptCallback(sysrepo::Session sess, uint32_t s
             "ieee802-dot1q-sched-bridge:gate-parameter-table/config-change";
 
         // getChanges returns a ChangeCollection which we can iterate over
-        auto changes = sess.getChanges(filter.c_str());
+        auto changes = sess.getChanges(filter);
 
         for (const auto &change : changes) {
             // Check if node was deleted (ignore)
-            if (change.operation == sysrepo::ChangeOperation::Deleted) continue;
+            if (change.operation == sysrepo::ChangeOperation::Deleted) {
+                continue;
+            }
 
             // Only trigger if changed to "true"
             if (change.node.asTerm().valueStr() == "true") {
                 std::string ifname = extractListKey(change.node.path(), "interface", "name");
 
-                spdlog::debug("[CB_CHANGE] [GPT] Applying new config for {}", ifname);
+                SPDLOG_DEBUG("[CB_CHANGE] [GPT] Applying new config for {}", ifname);
 
                 try {
                     // Update our internal cache and apply to hardware
                     // This function should be the one we optimized earlier (Zero-Copy)
-                    spdlog::debug("[CB_CHANGE] [GPT] Getting data from sysrepo ");
+                    SPDLOG_DEBUG("[CB_CHANGE] [GPT] Getting data from sysrepo ");
                     ietfInterface_t *iface = this->syncInterfaceFromSysrepo(sess, ifname, requestId);
 
-                    if (iface) {
-                        spdlog::debug("[CB_CHANGE] [GPT] Returned data:");
+                    if (iface != nullptr) {
+                        SPDLOG_DEBUG("[CB_CHANGE] [GPT] Returned data:");
                         printSingleInterface(*iface);
 
                         if (iface->bridgePort.gateParameterTable.gateEnabled) {
-                            spdlog::debug("[CB_CHANGE] [GPT] Gate is enabled, setting qdisc:");
-                            spdlog::debug("[CB_CHANGE] [GPT] Converting to TaprioConfig struct:");
+                            SPDLOG_DEBUG("[CB_CHANGE] [GPT] Gate is enabled, setting qdisc:");
+                            SPDLOG_DEBUG("[CB_CHANGE] [GPT] Converting to TaprioConfig struct:");
                             TaprioConfig taprioCfg = NetconfNetlinkMapper::mapToTaprio(*iface);
 
                             printTaprioConfig(taprioCfg);
-                            spdlog::debug("[CB_CHANGE] [GPT] Sending qdisc");
+                            SPDLOG_DEBUG("[CB_CHANGE] [GPT] Sending qdisc");
                             m_qm.setQdisc(m_sock, ifname, taprioCfg);
-                            spdlog::debug("[CB_CHANGE] [GPT] Qdisc \"sent\"");
+                            SPDLOG_DEBUG("[CB_CHANGE] [GPT] Qdisc \"sent\"");
                             m_pathsToReset.push_back(std::string(change.node.path()));
                         } else {
-                            spdlog::debug("[CB_CHANGE] [GPT] Gate is disabled, removing qdisc:");
+                            SPDLOG_DEBUG("[CB_CHANGE] [GPT] Gate is disabled, removing qdisc:");
                             QdiscManager::removeQdisc(m_sock, ifname);
-                            spdlog::debug("[CB_CHANGE] [GPT] Remove-request sent:");
+                            SPDLOG_DEBUG("[CB_CHANGE] [GPT] Remove-request sent:");
                             m_pathsToReset.push_back(std::string(change.node.path()));
                         }
                     }
@@ -1088,15 +1219,19 @@ sysrepo::ErrorCode tsnctrld::changeGptCallback(sysrepo::Session sess, uint32_t s
 sysrepo::ErrorCode tsnctrld::changeLldpCallback(sysrepo::Session sess, uint32_t subId, const std::string &moduleName,
                                                 const std::optional<std::string> &subXPath, sysrepo::Event event,
                                                 uint32_t requestId) {
-    spdlog::debug("[CB_CHANGE] [LLDP] Received change callback for module {}...", moduleName);
-    spdlog::debug("[CB_CHANGE] [LLDP] subXPath {}...", subXPath.value_or("MISSING"));
-    spdlog::debug("[CB_CHANGE] [LLDP] event {}...", event);
-    spdlog::debug("[CB_CHANGE] [LLDP] requestId {}...", requestId);
+    SPDLOG_DEBUG("[CB_CHANGE] [LLDP] Received change callback for module {}...", moduleName);
+    SPDLOG_DEBUG("[CB_CHANGE] [LLDP] subXPath {}...", subXPath.value_or("MISSING"));
+    SPDLOG_DEBUG("[CB_CHANGE] [LLDP] event {}...", event);
+    SPDLOG_DEBUG("[CB_CHANGE] [LLDP] requestId {}...", requestId);
 
-    if (event != sysrepo::Event::Change) return sysrepo::ErrorCode::Ok;
+    if (event != sysrepo::Event::Change) {
+        return sysrepo::ErrorCode::Ok;
+    }
 
     for (const auto &change : sess.getChanges("//.")) {
-        if (change.node.schema().module().name() != moduleName) continue;
+        if (change.node.schema().module().name() != moduleName) {
+            continue;
+        }
 
         spdlog::error(
             "[CB] [LLDP-CONFIG] [REJECT] Edits to 'ieee802-dot1ab-lldp' (LLDP) are currently not implemented. "
@@ -1115,7 +1250,7 @@ sysrepo::ErrorCode tsnctrld::changeLldpCallback(sysrepo::Session sess, uint32_t 
  */
 void tsnctrld::setupSubscriptions() {
     spdlog::info("[INIT] [SUBS] Initializing callbacks...");
-    spdlog::debug("[INIT] [SUBS] Registering granular callbacks...");
+    SPDLOG_DEBUG("[INIT] [SUBS] Registering granular callbacks...");
     auto defaultChangeCb = std::bind_front(&tsnctrld::defaultChangeCallback, this);
 
     auto changeInterfaceCb = std::bind_front(&tsnctrld::changeInterfaceCallback, this);
@@ -1133,7 +1268,7 @@ void tsnctrld::setupSubscriptions() {
     auto changeLldpCb = std::bind_front(&tsnctrld::changeLldpCallback, this);
     m_subs.push_back(m_sess.onModuleChange("ieee802-dot1ab-lldp", changeLldpCb, std::nullopt, 70));
 
-    spdlog::debug("[INIT] [SUBS] Registered change callbacks...");
+    SPDLOG_DEBUG("[INIT] [SUBS] Registered change callbacks...");
 
     auto defaultOperCb = std::bind_front(&tsnctrld::defaultOperCallback, this);
 
@@ -1149,7 +1284,7 @@ void tsnctrld::setupSubscriptions() {
     m_subs.push_back(m_sess.onOperGet("ieee802-dot1ab-lldp", operLldpCb, "/ieee802-dot1ab-lldp:lldp",
                                       sysrepo::SubscribeOptions::OperMerge));
 
-    spdlog::debug("[INIT] [SUBS] Registered oper callbacks...");
+    SPDLOG_DEBUG("[INIT] [SUBS] Registered oper callbacks...");
 }
 /**
  * @brief Instantiates the tsnctrld daemon.
@@ -1180,5 +1315,7 @@ int main() {
     spdlog::set_level(spdlog::level::trace);
     tsnctrld daemon = tsnctrld();
     daemon.initialize();
-    while (true) std::this_thread::sleep_for(std::chrono::seconds(1));
+    while (true) {
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+    }
 }
