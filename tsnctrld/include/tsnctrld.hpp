@@ -66,9 +66,9 @@ class tsnctrld {
                                           const std::optional<std::string>& requestXPath, uint32_t requestId,
                                           std::optional<libyang::DataNode>& parent);
     sysrepo::ErrorCode operBridgePortCallback(sysrepo::Session sess, uint32_t subId, const std::string& moduleName,
-                                      const std::optional<std::string>& subXPath,
-                                      const std::optional<std::string>& requestXPath, uint32_t requestId,
-                                      std::optional<libyang::DataNode>& parent);
+                                              const std::optional<std::string>& subXPath,
+                                              const std::optional<std::string>& requestXPath, uint32_t requestId,
+                                              std::optional<libyang::DataNode>& parent);
     sysrepo::ErrorCode operLldpCallback(sysrepo::Session sess, uint32_t subId, const std::string& moduleName,
                                         const std::optional<std::string>& subXPath,
                                         const std::optional<std::string>& requestXPath, uint32_t requestId,
@@ -84,8 +84,8 @@ class tsnctrld {
                                             const std::optional<std::string>& subXPath, sysrepo::Event event,
                                             uint32_t requestId);
     sysrepo::ErrorCode changeBridgePortCallback(sysrepo::Session sess, uint32_t subId, const std::string& moduleName,
-                                        const std::optional<std::string>& subXPath, sysrepo::Event event,
-                                        uint32_t requestId);
+                                                const std::optional<std::string>& subXPath, sysrepo::Event event,
+                                                uint32_t requestId);
     sysrepo::ErrorCode changeGptCallback(sysrepo::Session sess, uint32_t subId, const std::string& moduleName,
                                          const std::optional<std::string>& subXPath, sysrepo::Event event,
                                          uint32_t requestId);
