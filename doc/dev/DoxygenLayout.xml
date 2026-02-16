@@ -6,7 +6,9 @@
     <tab type="mainpage" visible="yes" title=""/>
     <tab type="pages" visible="no" title="" intro=""/>
     <tab type="user" url="@ref howto-index" visible="yes" title="How-To" intro="">
+      <tab type="user" url="@ref howto-install-dev" title="Installing the dependencies"/>
       <tab type="user" url="@ref howto-build-check" title="Building &amp; Checking"/>
+      <tab type="user" url="@ref howto-test-network-env" title="Setup test network env"/>
       <tab type="user" url="@ref howto-change-ci-container" title="Change CI Container"/>
     </tab>
     <tab type="user" url="@ref arch-index" visible="yes" title="Architecture" intro="">

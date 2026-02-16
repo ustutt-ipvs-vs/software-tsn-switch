@@ -1,0 +1,69 @@
+@startuml
+
+package "Centralized Network Configuration" {
+
+    class NetworkManager {
+        - topology_ : Topology&
+        - sessions_ : map<string, shared_ptr<NetconfSession>>
+        + NetworkManager(Topology&)
+        + connectAllNodes(inventory : InventoryMap) : bool
+        + fetchLldpData() : void
+        + fetchOperationGcl() : void
+        + deployConfigToNode(nodeName : string) : bool
+        + deployConfigToAll() : void
+        + getSession(nodeName : string) : shared_ptr<NetconfSession>
+        - buildGclXml(node : CncNode_t) : string
+    }
+
+    class Topology {
+        + nodes : vector<CncNode_t>
+        - nodeLookup : map<string, CncNode_t*>
+        + buildIndex() : void
+        + getNode(nodeName : string) : CncNode_t*
+        + getInterface(neighborInfo : LldpNeighbor_t) : ietfInterface_t*
+    }
+
+    class GclParser {
+        + parseOperationalGclData(xmlData : string, node : CncNode_t&) : bool
+        - parseInterfaceGcl(xmlNodePtr : void*, iface : ietfInterface_t&) : void
+    }
+
+    class GclXmlBuilder  {
+        + GclXmlBuilder() = delete
+        + buildXmlForNode(node : CncNode_t) : string
+        - appendInterfaceXml(ss : stringstream&, iface : ietfInterface_t&) : void
+        - appendCycleTime(ss : stringstream&, time : RationalTime_t&) : void
+        - appendControlList(ss : stringstream&, config : GclConfig_t) : void
+        - appendPtpTime(ss : stringstream&, time : PtpTime_t, tagName : string) : void
+    }
+
+    class JsonImporter  {
+        + importFromFile(filePath : string, topology : Topology&) : bool
+        + importInventory(filename : string) : InventoryMap
+    }
+
+    class LldpParser  {
+        + parseLldpData(xmlData : string, node : CncNode_t&) : bool
+    }
+
+    class NetconfSession {
+           - session_ : nc_session*
+           + NetconfSession()
+           + connect(ip : string, port : int, user : string, pass : string) : bool
+           + disconnect() : void
+           + isConnected() : bool
+           + getData(xpath : string) : string
+           + editData(configXml : string) : bool
+           + commit() : bool
+       }
+}
+
+NetworkManager *-- Topology : maintains reference to
+NetworkManager o-- NetconfSession : manages sessions for nodes
+NetworkManager --> GclXmlBuilder : uses to generate config
+NetworkManager --> GclParser : uses to parse response
+NetworkManager --> LldpParser : uses to obtain neighbor information
+
+JsonImporter --> Topology : populates
+
+@enduml

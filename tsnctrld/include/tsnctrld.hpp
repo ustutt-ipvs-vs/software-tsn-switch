@@ -14,7 +14,7 @@
 #include "NetlinkSocket.h"
 #include "QdiscManager.h"
 
-enum class GclFillOptions : uint32_t {
+enum class GclFillOptions : uint8_t {
     OnlyDefault = 0b00,
     FillAdmin = 0b01,
     FillOper = 0b10,
@@ -23,14 +23,22 @@ enum class GclFillOptions : uint32_t {
 
 // Bitwise boilerplate
 inline GclFillOptions operator|(GclFillOptions a, GclFillOptions b) {
-    return static_cast<GclFillOptions>(static_cast<uint32_t>(a) | static_cast<uint32_t>(b));
+    return static_cast<GclFillOptions>(static_cast<uint8_t>(a) | static_cast<uint8_t>(b));
 }
 inline bool operator&(GclFillOptions a, GclFillOptions b) {
-    return static_cast<uint32_t>(a) & static_cast<uint32_t>(b);
+    return (static_cast<uint8_t>(a) & static_cast<uint8_t>(b)) != 0;
 }
 
+/**
+ * @brief The main class of the "tsnctrld" control daemon for bridging the gap between sysrepo and kernel.
+ *
+ * Use this class by instantiating it and calling @ref initialize() on this instance. This reads the state of the system
+ * and places the relevant data into the `RUNNING` datastore. Afterwards, all necessary callbacks are started. Make sure
+ * the program keeps running, eg by starting an infinite while-loop.
+ */
 class tsnctrld {
    private:
+    int m_ethtool_sock;
     NetlinkSocket m_sock;
     QdiscManager m_qm;
     LinkManager m_lm;
@@ -78,6 +86,7 @@ class tsnctrld {
                                           const std::optional<std::string>& subXPath, sysrepo::Event event,
                                           uint32_t requestId);
 
+    int ensureRunningDaemons(const std::vector<std::string>& services);
     void syncHardwareToRunning();
     void setupSubscriptions();
     // ietfInterface_t& getExistingOrNewInterface(const std::string& ifname, std::vector<ietfInterface_t>& interfaces);
@@ -95,6 +104,7 @@ class tsnctrld {
 
    public:
     tsnctrld();
+    ~tsnctrld();
     void initialize();
 };
 

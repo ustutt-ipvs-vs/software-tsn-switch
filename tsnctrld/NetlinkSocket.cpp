@@ -42,6 +42,9 @@ NetlinkSocket::NetlinkSocket() : socketFd(connectSocket()) {
         close(socketFd);
         throw std::runtime_error("Error binding Netlink socket");
     }
+
+    int enable = 1;
+    setsockopt(socketFd, SOL_NETLINK, NETLINK_EXT_ACK, &enable, sizeof(enable));
 }
 
 /**
@@ -126,9 +129,37 @@ void NetlinkSocket::saveResponse() {
             if (nlh->nlmsg_type == NLMSG_ERROR) {
                 struct nlmsgerr *error = (struct nlmsgerr *)NLMSG_DATA(nlh);
                 if (error->error == 0) {
-                    spdlog::debug("Netlink Message accepted");
+                    SPDLOG_DEBUG("Netlink Message accepted");
                 } else {
-                    throw std::runtime_error("Error in received message with code: " + std::to_string(error->error));
+                    std::string extendedError = "";
+
+                    // Determine how much of the original request the kernel sent back.
+                    // If CAPPED is set, the kernel only sent back the 16-byte nlmsghdr.
+                    // If NOT CAPPED, the kernel sent back the full nlh->nlmsg_len of the request.
+                    int payload_to_skip = sizeof(int);  // The error code itself
+                    if (nlh->nlmsg_flags & NLM_F_CAPPED) {
+                        payload_to_skip += sizeof(struct nlmsghdr);
+                    } else {
+                        // error->msg is the header of the original request.
+                        // We skip the full length of the original request.
+                        payload_to_skip += error->msg.nlmsg_len;
+                    }
+
+                    // The attributes start after the error code + original message portion
+                    struct rtattr *rta = (struct rtattr *)((char *)error + payload_to_skip);
+                    int rta_len = nlh->nlmsg_len - NLMSG_HDRLEN - payload_to_skip;
+
+                    while (RTA_OK(rta, rta_len)) {
+                        // NLMSGERR_ATTR_MSG is 1
+                        if (rta->rta_type == 1) {
+                            extendedError = ": " + std::string((char *)RTA_DATA(rta));
+                            break;
+                        }
+                        rta = RTA_NEXT(rta, rta_len);
+                    }
+
+                    throw std::runtime_error("Error in received message with code: " + std::to_string(error->error) +
+                                             extendedError);
                 }
             }
             struct nlmsghdr *nlh_save = (nlmsghdr *)std::malloc(nlh->nlmsg_len);
