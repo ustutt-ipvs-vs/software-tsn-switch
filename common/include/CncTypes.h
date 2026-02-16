@@ -57,7 +57,7 @@ inline const std::optional<std::string>& operStatusToYangString(OperStatus statu
  * @brief Enum that represents the iana-if-type of an interface, interpreted from the IFLA_INFO_KIND netlink attribute
  * and required for the mandatory type leaf of the ietf-interfaces model.
  */
-enum class IfType : uint8_t{
+enum class IfType : uint8_t {
     ETHERNET,  // iana-if-type:ethernetCsmacd (Default)
     BRIDGE,    // iana-if-type:bridge
     LAG,       // iana-if-type:ieee8023adLag

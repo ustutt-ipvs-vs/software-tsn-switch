@@ -223,7 +223,7 @@ void QdiscManager::getInterfacesInResponse(const NetlinkSocket& sock, std::map<i
         tcmsg* tcm = (tcmsg*)NLMSG_DATA(nlh);
         int ifindex = tcm->tcm_ifindex;
         SPDLOG_TRACE("[QM] [Parse Full Response] Current interface: index={}, handle={}, parent={}", ifindex,
-                      tcm->tcm_handle, tcm->tcm_parent);
+                     tcm->tcm_handle, tcm->tcm_parent);
 
         ietfInterface_t& current = interfacesMap[ifindex];
 
@@ -394,7 +394,7 @@ void QdiscManager::fillTaprioSchedEntry(const rtattr* rta, int len, std::vector<
     }
     gclEntriesToFill.push_back(currentEntry);
     SPDLOG_TRACE("[QM] [Schedule Entry]    cmd={} gate_mask=0x{:02x}={:08b} interval={}ns index={}", cmd, gate, gate,
-                  interval, index);
+                 interval, index);
 }
 
 /**
@@ -407,10 +407,10 @@ void QdiscManager::parsePriomap(const rtattr* rta, ietfInterface_t& ifToFill) {
     const auto* qopt = reinterpret_cast<const tc_mqprio_qopt*>(RTA_DATA(rta));
     ifToFill.bridgePort.trafficClassData.numTrafficClasses = qopt->num_tc;
     SPDLOG_TRACE("[QM] [Parse Priomap] Number of traffic classes: {}",
-                  ifToFill.bridgePort.trafficClassData.numTrafficClasses);
+                 ifToFill.bridgePort.trafficClassData.numTrafficClasses);
     for (int i = 0; i < 8; ++i) {
         ifToFill.bridgePort.trafficClassData.priorityMap[i] = qopt->prio_tc_map[i];
         SPDLOG_TRACE("[QM] [Parse Priomap] Priority {} mapped to traffic class {}", i,
-                      ifToFill.bridgePort.trafficClassData.priorityMap[i]);
+                     ifToFill.bridgePort.trafficClassData.priorityMap[i]);
     }
 }
