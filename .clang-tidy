@@ -13,5 +13,9 @@ Checks: >
   -readability-magic-numbers,
   -readability-identifier-length
 
+CheckOptions:
+  - key: readability-function-cognitive-complexity.Threshold
+    value: 35   # default is 25
+
 # Directories we are responsible for
 HeaderFilterRegex: '(cnc|common|tsnctrld)/.*'
