@@ -7,6 +7,13 @@
 #include "Topology.h"
 
 namespace cnc {
+/**
+ * @brief Imports CNC topology and inventory data from JSON sources.
+ *
+ * This utility class provides static import routines for reading node/interface configuration into
+ * `Topology` objects and for loading device access credentials into an `InventoryMap`. It is intended
+ * as the JSON ingestion boundary between external configuration files and internal CNC data models.
+ */
 class JsonImporter {
    public:
     /**

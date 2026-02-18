@@ -6,6 +6,13 @@
 
 #include "CncTypes.h"
 
+/**
+ * @brief Stores and provides lookup access to the controller's in-memory network topology.
+ *
+ * This class owns the collection of `CncNode_t` objects representing switches and end devices,
+ * and builds auxiliary indices for efficient hostname-based access. It also offers helper
+ * queries to resolve interfaces from LLDP neighbor information during topology correlation.
+ */
 class Topology {
    public:
     /**

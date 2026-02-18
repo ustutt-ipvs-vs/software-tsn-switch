@@ -8,6 +8,13 @@
 struct nc_session;
 
 namespace common {
+/**
+ * @brief Manages a NETCONF client session and basic datastore operations for a network device.
+ *
+ * This class wraps the underlying NETCONF session lifecycle, including SSH-based connection setup,
+ * session teardown, and connectivity checks. It also provides helper methods for reading operational
+ * data and applying configuration changes via candidate datastore edit/commit workflows.
+ */
 class NetconfSession {
    public:
     // Constructor and Destructor

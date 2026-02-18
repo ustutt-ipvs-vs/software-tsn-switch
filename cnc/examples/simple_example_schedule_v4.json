@@ -1,0 +1,105 @@
+{
+  "nodes": [
+    {
+      "hostName": "vstsn01", 
+      "interfaces": [
+        {
+          "name": "veth-red-host",
+          "gcl": {
+            "adminGateStates": 255,
+            "cycleTime": 1000000,
+            "cycleTimeExtension": 500,
+            "baseTimeSeconds": 0,
+            "baseTimeNanoseconds": 0,
+            "entries": [
+              {
+                "index": 0,
+                "timeIntervalValue": 700000,
+                "gateStatesValue": 255,
+                "operationName": "sched:set-gate-states"
+              },
+              {
+                "index": 1,
+                "timeIntervalValue": 300000,
+                "gateStatesValue": 255,
+                "operationName": "sched:set-gate-states"
+              }
+            ]
+          }
+        },
+        {
+          "name": "veth-blue-host",
+          "gcl": {
+            "adminGateStates": 255,
+            "cycleTime": 1250000,
+            "cycleTimeExtension": 0,
+            "baseTimeSeconds": 0,
+            "baseTimeNanoseconds": 0,
+            "entries": [
+              {
+                "index": 0,
+                "timeIntervalValue": 1000000,
+                "gateStatesValue": 170, 
+                "operationName": "sched:set-gate-states"
+              },
+              {
+                "index": 1,
+                "timeIntervalValue": 250000,
+                "gateStatesValue": 15,
+                "operationName": "sched:set-gate-states"
+              }
+            ]
+          }
+        },
+        {
+          "name": "enp2s0f2",
+          "gcl": {
+            "adminGateStates": 255,
+            "cycleTime": 500000,
+            "cycleTimeExtension": 0,
+            "baseTimeSeconds": 0,
+            "baseTimeNanoseconds": 0,
+            "entries": [
+              {
+                "index": 0,
+                "timeIntervalValue": 250000,
+                "gateStatesValue": 200,
+                "operationName": "sched:set-gate-states"
+              },
+              {
+                "index": 1,
+                "timeIntervalValue": 250000,
+                "gateStatesValue": 3,
+                "operationName": "sched:set-gate-states"
+              }
+            ]
+          }
+        },
+        {
+          "name": "enp2s0f3",
+          "gcl": {
+            "adminGateStates": 255,
+            "cycleTime": 2000000,
+            "cycleTimeExtension": 0,
+            "baseTimeSeconds": 0,
+            "baseTimeNanoseconds": 0,
+            "entries": [
+              {
+                "index": 0,
+                "timeIntervalValue": 1500000,
+                "gateStatesValue": 129,
+                "operationName": "sched:set-gate-states"
+              },
+              {
+                "index": 1,
+                "timeIntervalValue": 500000,
+                "gateStatesValue": 0,
+                "operationName": "sched:set-gate-states"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

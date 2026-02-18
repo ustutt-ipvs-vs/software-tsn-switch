@@ -11,6 +11,13 @@
 #include "Topology.h"
 
 namespace cnc {
+/**
+ * @brief Coordinates NETCONF-based communication and TSN configuration workflows across topology nodes.
+ *
+ * This class manages per-node NETCONF sessions, retrieves operational LLDP and GCL data, and applies
+ * generated TSN/GCL configuration back to devices. It serves as the orchestration layer between
+ * topology state, inventory credentials, XML builders/parsers, and device-facing NETCONF operations.
+ */
 class NetworkManager {
    public:
     /**

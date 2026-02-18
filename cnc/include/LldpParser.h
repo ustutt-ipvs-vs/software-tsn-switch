@@ -5,6 +5,13 @@
 #include "Topology.h"
 
 namespace cnc {
+/**
+ * @brief Parses LLDP operational XML data from NETCONF and maps it to internal CNC structures.
+ *
+ * This parser consumes LLDP information retrieved from the NETCONF datastore in XML form and
+ * populates the corresponding fields in `CncNode_t`. It is used to translate neighbor and
+ * interface discovery data into the controller's in-memory topology representation.
+ */
 class LldpParser {
    public:
     /**

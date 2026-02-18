@@ -6,6 +6,13 @@
 #include <string>
 
 namespace cnc {
+/**
+ * @brief Parses Gate Control List (GCL) operational XML data and maps it to CncTypes.h data structures.
+ *
+ * This parser provides entry points to read interface-specific GCL information from XML and populate
+ * the corresponding TSN-related fields in CNC topology objects. It is intended to convert operational
+ * NETCONF/XML responses into strongly typed in-memory representations used by the controller logic.
+ */
 class GclParser {
    public:
     /**

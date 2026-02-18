@@ -7,6 +7,13 @@
 #include "CncTypes.h"
 
 namespace cnc {
+/**
+ * @brief Builds Gate Control List (GCL) XML payloads from CNC in-memory data structures.
+ *
+ * This utility class serializes TSN scheduling-related configuration from `CncNode_t` and nested
+ * interface/GCL types into the expected NETCONF/XML representation. It provides helper routines for
+ * composing cycle time, control-list entries, and PTP time fields used by bridge schedule configuration.
+ */
 class GclXmlBuilder {
    public:
     /**
