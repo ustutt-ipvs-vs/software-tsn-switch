@@ -1,6 +1,8 @@
 #include <linux/rtnetlink.h>
+
 #include <cstring>
 #include <stdexcept>
+
 #include "./include/NestedAttBuilder.h"
 #include "./include/NetlinkSocket.h"
 
@@ -54,7 +56,8 @@ int NestedAttrBuilder::addAttribute(nlmsghdr* nlh, const int type, const void* d
  * @param len The length of the attribute to be added
  * @return
  */
-int NestedAttrBuilder::addChildAttribute(const int attrBuilderParentID, const int type, const void* data, const int len) {
+int NestedAttrBuilder::addChildAttribute(const int attrBuilderParentID, const int type, const void* data,
+                                         const int len) {
     attrBuilderItem* parent = this->attrs.at(attrBuilderParentID);
     auto* attr = (struct rtattr*)((char*)parent->attr + RTA_ALIGN(parent->attr->rta_len));
     return this->insertAttr(new attrBuilderItem{.attr = attr, .parentID = attrBuilderParentID}, type, data, len);

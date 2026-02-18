@@ -1,3 +1,5 @@
+#include "./include/QdiscManager.h"
+
 #include <linux/netlink.h>
 #include <linux/pkt_sched.h>
 #include <linux/rtnetlink.h>
@@ -5,6 +7,7 @@
 #include <spdlog/spdlog.h>
 #include <sys/types.h>
 #include <unistd.h>
+
 #include <cstddef>
 #include <cstring>
 #include <ctime>
@@ -14,7 +17,6 @@
 #include "./include/NestedAttBuilder.h"
 #include "./include/NetconfNetlinkMapper.h"
 #include "./include/NetlinkSocket.h"
-#include "./include/QdiscManager.h"
 
 /**
  * @brief Set or replace the admin TAPRIO qdisc on a network interface
@@ -45,7 +47,8 @@ void QdiscManager::setQdisc(NetlinkSocket& netlinkSocket, const std::string& ifn
 
     NestedAttrBuilder builder(sizeof(req.attrbuf));
 
-    NetlinkSocket::addRtaAttribute(&req.nh, sizeof(req.attrbuf), TCA_KIND, const_cast<char*>("taprio"), strlen("taprio") + 1);
+    NetlinkSocket::addRtaAttribute(&req.nh, sizeof(req.attrbuf), TCA_KIND, const_cast<char*>("taprio"),
+                                   strlen("taprio") + 1);
 
     int optionsID = builder.addAttribute(&req.nh, TCA_OPTIONS | NLA_F_NESTED, nullptr, 0);
 
@@ -74,15 +77,15 @@ void QdiscManager::setQdisc(NetlinkSocket& netlinkSocket, const std::string& ifn
 
     // Base Time
     builder.addChildAttribute(optionsID, TCA_TAPRIO_ATTR_SCHED_BASE_TIME, &taprioConfig.admin.baseTime,
-                         sizeof(taprioConfig.admin.baseTime));
+                              sizeof(taprioConfig.admin.baseTime));
 
     // Cycle Time
     builder.addChildAttribute(optionsID, TCA_TAPRIO_ATTR_SCHED_CYCLE_TIME, &taprioConfig.admin.cycleTime,
-                         sizeof(taprioConfig.admin.cycleTime));
+                              sizeof(taprioConfig.admin.cycleTime));
 
     // Cycle Time Extension
     builder.addChildAttribute(optionsID, TCA_TAPRIO_ATTR_SCHED_CYCLE_TIME_EXTENSION, &taprioConfig.admin.cycleTimeExt,
-                         sizeof(taprioConfig.admin.cycleTimeExt));
+                              sizeof(taprioConfig.admin.cycleTimeExt));
 
     // TAPRIO Schedule Entry List
     int entryListID = builder.addChildAttribute(optionsID, TCA_TAPRIO_ATTR_SCHED_ENTRY_LIST | NLA_F_NESTED, nullptr, 0);
@@ -162,11 +165,14 @@ void QdiscManager::getQdiscInfo(NetlinkSocket& netlinkSocket, const std::string&
     netlinkSocket.sendMessage(&req.nlh, req.nlh.nlmsg_len);
 
     for (const nlmsghdr* nlh : netlinkSocket.getResponse()) {
-        if (nlh->nlmsg_type != RTM_NEWQDISC && nlh->nlmsg_type != RTM_GETQDISC) { continue;
-}
+        if (nlh->nlmsg_type != RTM_NEWQDISC && nlh->nlmsg_type != RTM_GETQDISC) {
+            continue;
+        }
 
         const auto* tcm = static_cast<const tcmsg*>(NLMSG_DATA(nlh));
-        if (tcm->tcm_ifindex != if_index) { continue;}
+        if (tcm->tcm_ifindex != if_index) {
+            continue;
+        }
         // TODO: Move to actually parsing single qdisc, not just printing
         // printSingleQdisc(nlh);
     }

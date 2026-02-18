@@ -2,6 +2,7 @@
 #define ENPRO_LLDPDAEMON_H
 
 #include <lldpctl.h>
+
 #include <atomic>
 #include <mutex>
 #include <sysrepo-cpp/Session.hpp>

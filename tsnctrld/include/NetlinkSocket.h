@@ -3,13 +3,12 @@
 
 #include <linux/netlink.h>
 #include <linux/rtnetlink.h>
-#include <vector>
+
 #include <cstdint>
+#include <vector>
 
 #define NLMSG_TAIL(nmsg) ((struct rtattr *)(((char *)(nmsg)) + NLMSG_ALIGN((nmsg)->nlmsg_len)))
-enum : std::uint16_t {
-BUFFER_SIZE_REC = 8192
-};
+enum : std::uint16_t { BUFFER_SIZE_REC = 8192 };
 
 class NetlinkSocket {
    private:

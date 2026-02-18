@@ -2,6 +2,7 @@
  * In part taken from @kupkabn implementation
  */
 #include "./include/NetlinkSocket.h"
+
 #include <arpa/inet.h>
 #include <linux/netlink.h>
 #include <linux/rtnetlink.h>
@@ -9,6 +10,7 @@
 #include <spdlog/spdlog.h>
 #include <sys/socket.h>
 #include <unistd.h>
+
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
@@ -64,7 +66,7 @@ NetlinkSocket::~NetlinkSocket() {
  * @param len The length of the added attribute
  * @return A pointer to the attributes of the netlink message
  */
-rtattr* NetlinkSocket::addRtaAttribute(nlmsghdr *nlh, const int maxlen, const int type, const void *data,
+rtattr *NetlinkSocket::addRtaAttribute(nlmsghdr *nlh, const int maxlen, const int type, const void *data,
                                        const unsigned long len) {
     rtattr *rta = NLMSG_TAIL(nlh);
     int rtalen = RTA_LENGTH(len);
@@ -76,8 +78,9 @@ rtattr* NetlinkSocket::addRtaAttribute(nlmsghdr *nlh, const int maxlen, const in
     rta->rta_type = type;
     rta->rta_len = rtalen;
 
-    if (data != nullptr) { memcpy(RTA_DATA(rta), data, len);
-}
+    if (data != nullptr) {
+        memcpy(RTA_DATA(rta), data, len);
+    }
 
     nlh->nlmsg_len = NLMSG_ALIGN(nlh->nlmsg_len) + RTA_ALIGN(rtalen);
     return rta;
