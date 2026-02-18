@@ -1,4 +1,3 @@
-#include "spdlog/spdlog.h"
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -10,6 +9,7 @@
 #include "JsonImporter.h"
 #include "NetworkManager.h"
 #include "Topology.h"
+#include "spdlog/spdlog.h"
 
 int main() {
     // Time measurement variables (in microseconds)
@@ -111,8 +111,8 @@ int main() {
         for (const auto& iface : node.interfaces) {
             if (iface.lldpNeighbor.hasNeighbor) {
                 anyNeighborFound = true;
-                spdlog::info("  [MATCH] Node: {} | Iface: {} <--> Remote: {} (PortID: {})",
-                             node.hostName, iface.name, iface.lldpNeighbor.systemName, iface.lldpNeighbor.portId);
+                spdlog::info("  [MATCH] Node: {} | Iface: {} <--> Remote: {} (PortID: {})", node.hostName, iface.name,
+                             iface.lldpNeighbor.systemName, iface.lldpNeighbor.portId);
             }
         }
     }
@@ -164,14 +164,12 @@ int main() {
 
                 for (uint32_t i = 0; i < gcl.operControlList.size(); ++i) {
                     const auto& entry = gcl.operControlList[i];
-                    
+
                     // HIER IST DER MAGISCHE TEIL:
-                    spdlog::info("      {:5} | {:13} | 0x{:X}", 
-                                i, 
-                                entry.timeIntervalValue, 
-                                static_cast<int>(entry.gateStatesValue)); 
+                    spdlog::info("      {:5} | {:13} | 0x{:X}", i, entry.timeIntervalValue,
+                                 static_cast<int>(entry.gateStatesValue));
                 }
-                
+
                 spdlog::info("----------------------------------------");
             }
         }
@@ -196,11 +194,11 @@ int main() {
     auto durTotal = std::chrono::duration_cast<std::chrono::microseconds>(endTotal - startTotal).count();
 
     // Kleiner Trick: Leere Info für Abstand, falls gewünscht
-    spdlog::info(""); 
+    spdlog::info("");
     spdlog::info("========================================");
-    spdlog::info("{:^40}", "PERFORMANCE METRICS"); // Automatisch zentriert!
+    spdlog::info("{:^40}", "PERFORMANCE METRICS");  // Automatisch zentriert!
     spdlog::info("========================================");
-    
+
     // Header: Phase links (25), Time rechts (12)
     spdlog::info("{:<25}{:>12}", "PHASE", "TIME (us)");
     spdlog::info("----------------------------------------");
