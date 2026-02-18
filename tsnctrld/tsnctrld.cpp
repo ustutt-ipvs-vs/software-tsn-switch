@@ -233,7 +233,11 @@ T tsnctrld::getLeaf(const std::optional<libyang::DataNode> &node, const std::str
     if (!leaf) {
         return T{};
     }
-    return std::get<T>(leaf->asTerm().value());
+    if constexpr (std::is_same_v<T, std::string>) {
+        return std::string(leaf->asTerm().valueStr());
+    } else {
+        return std::get<T>(leaf->asTerm().value());
+    }
 }
 
 /**
@@ -837,6 +841,8 @@ sysrepo::ErrorCode tsnctrld::operInterfaceCallback(sysrepo::Session sess, uint32
     SPDLOG_DEBUG("[CB_OPER] [IF] subXPath {}...", subXPath.value_or("MISSING"));
     SPDLOG_DEBUG("[CB_OPER] [IF] requestXPath {}...", requestXPath.value_or("MISSING"));
     SPDLOG_DEBUG("[CB_OPER] [IF] requestId {}...", requestId);
+    SPDLOG_DEBUG("[CB_OPER] [IF] module of parent node {}...", parent->schema().module().name());
+    SPDLOG_DEBUG("[CB_OPER] [IF] name of parent node {}...", parent->schema().name());
 
     SPDLOG_DEBUG("[CB_OPER] [IF] Refreshing interface status...");
 
@@ -887,6 +893,8 @@ sysrepo::ErrorCode tsnctrld::operInterfaceCallback(sysrepo::Session sess, uint32
 }
 
 /**
+ * @brief Callback for operational data under the /ieee802-dot1q-bridge:bridges top level element.
+ *
  * When a <get> request for the path `/ieee802-dot1q-bridge:bridges` happens, this callback populates the `bridge-port`s
  * in every "active" bridges `component`. The parameters are as defined by sysrepo-cpp
  *
@@ -907,6 +915,8 @@ sysrepo::ErrorCode tsnctrld::operBridgeCallback(sysrepo::Session sess, uint32_t 
     SPDLOG_DEBUG("[CB_OPER] [BR] subXPath {}...", subXPath.value_or("MISSING"));
     SPDLOG_DEBUG("[CB_OPER] [BR] requestXPath {}...", requestXPath.value_or("MISSING"));
     SPDLOG_DEBUG("[CB_OPER] [BR] requestId {}...", requestId);
+    SPDLOG_DEBUG("[CB_OPER] [BR] module of parent node {}...", parent->schema().module().name());
+    SPDLOG_DEBUG("[CB_OPER] [BR] name of parent node {}...", parent->schema().name());
 
     SPDLOG_DEBUG("[CB_OPER] [BR] Scanning interfaces for bridge members...");
 
@@ -953,6 +963,38 @@ sysrepo::ErrorCode tsnctrld::operBridgeCallback(sysrepo::Session sess, uint32_t 
             // libyang will take the string value and store it in its internal tree.
             comp_node->newPath2("bridge-port", *slaveName);
         }
+    }
+    return sysrepo::ErrorCode::Ok;
+}
+
+/**
+ * @brief Callback for getting operational data under /interfaces/interface/bridge-port.
+ * @param sess
+ * @param subId
+ * @param moduleName
+ * @param subXPath
+ * @param requestXPath
+ * @param requestId
+ * @param parent
+ * @return
+ */
+sysrepo::ErrorCode tsnctrld::operBridgePortCallback(sysrepo::Session sess, uint32_t subId,
+                                                    const std::string &moduleName,
+                                                    const std::optional<std::string> &subXPath,
+                                                    const std::optional<std::string> &requestXPath, uint32_t requestId,
+                                                    std::optional<libyang::DataNode> &parent) {
+    SPDLOG_DEBUG("[CB_OPER] [BP] Received oper callback for module {}...", moduleName);
+    SPDLOG_DEBUG("[CB_OPER] [BP] subXPath {}...", subXPath.value_or("MISSING"));
+    SPDLOG_DEBUG("[CB_OPER] [BP] requestXPath {}...", requestXPath.value_or("MISSING"));
+    SPDLOG_DEBUG("[CB_OPER] [BP] requestId {}...", requestId);
+    SPDLOG_DEBUG("[CB_OPER] [BP] module of parent node {}...", parent->schema().module().name());
+    SPDLOG_DEBUG("[CB_OPER] [BP] name of parent node {}...", parent->schema().name());
+
+    auto ctx = sess.getContext();
+    if (!parent) {
+        SPDLOG_DEBUG("[CB_OPER] [BP] parent is falsy...");
+    } else {
+        SPDLOG_DEBUG("[CB_OPER] [BP] parent is truthy...");
     }
     return sysrepo::ErrorCode::Ok;
 }
@@ -1023,10 +1065,12 @@ sysrepo::ErrorCode tsnctrld::changeInterfaceCallback(sysrepo::Session sess, uint
                                                      const std::string &moduleName,
                                                      const std::optional<std::string> &subXPath, sysrepo::Event event,
                                                      uint32_t requestId) {
+    static const std::string handledModuleName = "ietf-interfaces";
     SPDLOG_DEBUG("[CB_CHANGE] [IF] Received change callback for module {}...", moduleName);
     SPDLOG_DEBUG("[CB_CHANGE] [IF] subXPath {}...", subXPath.value_or("MISSING"));
     SPDLOG_DEBUG("[CB_CHANGE] [IF] event {}...", event);
     SPDLOG_DEBUG("[CB_CHANGE] [IF] requestId {}...", requestId);
+    SPDLOG_DEBUG("[CB_CHANGE] [IF] Actually trying to handle module {}...", handledModuleName);
     if (event != sysrepo::Event::Change) {
         return sysrepo::ErrorCode::Ok;
     }
@@ -1073,10 +1117,12 @@ sysrepo::ErrorCode tsnctrld::changeInterfaceCallback(sysrepo::Session sess, uint
 sysrepo::ErrorCode tsnctrld::changeBridgeCallback(sysrepo::Session sess, uint32_t subId, const std::string &moduleName,
                                                   const std::optional<std::string> &subXPath, sysrepo::Event event,
                                                   uint32_t requestId) {
+    static const std::string handledModuleName = "ieee802-dot1q-bridge";
     SPDLOG_DEBUG("[CB_CHANGE] [BR] Received change callback for module {}...", moduleName);
     SPDLOG_DEBUG("[CB_CHANGE] [BR] subXPath {}...", subXPath.value_or("MISSING"));
     SPDLOG_DEBUG("[CB_CHANGE] [BR] event {}...", event);
     SPDLOG_DEBUG("[CB_CHANGE] [BR] requestId {}...", requestId);
+    SPDLOG_DEBUG("[CB_CHANGE] [BR] Actually trying to handle module {}...", handledModuleName);
     if (event != sysrepo::Event::Change) {
         return sysrepo::ErrorCode::Ok;
     }
@@ -1103,6 +1149,59 @@ sysrepo::ErrorCode tsnctrld::changeBridgeCallback(sysrepo::Session sess, uint32_
     return sysrepo::ErrorCode::Ok;
 }
 /**
+ * @brief Callback when a change on any node under the `ieee802-dot1q-bridge` module, specifically the
+ * /interfaces/interface/bridge-port subtree, is attempted.
+ *
+ * This callback checks for each attempted change if the changed node actually belongs to the `ieee802-dot1q-bridge`
+ * module and does not block any changes that do not belong. Any changes to nodes on a whitelist (currently only the
+ * non-existent "TEMP") are also not blocked. If any change is not allowed by the two previous conditions, the entire
+ * attempt is blocked.
+ * This is used to restrict changes only to explicitly supported nodes.
+ *
+ * @param sess
+ * @param subId
+ * @param moduleName
+ * @param subXPath
+ * @param event
+ * @param requestId
+ * @return
+ */
+sysrepo::ErrorCode tsnctrld::changeBridgePortCallback(sysrepo::Session sess, uint32_t subId,
+                                                      const std::string &moduleName,
+                                                      const std::optional<std::string> &subXPath, sysrepo::Event event,
+                                                      uint32_t requestId) {
+    static const std::string handledModuleName = "ieee802-dot1q-bridge";
+    SPDLOG_DEBUG("[CB_CHANGE] [BP] Received change callback for module {}...", moduleName);
+    SPDLOG_DEBUG("[CB_CHANGE] [BP] subXPath {}...", subXPath.value_or("MISSING"));
+    SPDLOG_DEBUG("[CB_CHANGE] [BP] event {}...", event);
+    SPDLOG_DEBUG("[CB_CHANGE] [BP] requestId {}...", requestId);
+    SPDLOG_DEBUG("[CB_CHANGE] [BP] Actually trying to handle module {}...", handledModuleName);
+    if (event != sysrepo::Event::Change) {
+        return sysrepo::ErrorCode::Ok;
+    }
+
+    for (const auto &change : sess.getChanges("//.")) {
+        std::string nodeModuleName = change.node.schema().module().name();
+        std::string nodeName = change.node.schema().name();
+
+        if (nodeModuleName != handledModuleName) {
+            SPDLOG_DEBUG("[CB] [BP-CONFIG] [DEBUG] Change does not belong to this handled module, skipping");
+            continue;
+        }
+        if (nodeName == "TEMP") {
+            SPDLOG_DEBUG("[CB] [BP-CONFIG] [ALLOW] Attempting to change whitelisted node, continuing for now");
+            continue;
+        }
+        spdlog::error(
+            "[CB] [BP-CONFIG] [REJECT] Edits to 'ieee802-dot1q-bridge' (specifically the `bridge-port` element) "
+            "are currently not implemented. Attempted change to path: {}",
+            change.node.path());
+        return sysrepo::ErrorCode::Unsupported;
+    }
+    SPDLOG_DEBUG("[CB] [BP-CONFIG] [ALLOW] All attempted changes were allowed, accepting");
+    return sysrepo::ErrorCode::Ok;
+}
+/**
  * @brief The most important callback, listens for changes in the `gate-parameter-table` and sets/modifies or removes
  * the qdisc on an interface when the `config-change` node is set to true.
  *
@@ -1126,10 +1225,12 @@ sysrepo::ErrorCode tsnctrld::changeBridgeCallback(sysrepo::Session sess, uint32_
 sysrepo::ErrorCode tsnctrld::changeGptCallback(sysrepo::Session sess, uint32_t subId, const std::string &moduleName,
                                                const std::optional<std::string> &subXPath, sysrepo::Event event,
                                                uint32_t requestId) {
+    static const std::string handledModuleName = "ieee802-dot1q-sched-bridge";
     SPDLOG_DEBUG("[CB_CHANGE] [GPT] Received change callback for module {}...", moduleName);
     SPDLOG_DEBUG("[CB_CHANGE] [GPT] subXPath {}...", subXPath.value_or("MISSING"));
     SPDLOG_DEBUG("[CB_CHANGE] [GPT] event {}...", event);
     SPDLOG_DEBUG("[CB_CHANGE] [GPT] requestId {}...", requestId);
+    SPDLOG_DEBUG("[CB_CHANGE] [BP] Actually trying to handle module {}...", handledModuleName);
 
     if (sess.getOriginatorName() == "tsnctrld-internal") {
         SPDLOG_DEBUG("[CB_CHANGE] [GPT] Whatever just happened, we did it, so we can trust it...");
@@ -1147,11 +1248,18 @@ sysrepo::ErrorCode tsnctrld::changeGptCallback(sysrepo::Session sess, uint32_t s
         auto changes = sess.getChanges(filter);
 
         for (const auto &change : changes) {
+            std::string nodeModuleName = change.node.schema().module().name();
+
+            if (nodeModuleName != handledModuleName) {
+                SPDLOG_DEBUG("[CB_CHANGE] [GPT] [DEBUG] Change does not belong to this handled module, skipping");
+                continue;
+            }
+
             // Check if node was deleted (ignore)
             if (change.operation == sysrepo::ChangeOperation::Deleted) {
                 continue;
             }
-
+            SPDLOG_TRACE("module of change: {}", change.node.schema().module().name());
             // Only trigger if changed to "true"
             if (change.node.asTerm().valueStr() == "true") {
                 std::string ifname = extractListKey(change.node.path(), "interface", "name");
@@ -1259,6 +1367,11 @@ void tsnctrld::setupSubscriptions() {
     auto changeBridgeCb = std::bind_front(&tsnctrld::changeBridgeCallback, this);
     m_subs.push_back(m_sess.onModuleChange("ieee802-dot1q-bridge", changeBridgeCb, std::nullopt, 90));
 
+    auto changeBridgePortCb = std::bind_front(&tsnctrld::changeBridgePortCallback, this);
+    m_subs.push_back(m_sess.onModuleChange("ietf-interfaces", changeBridgePortCb,
+                                           "/ietf-interfaces:interfaces/interface/ieee802-dot1q-bridge:bridge-port",
+                                           85));
+
     auto changeGptCb = std::bind_front(&tsnctrld::changeGptCallback, this);
     m_subs.push_back(m_sess.onModuleChange("ietf-interfaces", changeGptCb,
                                            "/ietf-interfaces:interfaces/interface/ieee802-dot1q-bridge:bridge-port/"
@@ -1278,6 +1391,11 @@ void tsnctrld::setupSubscriptions() {
 
     auto operBridgeCb = std::bind_front(&tsnctrld::operBridgeCallback, this);
     m_subs.push_back(m_sess.onOperGet("ieee802-dot1q-bridge", operBridgeCb, "/ieee802-dot1q-bridge:bridges",
+                                      sysrepo::SubscribeOptions::OperMerge));
+
+    auto operBridgePortCb = std::bind_front(&tsnctrld::operBridgePortCallback, this);
+    m_subs.push_back(m_sess.onOperGet("ietf-interfaces", operBridgePortCb,
+                                      "/ietf-interfaces:interfaces/interface/ieee802-dot1q-bridge:bridge-port",
                                       sysrepo::SubscribeOptions::OperMerge));
 
     auto operLldpCb = std::bind_front(&tsnctrld::operLldpCallback, this);
