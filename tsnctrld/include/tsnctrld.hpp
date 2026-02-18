@@ -86,7 +86,7 @@ class tsnctrld {
                                           const std::optional<std::string>& subXPath, sysrepo::Event event,
                                           uint32_t requestId);
 
-    int ensureRunningDaemons(const std::vector<std::string>& services);
+    static int ensureRunningDaemons(const std::vector<std::string>& services);
     void syncHardwareToRunning();
     void setupSubscriptions();
     // ietfInterface_t& getExistingOrNewInterface(const std::string& ifname, std::vector<ietfInterface_t>& interfaces);

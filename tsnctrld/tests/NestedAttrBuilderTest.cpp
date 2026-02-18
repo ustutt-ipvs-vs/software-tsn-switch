@@ -65,11 +65,11 @@ TEST_F(NestedAttrBuilderTest, DeeplyNestedAttributesUpdateMessageLength) {
 
     int lenAfterRoot = nlh->nlmsg_len;
 
-    int childId = builder.addAttribute(rootId, /*type=*/101, &childVal, sizeof(childVal));
+    int childId = builder.addChildAttribute(rootId, /*type=*/101, &childVal, sizeof(childVal));
 
     int lenAfterChild = nlh->nlmsg_len;
 
-    builder.addAttribute(childId, /*type=*/102, &grandChildVal, sizeof(grandChildVal));
+    builder.addChildAttribute(childId, /*type=*/102, &grandChildVal, sizeof(grandChildVal));
 
     int lenAfterGrandChild = nlh->nlmsg_len;
 
@@ -106,8 +106,8 @@ TEST_F(NestedAttrBuilderTest, NestedAttributesExceedMaxPayload) {
 
     EXPECT_THROW(
         {
-            builder.addAttribute(parentId, 2, &childVal, sizeof(childVal));
-            builder.addAttribute(parentId, 3, &childVal2, sizeof(childVal2));
+            builder.addChildAttribute(parentId, 2, &childVal, sizeof(childVal));
+            builder.addChildAttribute(parentId, 3, &childVal2, sizeof(childVal2));
         },
         std::runtime_error);
 }

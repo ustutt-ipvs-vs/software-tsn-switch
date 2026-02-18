@@ -1,16 +1,16 @@
 #ifndef QDISCMANAGER_H
 #define QDISCMANAGER_H
-#include <NetlinkSocket.h>
-#include <TaprioModel.h>
-#include <linux/netlink.h>
+#include "NetlinkSocket.h"
+#include "TaprioModel.h"
 #include <linux/rtnetlink.h>
-
 #include <map>
 #include <string>
 
 #include "../../common/include/CncTypes.h"
 
-#define BUFFER_SIZE 8192
+enum : std::uint16_t {
+BUFFER_SIZE = 8192
+};
 
 /**
  * @brief This class is used to query, set/modify, or remove qdiscs of the interfaces present on the host

@@ -1,8 +1,7 @@
 /**
  * In part taken from @kupkabn implementation
  */
-#include "NetlinkSocket.h"
-
+#include "./include/NetlinkSocket.h"
 #include <arpa/inet.h>
 #include <linux/netlink.h>
 #include <linux/rtnetlink.h>
@@ -10,7 +9,6 @@
 #include <spdlog/spdlog.h>
 #include <sys/socket.h>
 #include <unistd.h>
-
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
@@ -63,12 +61,12 @@ NetlinkSocket::~NetlinkSocket() {
  * @param maxlen Maximum length that the netlink message can have
  * @param type The type of attribute
  * @param data The data of the added attribute
- * @param The length of the added attribute
+ * @param len The length of the added attribute
  * @return A pointer to the attributes of the netlink message
  */
-rtattr *NetlinkSocket::addRtaAttribute(nlmsghdr *nlh, const int maxlen, const int type, const void *data,
-                                       const int len) {
-    struct rtattr *rta = NLMSG_TAIL(nlh);
+rtattr* NetlinkSocket::addRtaAttribute(nlmsghdr *nlh, const int maxlen, const int type, const void *data,
+                                       const unsigned long len) {
+    rtattr *rta = NLMSG_TAIL(nlh);
     int rtalen = RTA_LENGTH(len);
 
     if (NLMSG_ALIGN(nlh->nlmsg_len) + RTA_ALIGN(rtalen) > maxlen) {
@@ -78,7 +76,8 @@ rtattr *NetlinkSocket::addRtaAttribute(nlmsghdr *nlh, const int maxlen, const in
     rta->rta_type = type;
     rta->rta_len = rtalen;
 
-    if (data != nullptr) memcpy(RTA_DATA(rta), data, len);
+    if (data != nullptr) { memcpy(RTA_DATA(rta), data, len);
+}
 
     nlh->nlmsg_len = NLMSG_ALIGN(nlh->nlmsg_len) + RTA_ALIGN(rtalen);
     return rta;
@@ -97,7 +96,7 @@ void NetlinkSocket::sendMessage(nlmsghdr *nlh, const size_t len) {
     nlh->nlmsg_flags |= NLM_F_ACK;
     struct iovec iov = {nlh, len};
     struct sockaddr_nl kernel = {.nl_family = AF_NETLINK};
-    struct msghdr msg = {&kernel, sizeof(kernel), &iov, 1, NULL, 0, 0};
+    struct msghdr msg = {&kernel, sizeof(kernel), &iov, 1, nullptr, 0, 0};
 
     if (sendmsg(socketFd, &msg, 0) < 0) {
         throw std::runtime_error("Failed to send message to kernel");
@@ -113,13 +112,13 @@ void NetlinkSocket::sendMessage(nlmsghdr *nlh, const size_t len) {
  * Handles NLMSG_DONE and NLMSG_ERROR messages.
  */
 void NetlinkSocket::saveResponse() {
-    char buffer[BUFFER_SIZE_REC];
+    std::vector<char> buffer(BUFFER_SIZE_REC);
     ssize_t len;
 
     this->clearResponse();
 
-    while ((len = recv(this->socketFd, buffer, sizeof(buffer), MSG_DONTWAIT)) > 0) {
-        struct nlmsghdr *nlh = (struct nlmsghdr *)buffer;
+    while ((len = recv(this->socketFd, buffer.data(), buffer.size(), MSG_DONTWAIT)) > 0) {
+        auto *nlh = reinterpret_cast<struct nlmsghdr *>(buffer.data());
 
         for (; NLMSG_OK(nlh, len); nlh = NLMSG_NEXT(nlh, len)) {
             if (nlh->nlmsg_type == NLMSG_DONE) {
@@ -127,17 +126,17 @@ void NetlinkSocket::saveResponse() {
             }
 
             if (nlh->nlmsg_type == NLMSG_ERROR) {
-                struct nlmsgerr *error = (struct nlmsgerr *)NLMSG_DATA(nlh);
+                auto *error = (struct nlmsgerr *)NLMSG_DATA(nlh);
                 if (error->error == 0) {
                     SPDLOG_DEBUG("Netlink Message accepted");
                 } else {
-                    std::string extendedError = "";
+                    std::string extendedError;
 
                     // Determine how much of the original request the kernel sent back.
                     // If CAPPED is set, the kernel only sent back the 16-byte nlmsghdr.
                     // If NOT CAPPED, the kernel sent back the full nlh->nlmsg_len of the request.
-                    int payload_to_skip = sizeof(int);  // The error code itself
-                    if (nlh->nlmsg_flags & NLM_F_CAPPED) {
+                    uint32_t payload_to_skip = sizeof(int);  // The error code itself
+                    if ((nlh->nlmsg_flags & NLM_F_CAPPED) != 0) {
                         payload_to_skip += sizeof(struct nlmsghdr);
                     } else {
                         // error->msg is the header of the original request.
@@ -146,8 +145,8 @@ void NetlinkSocket::saveResponse() {
                     }
 
                     // The attributes start after the error code + original message portion
-                    struct rtattr *rta = (struct rtattr *)((char *)error + payload_to_skip);
-                    int rta_len = nlh->nlmsg_len - NLMSG_HDRLEN - payload_to_skip;
+                    auto *rta = (struct rtattr *)((char *)error + payload_to_skip);
+                    uint32_t rta_len = nlh->nlmsg_len - NLMSG_HDRLEN - payload_to_skip;
 
                     while (RTA_OK(rta, rta_len)) {
                         // NLMSGERR_ATTR_MSG is 1
@@ -162,7 +161,7 @@ void NetlinkSocket::saveResponse() {
                                              extendedError);
                 }
             }
-            struct nlmsghdr *nlh_save = (nlmsghdr *)std::malloc(nlh->nlmsg_len);
+            auto *nlh_save = (nlmsghdr *)std::malloc(nlh->nlmsg_len);
             std::memcpy(nlh_save, nlh, nlh->nlmsg_len);
             this->response.emplace_back(nlh_save);
         }

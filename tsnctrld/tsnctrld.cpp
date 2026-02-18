@@ -1175,7 +1175,7 @@ sysrepo::ErrorCode tsnctrld::changeGptCallback(sysrepo::Session sess, uint32_t s
 
                             printTaprioConfig(taprioCfg);
                             SPDLOG_DEBUG("[CB_CHANGE] [GPT] Sending qdisc");
-                            m_qm.setQdisc(m_sock, ifname, taprioCfg);
+                            QdiscManager::setQdisc(m_sock, ifname, taprioCfg);
                             SPDLOG_DEBUG("[CB_CHANGE] [GPT] Qdisc \"sent\"");
                             m_pathsToReset.push_back(std::string(change.node.path()));
                         } else {
