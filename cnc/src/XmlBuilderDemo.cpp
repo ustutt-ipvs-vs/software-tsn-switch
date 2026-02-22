@@ -6,7 +6,7 @@
 
 // Simple demo to showcase GclXmlBuilder usage
 int main() {
-    std::cout << "--- Starting XML Builder Demo ---" << std::endl;
+    std::cout << "--- Starting XML Builder Demo ---" << '\n';
 
     // 1. Mocking: Building a dummy CncNode_t with one interface and GCL data
     CncNode_t dummyNode;
@@ -53,13 +53,13 @@ int main() {
     dummyNode.interfaces.push_back(iface);
 
     // 4. Action: Call the builder
-    std::cout << "Generating XML for " << dummyNode.hostName << "..." << std::endl;
+    std::cout << "Generating XML for " << dummyNode.hostName << "..." << '\n';
     std::string xmlOutput = cnc::GclXmlBuilder::buildXmlForNode(dummyNode);
 
     // 5. Check output
-    std::cout << "\n=== GENERATED XML START ===\n" << std::endl;
-    std::cout << xmlOutput << std::endl;
-    std::cout << "\n=== GENERATED XML END ===\n" << std::endl;
+    std::cout << "\n=== GENERATED XML START ===\n" << '\n';
+    std::cout << xmlOutput << '\n';
+    std::cout << "\n=== GENERATED XML END ===\n" << '\n';
 
     // Cleanup handled automatically by std::vector
 

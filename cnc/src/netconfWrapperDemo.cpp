@@ -12,8 +12,8 @@ std::map<std::string, std::string> loadConfig(const std::string& filename) {
     std::ifstream file(filename);
 
     if (!file.is_open()) {
-        std::cerr << "Could not find '" << filename << "'!" << std::endl;
-        std::cerr << "Please create the file in the execution directory." << std::endl;
+        std::cerr << "Could not find '" << filename << "'!" << '\n';
+        std::cerr << "Please create the file in the execution directory." << '\n';
         return config;
     }
 
@@ -41,7 +41,7 @@ std::map<std::string, std::string> loadConfig(const std::string& filename) {
 }
 
 int main() {
-    std::cout << "Netconf Wrapper Demo Application" << std::endl;
+    std::cout << "Netconf Wrapper Demo Application" << '\n';
 
     // Load configuration
     auto config = loadConfig("../../config.txt");
@@ -54,29 +54,29 @@ int main() {
     std::string pass = config["PASS"];
 
     // Debug Print (without password)
-    std::cout << "Target: " << host << ":" << port << std::endl;
-    std::cout << "User: " << user << std::endl;
+    std::cout << "Target: " << host << ":" << port << '\n';
+    std::cout << "User: " << user << '\n';
 
     common::NetconfSession session;
 
-    std::cout << "Connecting..." << std::endl;
+    std::cout << "Connecting..." << '\n';
 
     if (session.connect(host, port, user, pass)) {
-        std::cout << "SUCCESS: Connected to server!" << std::endl;
+        std::cout << "SUCCESS: Connected to server!" << '\n';
 
         // Read & Print current state
-        std::cout << "\n--- 1. Reading Current State (Running) ---" << std::endl;
+        std::cout << "\n--- 1. Reading Current State (Running) ---" << '\n';
         std::string xpath_filter = "/data:data";
         std::string initial_data = session.getData(xpath_filter);
 
         if (!initial_data.empty()) {
-            std::cout << initial_data << std::endl;
+            std::cout << initial_data << '\n';
         } else {
-            std::cout << "[Info] Filter returned no data (or empty). Check XPath." << std::endl;
+            std::cout << "[Info] Filter returned no data (or empty). Check XPath." << '\n';
         }
 
         // Prepare for edit
-        std::cout << "\n--- 2. Editing Data (Candidate) ---" << std::endl;
+        std::cout << "\n--- 2. Editing Data (Candidate) ---" << '\n';
 
         std::string changeXml = R"(<data xmlns="urn:examples:demo">
                 <numbers>
@@ -86,29 +86,29 @@ int main() {
             </data>)";
 
         if (session.editData(changeXml)) {
-            std::cout << "-> Edit OK: Data is now in 'Candidate' datastore." << std::endl;
+            std::cout << "-> Edit OK: Data is now in 'Candidate' datastore." << '\n';
         } else {
-            std::cerr << "-> Edit FAILED. Stopping." << std::endl;
+            std::cerr << "-> Edit FAILED. Stopping." << '\n';
             session.disconnect();
             return -1;
         }
 
         // Commit changes
-        std::cout << "\n--- 3. Committing to 'Running' ---" << std::endl;
+        std::cout << "\n--- 3. Committing to 'Running' ---" << '\n';
 
         if (session.commit()) {
-            std::cout << "-> Commit OK: Data is now live." << std::endl;
+            std::cout << "-> Commit OK: Data is now live." << '\n';
         } else {
-            std::cerr << "-> Commit FAILED." << std::endl;
+            std::cerr << "-> Commit FAILED." << '\n';
         }
 
         // Verify new state
-        std::cout << "\n--- 4. Verifying New State ---" << std::endl;
-        std::cout << session.getData(xpath_filter) << std::endl;
+        std::cout << "\n--- 4. Verifying New State ---" << '\n';
+        std::cout << session.getData(xpath_filter) << '\n';
 
         session.disconnect();
     } else {
-        std::cerr << "ERROR: Connection failed." << std::endl;
+        std::cerr << "ERROR: Connection failed." << '\n';
     }
 
     return 0;

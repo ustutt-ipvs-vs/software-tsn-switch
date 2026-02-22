@@ -26,7 +26,7 @@ bool NetworkManager::connectAllNodes(const InventoryMap& inventory) {
         auto it = inventory.find(node.hostName);
 
         if (it == inventory.end()) {
-            std::cerr << "[Warning] No credentials found for node " << node.hostName << std::endl;
+            std::cerr << "[Warning] No credentials found for node " << node.hostName << '\n';
             continue;
         }
 
@@ -34,7 +34,7 @@ bool NetworkManager::connectAllNodes(const InventoryMap& inventory) {
 
         // Validate credentials
         if (creds.username.empty() || creds.password.empty()) {
-            std::cerr << "[Warning] Incomplete credentials for node " << node.hostName << std::endl;
+            std::cerr << "[Warning] Incomplete credentials for node " << node.hostName << '\n';
             continue;
         }
 
@@ -47,7 +47,7 @@ bool NetworkManager::connectAllNodes(const InventoryMap& inventory) {
             sessions_[node.hostName] = session;
             atLeastOneConnected = true;
         } else {
-            std::cerr << "[Error] Failed to connect to node " << node.hostName << " at " << creds.ip << std::endl;
+            std::cerr << "[Error] Failed to connect to node " << node.hostName << " at " << creds.ip << '\n';
         }
     }
 
@@ -58,8 +58,8 @@ std::shared_ptr<common::NetconfSession> NetworkManager::getSession(const std::st
     auto it = sessions_.find(nodeName);
     if (it != sessions_.end()) {
         return it->second;
-    } 
-    std::cerr << "[Error] No session found for node " << nodeName << std::endl;
+    }
+    std::cerr << "[Error] No session found for node " << nodeName << '\n';
     return nullptr;
 }
 
@@ -74,14 +74,14 @@ void NetworkManager::fetchLldpData() {
         if (lldpData.empty()) {
             // No LLDP data retrieved
             continue;
-        } 
+        }
         CncNode_t* currentNode = topology_.getNode(name);
         if (currentNode != nullptr) {
             if (!cnc::LldpParser::parseLldpData(lldpData, *currentNode)) {
-                std::cerr << "[Error] Failed to parse LLDP data for node " << name << std::endl;
+                std::cerr << "[Error] Failed to parse LLDP data for node " << name << '\n';
             }
         } else {
-            std::cerr << "[Error] Node " << name << " not found in topology." << std::endl;
+            std::cerr << "[Error] Node " << name << " not found in topology." << '\n';
         }
     }
 }
@@ -112,7 +112,7 @@ void NetworkManager::fetchOperationGcl() {
         if (cnc::GclParser::parseOperationalGclData(gclData, *node)) {
             // Successfully parsed and updated node's GCL data
         } else {
-            std::cerr << "[Error] Failed to parse GCL data for node " << name << std::endl;
+            std::cerr << "[Error] Failed to parse GCL data for node " << name << '\n';
         }
     }
 }
@@ -120,7 +120,7 @@ void NetworkManager::fetchOperationGcl() {
 bool NetworkManager::deployConfigToNode(const std::string& nodeName) {
     auto session = getSession(nodeName);
     if (!session) {
-        std::cerr << "[Error] Cannot deploy config. No session for node " << nodeName << std::endl;
+        std::cerr << "[Error] Cannot deploy config. No session for node " << nodeName << '\n';
         return false;
     }
 
@@ -134,7 +134,7 @@ bool NetworkManager::deployConfigToNode(const std::string& nodeName) {
     }
 
     if (targetNode == nullptr) {
-        std::cerr << "[Error] Node " << nodeName << " not found in topology." << std::endl;
+        std::cerr << "[Error] Node " << nodeName << " not found in topology." << '\n';
         return false;
     }
 
@@ -142,17 +142,17 @@ bool NetworkManager::deployConfigToNode(const std::string& nodeName) {
     std::string configXml = buildGclXml(*targetNode);
 
     // Output for debugging
-    // std::cout << "Generated XML:\n" << configXml << std::endl;
+    // std::cout << "Generated XML:\n" << configXml << '\n';
 
     // 3. Deploy configuration via NETCONF to candidate datastore
     if (!session->editData(configXml)) {
-        std::cerr << "[Error] Failed to deploy configuration to node " << nodeName << std::endl;
+        std::cerr << "[Error] Failed to deploy configuration to node " << nodeName << '\n';
         return false;
     }
 
     // 4. Commit the changes (from candidate to running)
     if (!session->commit()) {
-        std::cerr << "[Error] Failed to commit configuration on node " << nodeName << std::endl;
+        std::cerr << "[Error] Failed to commit configuration on node " << nodeName << '\n';
         return false;
     }
 
@@ -172,7 +172,7 @@ void NetworkManager::deployConfigToAll() {
                 failCount++;
             }
         } else {
-            std::cerr << "[Warning] No session for node " << node.hostName << ". Skipping deployment." << std::endl;
+            std::cerr << "[Warning] No session for node " << node.hostName << ". Skipping deployment." << '\n';
             failCount++;
         }
     }

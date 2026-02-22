@@ -14,7 +14,7 @@ namespace cnc {
 bool JsonImporter::importFromFile(const std::string& filename, Topology& topology) {
     std::ifstream file(filename);
     if (!file.is_open()) {
-        std::cerr << "[Error] Could not open config file: " << filename << std::endl;
+        std::cerr << "[Error] Could not open config file: " << filename << '\n';
         return false;
     }
 
@@ -23,7 +23,7 @@ bool JsonImporter::importFromFile(const std::string& filename, Topology& topolog
         file >> root;
 
         if (!root.contains("nodes") || !root["nodes"].is_array()) {
-            std::cerr << "[Error] JSON root has no 'nodes' array." << std::endl;
+            std::cerr << "[Error] JSON root has no 'nodes' array." << '\n';
             return false;
         }
 
@@ -93,7 +93,7 @@ bool JsonImporter::importFromFile(const std::string& filename, Topology& topolog
         return true;
 
     } catch (const json::exception& e) {
-        std::cerr << "[Error] JSON Parse Error: " << e.what() << std::endl;
+        std::cerr << "[Error] JSON Parse Error: " << e.what() << '\n';
         return false;
     }
 }
@@ -103,7 +103,7 @@ InventoryMap JsonImporter::importInventory(const std::string& filename) {
 
     std::ifstream file(filename);
     if (!file.is_open()) {
-        std::cerr << "[Error] Could not open inventory file: " << filename << std::endl;
+        std::cerr << "[Error] Could not open inventory file: " << filename << '\n';
         return inventory;
     }
 
@@ -112,7 +112,7 @@ InventoryMap JsonImporter::importInventory(const std::string& filename) {
         file >> root;
 
         if (!root.contains("inventory") || !root["inventory"].is_array()) {
-            std::cerr << "[Error] Inventory JSON missing 'inventory' array." << std::endl;
+            std::cerr << "[Error] Inventory JSON missing 'inventory' array." << '\n';
             return inventory;
         }
 
@@ -133,7 +133,7 @@ InventoryMap JsonImporter::importInventory(const std::string& filename) {
         }
 
     } catch (const json::exception& e) {
-        std::cerr << "[Error] Inventory JSON Parse Error: " << e.what() << std::endl;
+        std::cerr << "[Error] Inventory JSON Parse Error: " << e.what() << '\n';
     }
 
     return inventory;

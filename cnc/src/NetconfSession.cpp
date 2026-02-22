@@ -55,10 +55,10 @@ bool NetconfSession::connect(const std::string &ip, int port, const std::string 
         disconnect();
     }
 
-    std::cout << "Connecting to " << ip << " on port " << port << " as user " << user << std::endl;
+    std::cout << "Connecting to " << ip << " on port " << port << " as user " << user << '\n';
 
     if (nc_client_ssh_set_username(user.c_str()) != 0) {
-        std::cerr << "Failed to set SSH username." << std::endl;
+        std::cerr << "Failed to set SSH username." << '\n';
         return false;
     }
 
@@ -73,11 +73,11 @@ bool NetconfSession::connect(const std::string &ip, int port, const std::string 
     g_current_password.clear();
 
     if (session_ == nullptr) {
-        std::cerr << "[NetconfSession] Connection failed." << std::endl;
+        std::cerr << "[NetconfSession] Connection failed." << '\n';
         return false;
     }
 
-    std::cout << "[NetconfSession] Connected successfully." << std::endl;
+    std::cout << "[NetconfSession] Connected successfully." << '\n';
     return true;
 }
 
@@ -85,7 +85,7 @@ void NetconfSession::disconnect() {
     if (session_ != nullptr) {
         nc_session_free(session_, nullptr);
         session_ = nullptr;
-        std::cout << "Disconnected from NETCONF session." << std::endl;
+        std::cout << "Disconnected from NETCONF session." << '\n';
     }
 }
 
@@ -95,7 +95,7 @@ bool NetconfSession::isConnected() const {
 
 std::string NetconfSession::getData(const std::string &xpath) {
     if (session_ == nullptr) {
-        std::cerr << "[NetconfSession] Not connected." << std::endl;
+        std::cerr << "[NetconfSession] Not connected." << '\n';
         return "";
     }
 
@@ -110,7 +110,7 @@ std::string NetconfSession::getData(const std::string &xpath) {
     }
 
     if (rpc == nullptr) {
-        std::cerr << "[NetconfSession] Error: Failed to create RPC." << std::endl;
+        std::cerr << "[NetconfSession] Error: Failed to create RPC." << '\n';
         return "";
     }
 
@@ -118,7 +118,7 @@ std::string NetconfSession::getData(const std::string &xpath) {
     uint64_t msgid;
     NC_MSG_TYPE status = nc_send_rpc(session_, rpc, 1000, &msgid);
     if (status == NC_MSG_ERROR || status == NC_MSG_WOULDBLOCK) {
-        std::cerr << "[NetconfSession] Error: Failed to send RPC." << std::endl;
+        std::cerr << "[NetconfSession] Error: Failed to send RPC." << '\n';
         nc_rpc_free(rpc);
         return "";
     }
@@ -143,10 +143,10 @@ std::string NetconfSession::getData(const std::string &xpath) {
                 free(str_out);
             }
         } else {
-            std::cout << "[NetconfSession] Reply OK but empty data." << std::endl;
+            std::cout << "[NetconfSession] Reply OK but empty data." << '\n';
         }
     } else if (msgtype == NC_MSG_ERROR) {
-        std::cerr << "[NetconfSession] Server replied with ERROR." << std::endl;
+        std::cerr << "[NetconfSession] Server replied with ERROR." << '\n';
     }
 
     if (op != nullptr) {
@@ -161,12 +161,12 @@ std::string NetconfSession::getData(const std::string &xpath) {
 
 bool NetconfSession::editData(const std::string &configXml) {
     if (session_ == nullptr) {
-        std::cerr << "[NetconfSession] Not connected." << std::endl;
+        std::cerr << "[NetconfSession] Not connected." << '\n';
         return false;
     }
 
     if (configXml.empty()) {
-        std::cerr << "[NetconfSession] Configuration XML is empty." << std::endl;
+        std::cerr << "[NetconfSession] Configuration XML is empty." << '\n';
         return false;
     }
 
@@ -175,7 +175,7 @@ bool NetconfSession::editData(const std::string &configXml) {
                                      NC_RPC_EDIT_ERROPT_STOP, configXml.c_str(), NC_PARAMTYPE_CONST);
 
     if (rpc == nullptr) {
-        std::cerr << "[NetconfSession] Error: Failed to create edit-config RPC." << std::endl;
+        std::cerr << "[NetconfSession] Error: Failed to create edit-config RPC." << '\n';
         return false;
     }
 
@@ -183,7 +183,7 @@ bool NetconfSession::editData(const std::string &configXml) {
     uint64_t msgid;
     NC_MSG_TYPE status = nc_send_rpc(session_, rpc, 1000, &msgid);
     if (status == NC_MSG_ERROR || status == NC_MSG_WOULDBLOCK) {
-        std::cerr << "[NetconfSession] Error: Failed to send edit-config RPC." << std::endl;
+        std::cerr << "[NetconfSession] Error: Failed to send edit-config RPC." << '\n';
         nc_rpc_free(rpc);
         return false;
     }
@@ -198,9 +198,9 @@ bool NetconfSession::editData(const std::string &configXml) {
     if (msgtype == NC_MSG_REPLY) {
         // Edit-config successful
         success = true;
-        std::cout << "[NetconfSession] edit-config successful." << std::endl;
+        std::cout << "[NetconfSession] edit-config successful." << '\n';
     } else if (msgtype == NC_MSG_ERROR) {
-        std::cerr << "[NetconfSession] Server replied with ERROR to edit-config." << std::endl;
+        std::cerr << "[NetconfSession] Server replied with ERROR to edit-config." << '\n';
     }
 
     // Cleanup
@@ -217,7 +217,7 @@ bool NetconfSession::editData(const std::string &configXml) {
 
 bool NetconfSession::commit() {
     if (session_ == nullptr) {
-        std::cerr << "[NetconfSession] Not connected." << std::endl;
+        std::cerr << "[NetconfSession] Not connected." << '\n';
         return false;
     }
 
@@ -225,7 +225,7 @@ bool NetconfSession::commit() {
     struct nc_rpc *rpc = nc_rpc_commit(0, 0, nullptr, nullptr, NC_PARAMTYPE_CONST);
 
     if (rpc == nullptr) {
-        std::cerr << "[NetconfSession] Error: Failed to create commit RPC." << std::endl;
+        std::cerr << "[NetconfSession] Error: Failed to create commit RPC." << '\n';
         return false;
     }
 
@@ -233,7 +233,7 @@ bool NetconfSession::commit() {
     uint64_t msgid;
     NC_MSG_TYPE status = nc_send_rpc(session_, rpc, 1000, &msgid);
     if (status == NC_MSG_ERROR || status == NC_MSG_WOULDBLOCK) {
-        std::cerr << "[NetconfSession] Error: Failed to send commit RPC." << std::endl;
+        std::cerr << "[NetconfSession] Error: Failed to send commit RPC." << '\n';
         nc_rpc_free(rpc);
         return false;
     }
@@ -248,9 +248,9 @@ bool NetconfSession::commit() {
     if (msgtype == NC_MSG_REPLY) {
         // Commit successful
         success = true;
-        std::cout << "[NetconfSession] commit successful." << std::endl;
+        std::cout << "[NetconfSession] commit successful." << '\n';
     } else if (msgtype == NC_MSG_ERROR) {
-        std::cerr << "[NetconfSession] Server replied with ERROR to commit." << std::endl;
+        std::cerr << "[NetconfSession] Server replied with ERROR to commit." << '\n';
     }
 
     // Cleanup
