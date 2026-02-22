@@ -84,6 +84,6 @@ class NetworkManager {
      * @param node The CncNode_t containing TSN parameters.
      * @return The XML string representing the GCL configuration.
      */
-    std::string buildGclXml(const CncNode_t& node);
+    static std::string buildGclXml(const CncNode_t& node);
 };
 }  // namespace cnc

@@ -11,7 +11,7 @@ void Topology::buildIndex() {
 
 CncNode_t* Topology::getNode(const std::string& nodeName) {
     // Check if the node exists in the lookup map
-    if (nodeLookup.count(nodeName)) {
+    if (nodeLookup.count(nodeName) != 0) {
         return nodeLookup[nodeName];
     }
     return nullptr;
@@ -20,7 +20,7 @@ CncNode_t* Topology::getNode(const std::string& nodeName) {
 ietfInterface_t* Topology::getInterface(const LldpNeighbor_t& neighborInfo) {
     CncNode_t* node = getNode(neighborInfo.systemName);
     // Check if the node exists
-    if (!node) {
+    if (node == nullptr) {
         return nullptr;
     }
     // Loop through the interfaces to find a matching LLDP neighbor

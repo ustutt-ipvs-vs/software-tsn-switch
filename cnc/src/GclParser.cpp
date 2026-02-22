@@ -28,19 +28,25 @@ static bool isNodeNameMatch(const pugi::xml_node& node, const std::string& targe
 
 // Helper function to find node recursively by name, considering namespaces
 static pugi::xml_node findNodeDeep(const pugi::xml_node& parent, const std::string& targetName) {
-    if (isNodeNameMatch(parent, targetName)) return parent;
+    if (isNodeNameMatch(parent, targetName)) {
+        return parent;
+    }
 
     for (pugi::xml_node child : parent.children()) {
         pugi::xml_node found = findNodeDeep(child, targetName);
-        if (found) return found;
+        if (found != nullptr) {
+            return found;
+        }
     }
-    return pugi::xml_node();
+    return {};
 }
 
 // Helper function to read value
 static std::string getVal(const pugi::xml_node& parent, const std::string& name, const char* def = "") {
     for (pugi::xml_node child : parent.children()) {
-        if (isNodeNameMatch(child, name)) return child.child_value();
+        if (isNodeNameMatch(child, name)) {
+            return child.child_value();
+        }
     }
     return def;
 }
@@ -69,11 +75,15 @@ bool GclParser::parseOperationalGclData(const std::string& xmlData, CncNode_t& n
     // 2. Iterate over each interface
     for (pugi::xml_node ifaceNode : root.children()) {
         // Make sure it's an interface node
-        if (!isNodeNameMatch(ifaceNode, "interface")) continue;
+        if (!isNodeNameMatch(ifaceNode, "interface")) {
+            continue;
+        }
 
         // Name of the interface
         std::string ifaceName = getVal(ifaceNode, "name");
-        if (ifaceName.empty()) continue;
+        if (ifaceName.empty()) {
+            continue;
+        }
 
         // 3. Search for interface in struct
         ietfInterface_t* targetIface = nullptr;
@@ -85,7 +95,7 @@ bool GclParser::parseOperationalGclData(const std::string& xmlData, CncNode_t& n
         }
 
         // If interface found in XML, parse its GCL
-        if (targetIface) {
+        if (targetIface != nullptr) {
             parseInterfaceGcl(&ifaceNode, *targetIface);
         }
     }
@@ -93,7 +103,7 @@ bool GclParser::parseOperationalGclData(const std::string& xmlData, CncNode_t& n
 }
 
 void GclParser::parseInterfaceGcl(const void* xmlNodePtr, ietfInterface_t& iface) {
-    const pugi::xml_node* ifnode = static_cast<const pugi::xml_node*>(xmlNodePtr);
+    const auto* ifnode = static_cast<const pugi::xml_node*>(xmlNodePtr);
 
     // Navigation: Search recursively for gate-parameter-table
     pugi::xml_node gclNode = findNodeDeep(*ifnode, "gate-parameter-table");
@@ -112,7 +122,7 @@ void GclParser::parseInterfaceGcl(const void* xmlNodePtr, ietfInterface_t& iface
     // oper-cycle-time
     // not in datastore --> create maybe fallback to admin time since admin is now running
     pugi::xml_node operCycleTimeNode = findNodeDeep(gclNode, "oper-cycle-time");
-    if (operCycleTimeNode) {
+    if (operCycleTimeNode != nullptr) {
         std::string numStr = getVal(operCycleTimeNode, "numerator");
         std::string denStr = getVal(operCycleTimeNode, "denominator");
         if (!numStr.empty() && !denStr.empty()) {
@@ -123,7 +133,7 @@ void GclParser::parseInterfaceGcl(const void* xmlNodePtr, ietfInterface_t& iface
 
     // oper-base-time
     pugi::xml_node operBaseTimeNode = findNodeDeep(gclNode, "oper-base-time");
-    if (operBaseTimeNode) {
+    if (operBaseTimeNode != nullptr) {
         std::string secStr = getVal(operBaseTimeNode, "seconds");
         std::string nsecStr = getVal(operBaseTimeNode, "nanoseconds");
         if (!secStr.empty() && !nsecStr.empty()) {
@@ -135,7 +145,7 @@ void GclParser::parseInterfaceGcl(const void* xmlNodePtr, ietfInterface_t& iface
     // oper-control-list
     pugi::xml_node operControlListNode = findNodeDeep(gclNode, "oper-control-list");
 
-    if (operControlListNode) {
+    if (operControlListNode != nullptr) {
         // 1. Collect all gate-control-entry nodes
         std::vector<pugi::xml_node> entries;
         for (pugi::xml_node entryNode : operControlListNode.children()) {

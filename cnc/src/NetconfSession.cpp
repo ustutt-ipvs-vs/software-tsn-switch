@@ -30,7 +30,7 @@ char *kb_interactive_clb(const char *auth_name, const char *instruction, const c
     return strdup(g_current_password.c_str());
 }
 
-NetconfSession::NetconfSession() : session_(nullptr) {
+NetconfSession::NetconfSession() {
     static bool initialized = false;
 
     if (!initialized) {
@@ -51,7 +51,7 @@ NetconfSession::~NetconfSession() {
 }
 
 bool NetconfSession::connect(const std::string &ip, int port, const std::string &user, const std::string &password) {
-    if (session_) {
+    if (session_ != nullptr) {
         disconnect();
     }
 
@@ -72,7 +72,7 @@ bool NetconfSession::connect(const std::string &ip, int port, const std::string 
 
     g_current_password.clear();
 
-    if (!session_) {
+    if (session_ == nullptr) {
         std::cerr << "[NetconfSession] Connection failed." << std::endl;
         return false;
     }
@@ -82,7 +82,7 @@ bool NetconfSession::connect(const std::string &ip, int port, const std::string 
 }
 
 void NetconfSession::disconnect() {
-    if (session_) {
+    if (session_ != nullptr) {
         nc_session_free(session_, nullptr);
         session_ = nullptr;
         std::cout << "Disconnected from NETCONF session." << std::endl;
@@ -94,13 +94,13 @@ bool NetconfSession::isConnected() const {
 }
 
 std::string NetconfSession::getData(const std::string &xpath) {
-    if (!session_) {
+    if (session_ == nullptr) {
         std::cerr << "[NetconfSession] Not connected." << std::endl;
         return "";
     }
 
     // 1. Create RPC object
-    std::string result_xml = "";
+    std::string result_xml;
     struct nc_rpc *rpc = nullptr;
 
     if (xpath.empty()) {
@@ -109,7 +109,7 @@ std::string NetconfSession::getData(const std::string &xpath) {
         rpc = nc_rpc_get(xpath.c_str(), NC_WD_ALL, NC_PARAMTYPE_CONST);
     }
 
-    if (!rpc) {
+    if (rpc == nullptr) {
         std::cerr << "[NetconfSession] Error: Failed to create RPC." << std::endl;
         return "";
     }
@@ -130,7 +130,7 @@ std::string NetconfSession::getData(const std::string &xpath) {
 
     if (msgtype == NC_MSG_REPLY) {
         // Data received successfully
-        if (op) {
+        if (op != nullptr) {
             char *str_out = nullptr;
 
             // libyang v3 Printing
@@ -138,7 +138,7 @@ std::string NetconfSession::getData(const std::string &xpath) {
             // LYD_PRINT_SIBLINGS: Recursively print all siblings
             lyd_print_mem(&str_out, op, LYD_XML, LYD_PRINT_SIBLINGS);
 
-            if (str_out) {
+            if (str_out != nullptr) {
                 result_xml = std::string(str_out);
                 free(str_out);
             }
@@ -149,14 +149,18 @@ std::string NetconfSession::getData(const std::string &xpath) {
         std::cerr << "[NetconfSession] Server replied with ERROR." << std::endl;
     }
 
-    if (op) lyd_free_all(op);
-    if (envp) lyd_free_all(envp);
+    if (op != nullptr) {
+        lyd_free_all(op);
+    }
+    if (envp != nullptr) {
+        lyd_free_all(envp);
+    }
 
     return result_xml;
 }
 
 bool NetconfSession::editData(const std::string &configXml) {
-    if (!session_) {
+    if (session_ == nullptr) {
         std::cerr << "[NetconfSession] Not connected." << std::endl;
         return false;
     }
@@ -170,7 +174,7 @@ bool NetconfSession::editData(const std::string &configXml) {
     struct nc_rpc *rpc = nc_rpc_edit(NC_DATASTORE_CANDIDATE, NC_RPC_EDIT_DFLTOP_MERGE, NC_RPC_EDIT_TESTOPT_TESTSET,
                                      NC_RPC_EDIT_ERROPT_STOP, configXml.c_str(), NC_PARAMTYPE_CONST);
 
-    if (!rpc) {
+    if (rpc == nullptr) {
         std::cerr << "[NetconfSession] Error: Failed to create edit-config RPC." << std::endl;
         return false;
     }
@@ -201,14 +205,18 @@ bool NetconfSession::editData(const std::string &configXml) {
 
     // Cleanup
     nc_rpc_free(rpc);
-    if (op) lyd_free_all(op);
-    if (envp) lyd_free_all(envp);
+    if (op != nullptr) {
+        lyd_free_all(op);
+    }
+    if (envp != nullptr) {
+        lyd_free_all(envp);
+    }
 
     return success;
 }
 
 bool NetconfSession::commit() {
-    if (!session_) {
+    if (session_ == nullptr) {
         std::cerr << "[NetconfSession] Not connected." << std::endl;
         return false;
     }
@@ -216,7 +224,7 @@ bool NetconfSession::commit() {
     // 1. Create RPC: <commit>
     struct nc_rpc *rpc = nc_rpc_commit(0, 0, nullptr, nullptr, NC_PARAMTYPE_CONST);
 
-    if (!rpc) {
+    if (rpc == nullptr) {
         std::cerr << "[NetconfSession] Error: Failed to create commit RPC." << std::endl;
         return false;
     }
@@ -247,8 +255,12 @@ bool NetconfSession::commit() {
 
     // Cleanup
     nc_rpc_free(rpc);
-    if (op) lyd_free_all(op);
-    if (envp) lyd_free_all(envp);
+    if (op != nullptr) {
+        lyd_free_all(op);
+    }
+    if (envp != nullptr) {
+        lyd_free_all(envp);
+    }
 
     return success;
 }

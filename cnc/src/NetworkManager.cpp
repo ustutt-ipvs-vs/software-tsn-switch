@@ -58,10 +58,9 @@ std::shared_ptr<common::NetconfSession> NetworkManager::getSession(const std::st
     auto it = sessions_.find(nodeName);
     if (it != sessions_.end()) {
         return it->second;
-    } else {
-        std::cerr << "[Error] No session found for node " << nodeName << std::endl;
-        return nullptr;
-    }
+    } 
+    std::cerr << "[Error] No session found for node " << nodeName << std::endl;
+    return nullptr;
 }
 
 void NetworkManager::fetchLldpData() {
@@ -75,15 +74,14 @@ void NetworkManager::fetchLldpData() {
         if (lldpData.empty()) {
             // No LLDP data retrieved
             continue;
-        } else {
-            CncNode_t* currentNode = topology_.getNode(name);
-            if (currentNode) {
-                if (!cnc::LldpParser::parseLldpData(lldpData, *currentNode)) {
-                    std::cerr << "[Error] Failed to parse LLDP data for node " << name << std::endl;
-                }
-            } else {
-                std::cerr << "[Error] Node " << name << " not found in topology." << std::endl;
+        } 
+        CncNode_t* currentNode = topology_.getNode(name);
+        if (currentNode != nullptr) {
+            if (!cnc::LldpParser::parseLldpData(lldpData, *currentNode)) {
+                std::cerr << "[Error] Failed to parse LLDP data for node " << name << std::endl;
             }
+        } else {
+            std::cerr << "[Error] Node " << name << " not found in topology." << std::endl;
         }
     }
 }
@@ -107,7 +105,7 @@ void NetworkManager::fetchOperationGcl() {
         }
 
         CncNode_t* node = topology_.getNode(name);
-        if (!node) {
+        if (node == nullptr) {
             continue;
         }
 
@@ -135,7 +133,7 @@ bool NetworkManager::deployConfigToNode(const std::string& nodeName) {
         }
     }
 
-    if (!targetNode) {
+    if (targetNode == nullptr) {
         std::cerr << "[Error] Node " << nodeName << " not found in topology." << std::endl;
         return false;
     }

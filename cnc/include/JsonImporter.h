@@ -18,10 +18,10 @@ class JsonImporter {
    public:
     /**
      * @brief Imports CNC node configurations from a JSON file.
-     * @param filePath The path to the JSON file.
+     * @param filename The path to the JSON file.
      * @return True if the import was successful, false otherwise.
      */
-    static bool importFromFile(const std::string& filePath, Topology& topology);
+    static bool importFromFile(const std::string& filename, Topology& topology);
 
     /**
      * @brief Imports device inventory (credentials) from a JSON file.

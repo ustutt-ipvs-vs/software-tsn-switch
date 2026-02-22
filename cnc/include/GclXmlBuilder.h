@@ -50,7 +50,7 @@ class GclXmlBuilder {
      * @param ss The stringstream to append the XML to.
      * @param config The GCL holding all necessary information for node.
      */
-    static void appendControlList(std::stringstream& ss, GclConfig_t config);
+    static void appendControlList(std::stringstream& ss, const GclConfig_t& config);
 
     /**
      * @brief Appends the ptpTime to the Xml

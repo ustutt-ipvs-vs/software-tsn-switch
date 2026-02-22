@@ -25,20 +25,26 @@ static bool isNodeNameMatch(const pugi::xml_node& node, const std::string& targe
 
 // Recursive function to find a node by name, considering namespaces
 static pugi::xml_node findNodeDeep(const pugi::xml_node& parent, const std::string& targetName) {
-    if (isNodeNameMatch(parent, targetName)) return parent;
+    if (isNodeNameMatch(parent, targetName)) {
+        return parent;
+    }
 
     for (pugi::xml_node child : parent.children()) {
         pugi::xml_node found = findNodeDeep(child, targetName);
-        if (found) return found;
+        if (found != nullptr) {
+            return found;
+        }
     }
-    return pugi::xml_node();
+    return {};
 }
 
 // Helper function to extract tag value considering possible namespaces
 static std::string getChildValue(const pugi::xml_node& parent, const std::string& name) {
     // Direct child lookup
     for (pugi::xml_node child : parent.children()) {
-        if (isNodeNameMatch(child, name)) return child.child_value();
+        if (isNodeNameMatch(child, name)) {
+            return child.child_value();
+        }
     }
     return "";
 }
@@ -88,7 +94,9 @@ bool LldpParser::parseLldpData(const std::string& xmlData, CncNode_t& node) {
 
         // Get Name wih helper function
         std::string interfaceName = getChildValue(port, "name");
-        if (interfaceName.empty()) continue;
+        if (interfaceName.empty()) {
+            continue;
+        }
 
         // Security check
         if (node.interfaces.empty()) {
@@ -106,13 +114,15 @@ bool LldpParser::parseLldpData(const std::string& xmlData, CncNode_t& node) {
         }
 
         // If port does not exist in config, ignore it
-        if (!targetInterface) continue;
+        if (targetInterface == nullptr) {
+            continue;
+        }
 
         // 4. Parse LLDP neighbor information
         pugi::xml_node remoteData = findNodeDeep(port, "remote-systems-data");
 
         // 5. Write data into struct
-        if (remoteData) {
+        if (remoteData != nullptr) {
             targetInterface->lldpNeighbor.hasNeighbor = true;
 
             // Use helper function to get child values
@@ -123,7 +133,7 @@ bool LldpParser::parseLldpData(const std::string& xmlData, CncNode_t& node) {
             // Look for ip address
             pugi::xml_node mgmtIpNode = findNodeDeep(remoteData, "management-address");
 
-            if (mgmtIpNode) {
+            if (mgmtIpNode != nullptr) {
                 targetInterface->lldpNeighbor.managementIp = getChildValue(mgmtIpNode, "address");
             }
         } else {

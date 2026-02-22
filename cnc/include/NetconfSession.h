@@ -64,6 +64,6 @@ class NetconfSession {
 
    private:
     // Pointer to the underlying NETCONF session
-    struct nc_session* session_;
+    struct nc_session* session_ = nullptr;
 };
 }  // namespace common
