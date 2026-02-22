@@ -118,7 +118,9 @@ InventoryMap JsonImporter::importInventory(const std::string& filename) {
 
         for (const auto& item : root["inventory"]) {
             std::string host = item.value("hostName", "");
-            if (host.empty()) continue;  // Ohne Hostname bringt der Eintrag nichts
+            if (host.empty()) {
+                continue;  // Ohne Hostname bringt der Eintrag nichts
+            }
 
             DeviceCredentials_t creds;
             creds.ip = item.value("management_ip", "");

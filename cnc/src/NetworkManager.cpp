@@ -66,7 +66,9 @@ std::shared_ptr<common::NetconfSession> NetworkManager::getSession(const std::st
 
 void NetworkManager::fetchLldpData() {
     for (auto const& [name, session] : sessions_) {
-        if (!session->isConnected()) continue;
+        if (!session->isConnected()) {
+            continue;
+        }
 
         std::string lldpData = session->getData("/ieee802-dot1ab-lldp:lldp");
 
@@ -92,7 +94,9 @@ void NetworkManager::fetchOperationGcl() {
         "ieee802-dot1q-sched-bridge:gate-parameter-table";
 
     for (auto const& [name, session] : sessions_) {
-        if (!session->isConnected()) continue;
+        if (!session->isConnected()) {
+            continue;
+        }
 
         // Fetch GCL data via NETCONF <get>
         std::string gclData = session->getData(gclXPath);
@@ -103,7 +107,9 @@ void NetworkManager::fetchOperationGcl() {
         }
 
         CncNode_t* node = topology_.getNode(name);
-        if (!node) continue;
+        if (!node) {
+            continue;
+        }
 
         if (cnc::GclParser::parseOperationalGclData(gclData, *node)) {
             // Successfully parsed and updated node's GCL data
