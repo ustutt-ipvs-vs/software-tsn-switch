@@ -5,12 +5,15 @@
 #include <optional>
 #include <vector>
 
+/**
+ * @brief Helper to build netlink messages, used to add attributes to a message and resize everything appropriately.
+ */
 class NestedAttrBuilder {
    public:
     NestedAttrBuilder(int maxPayloadLength);
-    int addAttribute(int attrBuilderItemID, int type, const void* data, int len);
+    int addChildAttribute(int attrBuilderParentID, int type, const void* data, int len);
     int addAttribute(nlmsghdr* nlh, int type, const void* data, int len);
-    void addAttrLength(const int attrBuilderID, const int length);
+    void addAttrLength(int attrBuilderID, int length);
     ~NestedAttrBuilder();
 
    private:
@@ -22,7 +25,7 @@ class NestedAttrBuilder {
     const int maxPayloadLength;
     nlmsghdr* nlh{};
 
-    int insertAttr(attrBuilderItem* attr, int type, const void* data, int len);
+    int insertAttr(attrBuilderItem* item, int type, const void* data, int len);
     void clearAttrVector();
 };
 

@@ -1,16 +1,15 @@
 #ifndef QDISCMANAGER_H
 #define QDISCMANAGER_H
-#include <NetlinkSocket.h>
-#include <TaprioModel.h>
-#include <linux/netlink.h>
 #include <linux/rtnetlink.h>
 
 #include <map>
 #include <string>
 
 #include "../../common/include/CncTypes.h"
+#include "NetlinkSocket.h"
+#include "TaprioModel.h"
 
-#define BUFFER_SIZE 8192
+enum : std::uint16_t { BUFFER_SIZE = 8192 };
 
 /**
  * @brief This class is used to query, set/modify, or remove qdiscs of the interfaces present on the host
@@ -41,10 +40,10 @@ class QdiscManager {
     static void parsePriomap(const rtattr* rta, ietfInterface_t& ifToFill);
 
    public:
-    static void setQdisc(NetlinkSocket& netlink_socket, const std::string& ifname, TaprioConfig& taprioConfig);
-    static void removeQdisc(NetlinkSocket& netlink_socket, const std::string& ifname);
-    static void getQdiscInfo(NetlinkSocket& netlink_socket, const std::string& ifname);
-    static void getAllQdiscInfo(NetlinkSocket& netlink_socket);
+    static void setQdisc(NetlinkSocket& netlinkSocket, const std::string& ifname, TaprioConfig& taprioConfig);
+    static void removeQdisc(NetlinkSocket& netlinkSocket, const std::string& ifname);
+    static void getQdiscInfo(NetlinkSocket& netlinkSocket, const std::string& ifname);
+    static void getAllQdiscInfo(NetlinkSocket& netlinkSocket);
     static void getInterfacesInResponse(const NetlinkSocket& sock, std::map<int, ietfInterface_t>& interfacesMap,
                                         uint32_t currentReqId);
 };

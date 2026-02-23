@@ -1,4 +1,4 @@
-#include "NetconfNetlinkMapper.h"
+#include "./include/NetconfNetlinkMapper.h"
 
 #include <bits/time.h>
 
@@ -24,7 +24,7 @@ uint64_t NetconfNetlinkMapper::rationalToNs(const RationalTime_t& rationalTime) 
  * @return uint64_t Time in nanoseconds
  */
 uint64_t NetconfNetlinkMapper::ptpToNs(const PtpTime_t& time) {
-    return time.seconds * 1'000'000'000ULL + time.nanoseconds;
+    return (time.seconds * 1'000'000'000ULL) + time.nanoseconds;
 }
 
 /**
@@ -58,15 +58,15 @@ TaprioConfig NetconfNetlinkMapper::mapToTaprio(const ietfInterface_t& iface) {
     taprioConf.numTxQs = iface.numActiveTxQueues;
     taprioConf.numTc = bp.trafficClassData.numTrafficClasses;
 
-    for (uint8_t i = 0; i < 8; ++i) {
+    for (uint32_t i = 0; i < 8; ++i) {
         taprioConf.prioTc[i] = bp.trafficClassData.priorityMap[i];
     }
-    for (uint8_t i = 8; i < TC_QOPT_BITMASK + 1; ++i) {
+    for (uint32_t i = 8; i < TC_QOPT_BITMASK + 1; ++i) {
         // TODO: How are priorities above 7 mapped? YANG only supports 8, linux 16
         taprioConf.prioTc[i] = 0;
     }
 
-    for (uint8_t i = 0; i < taprioConf.numTc; ++i) {
+    for (uint32_t i = 0; i < taprioConf.numTc; ++i) {
         taprioConf.maxSDUs[i].trafficClass = gcl.queueMaxSduTable[i].trafficClass;
         taprioConf.maxSDUs[i].queueMaxSdu = gcl.queueMaxSduTable[i].queueMaxSdu;
         taprioConf.maxSDUs[i].preemtible =
@@ -74,8 +74,8 @@ TaprioConfig NetconfNetlinkMapper::mapToTaprio(const ietfInterface_t& iface) {
     }
 
     taprioConf.admin.clockid = CLOCK_TAI;
-    taprioConf.admin.baseTime = ptpToNs(gcl.adminBaseTime);
-    taprioConf.admin.cycleTime = rationalToNs(gcl.adminCycleTime);
+    taprioConf.admin.baseTime = static_cast<int64_t>(ptpToNs(gcl.adminBaseTime));
+    taprioConf.admin.cycleTime = static_cast<int64_t>(rationalToNs(gcl.adminCycleTime));
     taprioConf.admin.cycleTimeExt = gcl.adminCycleTimeExtensionNs;
 
     taprioConf.admin.entries.reserve(gcl.adminControlList.size());

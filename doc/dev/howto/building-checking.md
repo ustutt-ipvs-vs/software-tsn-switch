@@ -1,7 +1,7 @@
 # Building & checking the project {#howto-build-check}
 
 > **Important:**
-> First, make sure you've set up all the required dependencies (TODO).
+> First, make sure you've set up [all the required dependencies](@ref howto-install-dev).
 > All commands on this page assume you're in the repo's root, **not** in a build folder or similar!
 
 ### Building the code

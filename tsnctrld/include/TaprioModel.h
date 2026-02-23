@@ -6,12 +6,20 @@
 #include <cstdint>
 #include <vector>
 
+/**
+ * @brief Represents one single entry in the schedule, contains what to do at this time, the gate mask, and how long
+ * this entry lasts.
+ */
 struct TaprioSchedEntry {
     uint8_t command;
     uint32_t gateMask;
     uint32_t interval;
 };
 
+/**
+ * @brief Represents a schedule passed to configure the qdisc. Contains the id of the clock to use, the actual
+ * schedule-entries, and other data.
+ */
 struct TaprioSchedule {
     int32_t clockid;
     int64_t baseTime;
@@ -20,12 +28,19 @@ struct TaprioSchedule {
     std::vector<TaprioSchedEntry> entries;
 };
 
+/**
+ * @brief Represents one configuration entry that defines the maximum SDU of a traffic class, as well as its
+ * "preemtibility".
+ */
 struct TaprioMaxSDU {
     uint32_t trafficClass;
     uint32_t queueMaxSdu;
     uint32_t preemtible;  // Either 1=TC_FP_EXPRESS or 2=TC_FP_PREEMPTIBLE
 };
 
+/**
+ * @brief Represents the configuration passed to @ref QdiscManager::setQdisc() to configure the qdisc.
+ */
 struct TaprioConfig {
     uint32_t numTc;
     uint32_t numTxQs;

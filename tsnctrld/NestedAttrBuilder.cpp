@@ -1,10 +1,10 @@
-#include <NetlinkSocket.h>
 #include <linux/rtnetlink.h>
 
 #include <cstring>
 #include <stdexcept>
 
-#include "NestedAttBuilder.h"
+#include "./include/NestedAttBuilder.h"
+#include "./include/NetlinkSocket.h"
 
 NestedAttrBuilder::NestedAttrBuilder(const int maxPayloadLength) : maxPayloadLength(maxPayloadLength) {
 }
@@ -33,7 +33,7 @@ void NestedAttrBuilder::addAttrLength(const int attrBuilderID, const int length)
 }
 
 /**
- * @brief Add an attribute to the neadlink message data structure
+ * @brief Add an attribute to the netlink message data structure
  * @param nlh Pointer to the netlink message header data
  * @param type The type of the attribute that will be added
  * @param data Pointer to the data of the attribute
@@ -56,9 +56,10 @@ int NestedAttrBuilder::addAttribute(nlmsghdr* nlh, const int type, const void* d
  * @param len The length of the attribute to be added
  * @return
  */
-int NestedAttrBuilder::addAttribute(const int attrBuilderParentID, const int type, const void* data, const int len) {
+int NestedAttrBuilder::addChildAttribute(const int attrBuilderParentID, const int type, const void* data,
+                                         const int len) {
     attrBuilderItem* parent = this->attrs.at(attrBuilderParentID);
-    rtattr* attr = (struct rtattr*)((char*)parent->attr + RTA_ALIGN(parent->attr->rta_len));
+    auto* attr = (struct rtattr*)((char*)parent->attr + RTA_ALIGN(parent->attr->rta_len));
     return this->insertAttr(new attrBuilderItem{.attr = attr, .parentID = attrBuilderParentID}, type, data, len);
 }
 
@@ -90,7 +91,7 @@ int NestedAttrBuilder::insertAttr(attrBuilderItem* item, const int type, const v
         this->nlh->nlmsg_len = nlh_len;
     }
 
-    return this->attrs.size() - 1;
+    return static_cast<int>(this->attrs.size() - 1);
 }
 
 /**

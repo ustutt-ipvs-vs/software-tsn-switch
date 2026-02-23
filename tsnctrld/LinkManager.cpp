@@ -17,8 +17,9 @@
 
 /* RFC 2863 operational status
  * Taken from linux/if.h
+ * Set basetype for default uint32_t to uint8_t to satify linter
  * */
-enum {
+enum : uint8_t {
     IF_OPER_UNKNOWN,
     IF_OPER_NOTPRESENT,
     IF_OPER_DOWN,
@@ -35,17 +36,17 @@ static OperStatus mapOperState(uint8_t kernelState) {
     // TESTING=4, DORMANT=5, UP=6
 
     switch (kernelState) {
-        case 6:
+        case IF_OPER_UP:
             return OperStatus::UP;  // IF_OPER_UP
-        case 2:
+        case IF_OPER_DOWN:
             return OperStatus::DOWN;  // IF_OPER_DOWN
-        case 4:
+        case IF_OPER_TESTING:
             return OperStatus::TESTING;  // IF_OPER_TESTING
-        case 5:
+        case IF_OPER_DORMANT:
             return OperStatus::DORMANT;  // IF_OPER_DORMANT
-        case 1:
+        case IF_OPER_NOTPRESENT:
             return OperStatus::NOT_PRESENT;  // IF_OPER_NOTPRESENT
-        case 3:
+        case IF_OPER_LOWERLAYERDOWN:
             return OperStatus::LOWER_LAYER_DOWN;  // IF_OPER_LOWERLAYERDOWN
         default:
             return OperStatus::UNKNOWN;
@@ -143,7 +144,7 @@ void LinkManager::getInterfacesInResponse(const NetlinkSocket& sock, std::map<in
             continue;
         }
 
-        struct ifinfomsg* ifm = (struct ifinfomsg*)NLMSG_DATA(nlh);
+        auto* ifm = (struct ifinfomsg*)NLMSG_DATA(nlh);
         int ifindex = ifm->ifi_index;
 
         ietfInterface_t& current = interfacesMap[ifindex];
@@ -152,12 +153,12 @@ void LinkManager::getInterfacesInResponse(const NetlinkSocket& sock, std::map<in
         current.ifindex = ifindex;
 
         // 2. Parse Basic Flags
-        current.adminEnabled = (ifm->ifi_flags & IFF_UP);
-        bool isLoopback = (ifm->ifi_flags & IFF_LOOPBACK);
+        current.adminEnabled = (ifm->ifi_flags & IFF_UP) != 0;
+        bool isLoopback = (ifm->ifi_flags & IFF_LOOPBACK) != 0;
 
         // 3. Parse Attributes
-        int len = nlh->nlmsg_len - NLMSG_LENGTH(sizeof(*ifm));
-        rtattr* rta = (struct rtattr*)(((char*)ifm) + NLMSG_ALIGN(sizeof(*ifm)));
+        unsigned long len = nlh->nlmsg_len - NLMSG_LENGTH(sizeof(*ifm));
+        auto* rta = (struct rtattr*)(((char*)ifm) + NLMSG_ALIGN(sizeof(*ifm)));
 
         const char* kindRaw = nullptr;  // To store IFLA_INFO_KIND
 
@@ -186,25 +187,30 @@ void LinkManager::getInterfacesInResponse(const NetlinkSocket& sock, std::map<in
                     current.numTxQueues = *reinterpret_cast<uint32_t*>(RTA_DATA(rta));
                     break;
 
-                case IFLA_MASTER:
+                case IFLA_MASTER: {
                     current.bridgePort.masterIndex = *reinterpret_cast<int*>(RTA_DATA(rta));
                     // Resolve Master Name immediately for convenience
-                    char masterBuf[IF_NAMESIZE];
-                    if (if_indextoname(current.bridgePort.masterIndex, masterBuf)) {
-                        current.bridgePort.bridgeName = masterBuf;
+                    std::array<char, IF_NAMESIZE> masterBuf{};
+                    if (if_indextoname(current.bridgePort.masterIndex, masterBuf.data()) != nullptr) {
+                        current.bridgePort.bridgeName = masterBuf.data();
                     }
                     break;
-
+                }
                 case IFLA_LINKINFO:
                     kindRaw = getLinkKindRaw((rtattr*)RTA_DATA(rta), RTA_PAYLOAD(rta));
                     break;
 
                     // Handle other attributes if strictly necessary for debug
                     // case IFLA_STATS: ...
+
+                default:
+                    // Default case that ignores cases not handled explicitly, satisfies linter.
+                    break;
             }
         }
 
         // 4. Deduce Type (IANA Identity)
+        current.type = IfType::ETHERNET;  // Default first, special cases later
         if (isLoopback) {
             current.type = IfType::LOOPBACK;
         } else if (kindRaw != nullptr) {
@@ -212,13 +218,7 @@ void LinkManager::getInterfacesInResponse(const NetlinkSocket& sock, std::map<in
                 current.type = IfType::BRIDGE;
             } else if (strcmp(kindRaw, "bond") == 0) {
                 current.type = IfType::LAG;
-            } else if (strcmp(kindRaw, "veth") == 0) {
-                current.type = IfType::ETHERNET;
-            } else {
-                current.type = IfType::ETHERNET;  // Fallback for unknown kinds
             }
-        } else {
-            current.type = IfType::ETHERNET;  // Physical hardware
         }
     }
 }
@@ -239,7 +239,7 @@ void LinkManager::getActiveQueues(int sock, ietfInterface_t& iface) {
     ifr.ifr_data = (char*)&channels;
 
     if (ioctl(sock, SIOCETHTOOL, &ifr) < 0) {
-        spdlog::debug("[LM] [Active TX Qs] Interface {} does not support GCHANNELS, assuming 1 queue", iface.name);
+        SPDLOG_DEBUG("[LM] [Active TX Qs] Interface {} does not support GCHANNELS, assuming 1 queue", iface.name);
         iface.numActiveTxQueues = active;
         return;
     }
