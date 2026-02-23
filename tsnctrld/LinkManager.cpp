@@ -17,8 +17,9 @@
 
 /* RFC 2863 operational status
  * Taken from linux/if.h
+ * Set basetype for default uint32_t to uint8_t to satify linter
  * */
-enum {
+enum : uint8_t {
     IF_OPER_UNKNOWN,
     IF_OPER_NOTPRESENT,
     IF_OPER_DOWN,
@@ -35,17 +36,17 @@ static OperStatus mapOperState(uint8_t kernelState) {
     // TESTING=4, DORMANT=5, UP=6
 
     switch (kernelState) {
-        case 6:
+        case IF_OPER_UP:
             return OperStatus::UP;  // IF_OPER_UP
-        case 2:
+        case IF_OPER_DOWN:
             return OperStatus::DOWN;  // IF_OPER_DOWN
-        case 4:
+        case IF_OPER_TESTING:
             return OperStatus::TESTING;  // IF_OPER_TESTING
-        case 5:
+        case IF_OPER_DORMANT:
             return OperStatus::DORMANT;  // IF_OPER_DORMANT
-        case 1:
+        case IF_OPER_NOTPRESENT:
             return OperStatus::NOT_PRESENT;  // IF_OPER_NOTPRESENT
-        case 3:
+        case IF_OPER_LOWERLAYERDOWN:
             return OperStatus::LOWER_LAYER_DOWN;  // IF_OPER_LOWERLAYERDOWN
         default:
             return OperStatus::UNKNOWN;
@@ -143,7 +144,7 @@ void LinkManager::getInterfacesInResponse(const NetlinkSocket& sock, std::map<in
             continue;
         }
 
-        struct ifinfomsg* ifm = (struct ifinfomsg*)NLMSG_DATA(nlh);
+        auto* ifm = (struct ifinfomsg*)NLMSG_DATA(nlh);
         int ifindex = ifm->ifi_index;
 
         ietfInterface_t& current = interfacesMap[ifindex];
@@ -152,12 +153,12 @@ void LinkManager::getInterfacesInResponse(const NetlinkSocket& sock, std::map<in
         current.ifindex = ifindex;
 
         // 2. Parse Basic Flags
-        current.adminEnabled = (ifm->ifi_flags & IFF_UP);
-        bool isLoopback = (ifm->ifi_flags & IFF_LOOPBACK);
+        current.adminEnabled = (ifm->ifi_flags & IFF_UP) != 0;
+        bool isLoopback = (ifm->ifi_flags & IFF_LOOPBACK) != 0;
 
         // 3. Parse Attributes
-        int len = nlh->nlmsg_len - NLMSG_LENGTH(sizeof(*ifm));
-        rtattr* rta = (struct rtattr*)(((char*)ifm) + NLMSG_ALIGN(sizeof(*ifm)));
+        unsigned long len = nlh->nlmsg_len - NLMSG_LENGTH(sizeof(*ifm));
+        auto* rta = (struct rtattr*)(((char*)ifm) + NLMSG_ALIGN(sizeof(*ifm)));
 
         const char* kindRaw = nullptr;  // To store IFLA_INFO_KIND
 
@@ -201,6 +202,10 @@ void LinkManager::getInterfacesInResponse(const NetlinkSocket& sock, std::map<in
 
                     // Handle other attributes if strictly necessary for debug
                     // case IFLA_STATS: ...
+
+                default:
+                    // Default case that ignores cases not handled explicitly, satisfies linter.
+                    break;
             }
         }
 

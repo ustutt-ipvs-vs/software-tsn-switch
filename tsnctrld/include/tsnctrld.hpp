@@ -53,23 +53,23 @@ class tsnctrld {
 
     std::vector<std::string> m_pathsToReset;
 
-    sysrepo::ErrorCode defaultOperCallback(sysrepo::Session sess, uint32_t subId, const std::string& moduleName,
+    sysrepo::ErrorCode defaultOperCallback(const sysrepo::Session& sess, uint32_t subId, const std::string& moduleName,
                                            const std::optional<std::string>& subXPath,
                                            const std::optional<std::string>& requestXPath, uint32_t requestId,
                                            std::optional<libyang::DataNode>& parent);
-    sysrepo::ErrorCode operInterfaceCallback(sysrepo::Session sess, uint32_t subId, const std::string& moduleName,
-                                             const std::optional<std::string>& subXPath,
+    sysrepo::ErrorCode operInterfaceCallback(const sysrepo::Session& sess, uint32_t subId,
+                                             const std::string& moduleName, const std::optional<std::string>& subXPath,
                                              const std::optional<std::string>& requestXPath, uint32_t requestId,
                                              std::optional<libyang::DataNode>& parent);
-    sysrepo::ErrorCode operBridgeCallback(sysrepo::Session sess, uint32_t subId, const std::string& moduleName,
+    sysrepo::ErrorCode operBridgeCallback(const sysrepo::Session& sess, uint32_t subId, const std::string& moduleName,
                                           const std::optional<std::string>& subXPath,
                                           const std::optional<std::string>& requestXPath, uint32_t requestId,
                                           std::optional<libyang::DataNode>& parent);
-    sysrepo::ErrorCode operBridgePortCallback(sysrepo::Session sess, uint32_t subId, const std::string& moduleName,
-                                              const std::optional<std::string>& subXPath,
+    sysrepo::ErrorCode operBridgePortCallback(const sysrepo::Session& sess, uint32_t subId,
+                                              const std::string& moduleName, const std::optional<std::string>& subXPath,
                                               const std::optional<std::string>& requestXPath, uint32_t requestId,
                                               std::optional<libyang::DataNode>& parent);
-    sysrepo::ErrorCode operLldpCallback(sysrepo::Session sess, uint32_t subId, const std::string& moduleName,
+    sysrepo::ErrorCode operLldpCallback(const sysrepo::Session& sess, uint32_t subId, const std::string& moduleName,
                                         const std::optional<std::string>& subXPath,
                                         const std::optional<std::string>& requestXPath, uint32_t requestId,
                                         std::optional<libyang::DataNode>& parent);
@@ -94,6 +94,13 @@ class tsnctrld {
                                           uint32_t requestId);
 
     static int ensureRunningDaemons(const std::vector<std::string>& services);
+    static void populateAsBridge(const ietfInterface_t& current, libyang::Context& ctx,
+                                 std::optional<libyang::DataNode>& forest);
+    static void populateAsTsnCapableInterface(ietfInterface_t& current, libyang::DataNode& if_node);
+    static void populateAsInterface(ietfInterface_t& current, libyang::Context& ctx,
+                                    std::optional<libyang::DataNode>& forest);
+    static void popuplateAsLldpConfiguration(ietfInterface_t& current, libyang::Context& ctx,
+                                             std::optional<libyang::DataNode>& forest);
     void syncHardwareToRunning();
     void setupSubscriptions();
     // ietfInterface_t& getExistingOrNewInterface(const std::string& ifname, std::vector<ietfInterface_t>& interfaces);
