@@ -28,6 +28,9 @@ static constexpr std::array IEEE8021Q_DEFAULT_TC_MAP = {
 template <>
 struct fmt::formatter<sysrepo::Event> : ostream_formatter {};
 
+/**
+ * @brief Allow formatting of sysrepo::Changes for logging using spdlog/fmt.
+ */
 template <>
 struct fmt::formatter<sysrepo::Change> {
     // Standard parse function (accepts default "{}" formatting)
@@ -173,7 +176,7 @@ void print_interfaces(const std::vector<ietfInterface_t> &interfaces) {
 }
 
 /**
- * @brief Helper
+ * @brief Helper to convert numeric clock id to string.
  * @param clk The id of a clock
  * @return The string representation of the clock id
  */
@@ -698,6 +701,14 @@ int tsnctrld::ensureRunningDaemons(const std::vector<std::string> &services) {
     return globalSuccess ? 0 : 1;
 }
 
+/**
+ * @brief Takes an @ref ietfInterface_t, checks if it is of type "bridge", and if so, populates the datastore
+ * appropriately.
+ *
+ * @param current The interface to check and use to populate.
+ * @param ctx The libyang Context under which to start adding the data, used if the @ref forest does not yet exist.
+ * @param forest A libyang DataNode in whose Context the data should be added.
+ */
 void tsnctrld::populateAsBridge(const ietfInterface_t &current, libyang::Context &ctx,
                                 std::optional<libyang::DataNode> &forest) {
     if (current.type == IfType::BRIDGE) {
@@ -731,6 +742,14 @@ void tsnctrld::populateAsBridge(const ietfInterface_t &current, libyang::Context
     }
 }
 
+/**
+ * @brief Takes an @ref ietfInterface_t, first populates the data required for all types of interfaces, then tries to
+ * populate fields relevant to TSN.
+ *
+ * @param current The interface used to populate the datastore.
+ * @param ctx The libyang Context under which to start adding the data, used if the @ref forest does not yet exist.
+ * @param forest A libyang DataNode in whose Context the data should be added.
+ */
 void tsnctrld::populateAsInterface(ietfInterface_t &current, libyang::Context &ctx,
                                    std::optional<libyang::DataNode> &forest) {
     std::string if_path = std::string("/ietf-interfaces:interfaces/interface[name='").append(current.name).append("']");
@@ -753,6 +772,14 @@ void tsnctrld::populateAsInterface(ietfInterface_t &current, libyang::Context &c
     populateAsTsnCapableInterface(current, *if_node);
 }
 
+/**
+ * @brief Takes an interface and a DataNode representing the path "/interfaces/interface", and fills its "bridge-port"
+ * with the relevant data given by the @ref ietfInterface_t struct.
+ *
+ * @param current The interface used to populate the given DataNode.
+ * @param if_node A libyang DataNode where the "bridge-port" and "bridge-port/gate-parameter-table" nodes are filled
+ * appropriately.
+ */
 void tsnctrld::populateAsTsnCapableInterface(ietfInterface_t &current, libyang::DataNode &if_node) {
     if (current.type == IfType::BRIDGE || current.type == IfType::ETHERNET) {
         SPDLOG_DEBUG("[SYNC] [BR] Interface is may be TSN capable, filling required fields according to yang model...");
@@ -825,6 +852,14 @@ void tsnctrld::populateAsTsnCapableInterface(ietfInterface_t &current, libyang::
     }
 }
 
+/**
+ * @brief Takes an interface and checks if LLDP makes sense here, in that case, adding the basic configuration to the
+ * datastore.
+ *
+ * @param current The interface to check and use to populate.
+ * @param ctx The libyang Context under which to start adding the data, used if the @ref forest does not yet exist.
+ * @param forest A libyang DataNode in whose Context the data should be added.
+ */
 void tsnctrld::popuplateAsLldpConfiguration(ietfInterface_t &current, libyang::Context &ctx,
                                             std::optional<libyang::DataNode> &forest) {
     if (current.type == IfType::ETHERNET) {

@@ -3,6 +3,10 @@
 #include "../../common/include/CncTypes.h"
 #include "TaprioModel.h"
 
+/**
+ * @brief Helper class with methods to help building a @ref TaprioConfig from an @ref ietfInterface_t or an @ref
+ * ietfInterface_t from a (partial) @ref TaprioConfig.
+ */
 class NetconfNetlinkMapper {
    public:
     static TaprioConfig mapToTaprio(const ietfInterface_t& iface);

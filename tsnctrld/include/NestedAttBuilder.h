@@ -5,6 +5,9 @@
 #include <optional>
 #include <vector>
 
+/**
+ * @brief Helper to build netlink messages, used to add attributes to a message and resize everything appropriately.
+ */
 class NestedAttrBuilder {
    public:
     NestedAttrBuilder(int maxPayloadLength);
