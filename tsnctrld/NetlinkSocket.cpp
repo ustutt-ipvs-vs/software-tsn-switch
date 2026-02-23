@@ -97,9 +97,15 @@ rtattr *NetlinkSocket::addRtaAttribute(nlmsghdr *nlh, const int maxlen, const in
  */
 void NetlinkSocket::sendMessage(nlmsghdr *nlh, const size_t len) {
     nlh->nlmsg_flags |= NLM_F_ACK;
-    struct iovec iov = {nlh, len};
+    struct iovec iov = {.iov_base = nlh, .iov_len = len};
     struct sockaddr_nl kernel = {.nl_family = AF_NETLINK};
-    struct msghdr msg = {&kernel, sizeof(kernel), &iov, 1, nullptr, 0, 0};
+    struct msghdr msg = {.msg_name = &kernel,
+                         .msg_namelen = sizeof(kernel),
+                         .msg_iov = &iov,
+                         .msg_iovlen = 1,
+                         .msg_control = nullptr,
+                         .msg_controllen = 0,
+                         .msg_flags = 0};
 
     if (sendmsg(socketFd, &msg, 0) < 0) {
         throw std::runtime_error("Failed to send message to kernel");

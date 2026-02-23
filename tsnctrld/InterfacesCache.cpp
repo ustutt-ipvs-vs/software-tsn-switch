@@ -38,7 +38,9 @@ ietfInterface_t* InterfacesCache::getInterface(int ifindex) {
  */
 ietfInterface_t* InterfacesCache::getInterface(const std::string& name) {
     for (auto& [idx, iface] : m_interfaces) {
-        if (iface.name == name) return &iface;
+        if (iface.name == name) {
+            return &iface;
+        }
     }
     return nullptr;
 }
@@ -89,7 +91,9 @@ std::map<int, ietfInterface_t>& InterfacesCache::getAllInterfaces() {
  * @param ethtool_sock A simple socket used to query the kernel for the number of active TX-queues of an interface.
  */
 void InterfacesCache::ensureFullLinkData(NetlinkSocket& sock, int ethtool_sock) {
-    if (m_fullLinkDumpDone) return;
+    if (m_fullLinkDumpDone) {
+        return;
+    }
 
     // 1. Mark all as stale
     // This is critical. If an interface was deleted in the kernel,
@@ -159,7 +163,9 @@ void InterfacesCache::ensureFullLinkData(NetlinkSocket& sock, int ethtool_sock) 
  * @param sock An instance of a @ref NetlinkSocket which is used to send the message and retrieve the response.
  */
 void InterfacesCache::ensureFullQdiscData(NetlinkSocket& sock) {
-    if (m_fullQdiscDumpDone) return;
+    if (m_fullQdiscDumpDone) {
+        return;
+    }
 
     // 1. Full Dump
     QdiscManager::getAllQdiscInfo(sock);

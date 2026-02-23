@@ -187,15 +187,15 @@ void LinkManager::getInterfacesInResponse(const NetlinkSocket& sock, std::map<in
                     current.numTxQueues = *reinterpret_cast<uint32_t*>(RTA_DATA(rta));
                     break;
 
-                case IFLA_MASTER:
+                case IFLA_MASTER: {
                     current.bridgePort.masterIndex = *reinterpret_cast<int*>(RTA_DATA(rta));
                     // Resolve Master Name immediately for convenience
-                    char masterBuf[IF_NAMESIZE];
-                    if (if_indextoname(current.bridgePort.masterIndex, masterBuf)) {
-                        current.bridgePort.bridgeName = masterBuf;
+                    std::array<char, IF_NAMESIZE> masterBuf{};
+                    if (if_indextoname(current.bridgePort.masterIndex, masterBuf.data()) != nullptr) {
+                        current.bridgePort.bridgeName = masterBuf.data();
                     }
                     break;
-
+                }
                 case IFLA_LINKINFO:
                     kindRaw = getLinkKindRaw((rtattr*)RTA_DATA(rta), RTA_PAYLOAD(rta));
                     break;
@@ -210,6 +210,7 @@ void LinkManager::getInterfacesInResponse(const NetlinkSocket& sock, std::map<in
         }
 
         // 4. Deduce Type (IANA Identity)
+        current.type = IfType::ETHERNET;  // Default first, special cases later
         if (isLoopback) {
             current.type = IfType::LOOPBACK;
         } else if (kindRaw != nullptr) {
@@ -217,13 +218,7 @@ void LinkManager::getInterfacesInResponse(const NetlinkSocket& sock, std::map<in
                 current.type = IfType::BRIDGE;
             } else if (strcmp(kindRaw, "bond") == 0) {
                 current.type = IfType::LAG;
-            } else if (strcmp(kindRaw, "veth") == 0) {
-                current.type = IfType::ETHERNET;
-            } else {
-                current.type = IfType::ETHERNET;  // Fallback for unknown kinds
             }
-        } else {
-            current.type = IfType::ETHERNET;  // Physical hardware
         }
     }
 }
