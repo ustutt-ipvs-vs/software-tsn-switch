@@ -1,5 +1,7 @@
 #include "LldpParser.h"
 
+#include <spdlog/spdlog.h>
+
 #include <cstring>
 #include <iostream>
 #include <pugixml.hpp>
@@ -52,7 +54,7 @@ static std::string getChildValue(const pugi::xml_node& parent, const std::string
 bool LldpParser::parseLldpData(const std::string& xmlData, CncNode_t& node) {
     // Check for empty input
     if (xmlData.empty()) {
-        std::cerr << "[Error] Empty XML data provided for LLDP parsing." << '\n';
+        spdlog::error("[Error] Empty XML data provided for LLDP parsing.");
         return false;
     }
 
@@ -61,7 +63,7 @@ bool LldpParser::parseLldpData(const std::string& xmlData, CncNode_t& node) {
     pugi::xml_parse_result result = doc.load_string(xmlData.c_str());
 
     if (!result) {
-        std::cerr << "[Error] Failed to parse LLDP XML data: " << result.description() << '\n';
+        spdlog::error("[Error] Failed to parse LLDP XML data: {}", result.description());
         return false;
     }
 
@@ -81,7 +83,7 @@ bool LldpParser::parseLldpData(const std::string& xmlData, CncNode_t& node) {
 
     // No LLDP root found
     if (!lldpRoot) {
-        std::cerr << "[Error] No <lldp> root element found in XML data." << '\n';
+        spdlog::error("[Error] No <lldp> root element found in XML data.");
         return false;
     }
 
@@ -100,7 +102,7 @@ bool LldpParser::parseLldpData(const std::string& xmlData, CncNode_t& node) {
 
         // Security check
         if (node.interfaces.empty()) {
-            std::cerr << "[FATAL] Node interface list is empty! Check CncNode initialization." << '\n';
+            spdlog::error("[FATAL] Node interface list is empty! Check CncNode initialization.");
             return false;
         }
 

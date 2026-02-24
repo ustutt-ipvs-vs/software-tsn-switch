@@ -1,3 +1,5 @@
+#include <spdlog/spdlog.h>
+
 #include <iostream>
 #include <vector>
 
@@ -6,7 +8,7 @@
 
 // Simple demo to showcase GclXmlBuilder usage
 int main() {
-    std::cout << "--- Starting XML Builder Demo ---" << '\n';
+    spdlog::info("--- Starting XML Builder Demo ---");
 
     // 1. Mocking: Building a dummy CncNode_t with one interface and GCL data
     CncNode_t dummyNode;
@@ -53,13 +55,13 @@ int main() {
     dummyNode.interfaces.push_back(iface);
 
     // 4. Action: Call the builder
-    std::cout << "Generating XML for " << dummyNode.hostName << "..." << '\n';
+    spdlog::info("Generating XML for {}...", dummyNode.hostName);
     std::string xmlOutput = cnc::GclXmlBuilder::buildXmlForNode(dummyNode);
 
     // 5. Check output
-    std::cout << "\n=== GENERATED XML START ===\n" << '\n';
-    std::cout << xmlOutput << '\n';
-    std::cout << "\n=== GENERATED XML END ===\n" << '\n';
+    spdlog::info("=== GENERATED XML START ===");
+    spdlog::info(xmlOutput);
+    spdlog::info("=== GENERATED XML END ===");
 
     // Cleanup handled automatically by std::vector
 

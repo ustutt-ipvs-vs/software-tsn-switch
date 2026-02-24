@@ -1,5 +1,7 @@
 #include "../include/GclParser.h"
 
+#include <spdlog/spdlog.h>
+
 #include <cstring>
 #include <iostream>
 #include <pugixml.hpp>
@@ -60,7 +62,7 @@ bool GclParser::parseOperationalGclData(const std::string& xmlData, CncNode_t& n
     pugi::xml_parse_result result = doc.load_string(xmlData.c_str());
 
     if (!result) {
-        std::cerr << "XML parsing error: " << result.description() << " at offset " << result.offset << '\n';
+        spdlog::error("XML parsing error: {} at offset {}", result.description(), result.offset);
         return false;
     }
 
@@ -68,7 +70,7 @@ bool GclParser::parseOperationalGclData(const std::string& xmlData, CncNode_t& n
     pugi::xml_node root = findNodeDeep(doc, "interfaces");
 
     if (!root) {
-        std::cerr << "No interfaces found in GCL data." << '\n';
+        spdlog::error("No interfaces found in GCL data.");
         return false;
     }
 

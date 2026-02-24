@@ -1,3 +1,5 @@
+#include <spdlog/spdlog.h>
+
 #include <filesystem>
 #include <iostream>
 
@@ -7,9 +9,9 @@
 using namespace cnc;
 
 int main() {
-    std::cout << "--- JSON Importer Test ---" << '\n';
+    spdlog::info("--- JSON Importer Test ---");
 
-    std::cout << "[DEBUG] Current Working Directory: " << std::filesystem::current_path() << '\n';
+    spdlog::info("[DEBUG] Current Working Directory: {}", std::filesystem::current_path());
 
     // 1. Create Topology object
     Topology topology;
@@ -22,24 +24,24 @@ int main() {
     // or copy the file to build/.
 
     if (JsonImporter::importFromFile(filename, topology)) {
-        std::cout << "Success! Loaded " << topology.nodes.size() << " nodes." << '\n';
+        spdlog::info("Success! Loaded {} nodes.", topology.nodes.size());
 
         // 3. Check imported data
         for (const auto& node : topology.nodes) {
-            std::cout << "\n[Node] " << node.hostName << '\n';
-            std::cout << "  - IP: '" << node.ipAddress << "'" << '\n';
+            spdlog::info("[Node] {}", node.hostName);
+            spdlog::info("  - IP: '{}'", node.ipAddress);
 
             for (const auto& iface : node.interfaces) {
-                std::cout << "  - Interface: '" << iface.name << "'" << '\n';
+                spdlog::info("  - Interface: '{}'", iface.name);
 
                 if (iface.bridgePort.gateParameterTable.gateEnabled) {
-                    std::cout << "    -> GCL Config found (Cycle: "
-                              << iface.bridgePort.gateParameterTable.adminCycleTime.numerator << "ns)" << '\n';
+                    spdlog::info("    -> GCL Config found (Cycle: {}ns)",
+                                 iface.bridgePort.gateParameterTable.adminCycleTime.numerator);
                 }
             }
         }
     } else {
-        std::cerr << "Failed to import JSON!" << '\n';
+        spdlog::error("Failed to import JSON!");
         return 1;
     }
 

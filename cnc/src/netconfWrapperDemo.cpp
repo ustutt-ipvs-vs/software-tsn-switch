@@ -1,3 +1,5 @@
+#include <spdlog/spdlog.h>
+
 #include <chrono>  // For sleep (optional)
 #include <fstream>
 #include <iostream>
@@ -12,8 +14,7 @@ std::map<std::string, std::string> loadConfig(const std::string& filename) {
     std::ifstream file(filename);
 
     if (!file.is_open()) {
-        std::cerr << "Could not find '" << filename << "'!" << '\n';
-        std::cerr << "Please create the file in the execution directory." << '\n';
+        spdlog::error("Could not find '{}'! Please create the file in the execution directory.", filename);
         return config;
     }
 
@@ -41,7 +42,7 @@ std::map<std::string, std::string> loadConfig(const std::string& filename) {
 }
 
 int main() {
-    std::cout << "Netconf Wrapper Demo Application" << '\n';
+    spdlog::info("Netconf Wrapper Demo Application");
 
     // Load configuration
     auto config = loadConfig("../../config.txt");
@@ -54,29 +55,29 @@ int main() {
     std::string pass = config["PASS"];
 
     // Debug Print (without password)
-    std::cout << "Target: " << host << ":" << port << '\n';
-    std::cout << "User: " << user << '\n';
+    spdlog::info("Target: {}:{}", host, port);
+    spdlog::info("User: {}", user);
 
     common::NetconfSession session;
 
-    std::cout << "Connecting..." << '\n';
+    spdlog::info("Connecting...");
 
     if (session.connect(host, port, user, pass)) {
-        std::cout << "SUCCESS: Connected to server!" << '\n';
+        spdlog::info("SUCCESS: Connected to server!");
 
         // Read & Print current state
-        std::cout << "\n--- 1. Reading Current State (Running) ---" << '\n';
+        spdlog::info("\n--- 1. Reading Current State (Running) ---");
         std::string xpath_filter = "/data:data";
         std::string initial_data = session.getData(xpath_filter);
 
         if (!initial_data.empty()) {
-            std::cout << initial_data << '\n';
+            spdlog::info(initial_data);
         } else {
-            std::cout << "[Info] Filter returned no data (or empty). Check XPath." << '\n';
+            spdlog::info("[Info] Filter returned no data (or empty). Check XPath.");
         }
 
         // Prepare for edit
-        std::cout << "\n--- 2. Editing Data (Candidate) ---" << '\n';
+        spdlog::info("\n--- 2. Editing Data (Candidate) ---");
 
         std::string changeXml = R"(<data xmlns="urn:examples:demo">
                 <numbers>
@@ -86,29 +87,29 @@ int main() {
             </data>)";
 
         if (session.editData(changeXml)) {
-            std::cout << "-> Edit OK: Data is now in 'Candidate' datastore." << '\n';
+            spdlog::info("-> Edit OK: Data is now in 'Candidate' datastore.");
         } else {
-            std::cerr << "-> Edit FAILED. Stopping." << '\n';
+            spdlog::error("-> Edit FAILED. Stopping.");
             session.disconnect();
             return -1;
         }
 
         // Commit changes
-        std::cout << "\n--- 3. Committing to 'Running' ---" << '\n';
+        spdlog::info("\n--- 3. Committing to 'Running' ---");
 
         if (session.commit()) {
-            std::cout << "-> Commit OK: Data is now live." << '\n';
+            spdlog::info("-> Commit OK: Data is now live.");
         } else {
-            std::cerr << "-> Commit FAILED." << '\n';
+            spdlog::error("-> Commit FAILED.");
         }
 
         // Verify new state
-        std::cout << "\n--- 4. Verifying New State ---" << '\n';
-        std::cout << session.getData(xpath_filter) << '\n';
+        spdlog::info("\n--- 4. Verifying New State ---");
+        spdlog::info(session.getData(xpath_filter));
 
         session.disconnect();
     } else {
-        std::cerr << "ERROR: Connection failed." << '\n';
+        spdlog::error("ERROR: Connection failed.");
     }
 
     return 0;

@@ -1,5 +1,7 @@
 #include "include/LldpDaemon.h"
 
+#include <spdlog/spdlog.h>
+
 #include <chrono>
 #include <iostream>
 #include <stdexcept>
@@ -100,10 +102,10 @@ void LldpDaemon::syncInitialNeighbors() {
     lldpctl_atom_t* iface = nullptr;
     lldpctl_atom_t* ifaces = lldpctl_get_interfaces(m_queryConn);
 
-    std::cout << "[LLDP] Reading current neighbors from lldpd...\n";
+    SPDLOG_DEBUG("[LLDP] Reading current neighbors from lldpd...");
 
     if (ifaces == nullptr) {
-        std::cerr << "[LLDP] Failed to get interfaces: " << lldpctl_last_error(m_queryConn) << "\n";
+        spdlog::error("[LLDP] Failed to get interfaces: {}", lldpctl_last_strerror(m_queryConn));
         return;
     }
 
@@ -169,7 +171,7 @@ void LldpDaemon::syncInitialNeighbors() {
     }
     lldpctl_atom_dec_ref(ifaces);
 
-    std::cout << "[LLDP] Operational datastore updated\n";
+    SPDLOG_DEBUG("[LLDP] Operational datastore updated");
 }
 
 /**
@@ -182,17 +184,17 @@ void LldpDaemon::startWatching() {
     }
     m_stop = false;
     m_watchThread = std::thread([this]() {
-        std::cout << "[LLDP] Watcher thread started. Waiting for events...\n";
+        SPDLOG_DEBUG("[LLDP] Watcher thread started. Waiting for events...");
         while (!m_stop) {
             if (lldpctl_watch(m_watchConn) < 0) {
-                std::cerr << "[LLDP] Watcher error: " << lldpctl_last_error(m_watchConn) << "\n";
+                spdlog::error("[LLDP] Watcher error: {}", lldpctl_last_strerror(m_watchConn));
                 break;
             }
             if (m_stop) {
                 break;
             }
         }
-        std::cout << "[LLDP] Watcher thread exiting.\n";
+        SPDLOG_DEBUG("[LLDP] Watcher thread exiting.");
     });
 }
 
@@ -211,14 +213,14 @@ void LldpDaemon::processEvent(lldpctl_change_t type, lldpctl_atom_t* iface, lldp
         "/ieee802-dot1ab-lldp:lldp/port[name='" + ifName + "'][dest-mac-address='01-80-c2-00-00-0e']";
 
     if (type == lldpctl_c_deleted) {
-        std::cout << "[LLDP] [EVENT] Neighbor lost on " << ifName << ". Cleaning datastore.\n";
+        SPDLOG_DEBUG("[LLDP] [EVENT] Neighbor lost on {}. Cleaning datastore.", ifName);
         m_operSess.deleteItem(basePort + "/remote-systems-data");
         m_operSess.applyChanges();
         return;
     }
 
     if (type == lldpctl_c_added || type == lldpctl_c_updated) {
-        std::cout << "[LLDP] [EVENT] Neighbor update on " << ifName << "\n";
+        SPDLOG_DEBUG("[LLDP] [EVENT] Neighbor update on {}", ifName);
         refreshPortNeighbors(ifName);
         m_operSess.applyChanges();
     }
@@ -235,7 +237,7 @@ void LldpDaemon::processEvent(lldpctl_change_t type, lldpctl_atom_t* iface, lldp
 void LldpDaemon::refreshPortNeighbors(const std::string& ifName) {
     lldpctl_atom_t* ifaces = lldpctl_get_interfaces(m_queryConn);
     if (ifaces == nullptr) {
-        std::cerr << "[LLDP] refreshPortNeighbors: get_interfaces failed: " << lldpctl_last_error(m_queryConn) << "\n";
+        spdlog::error("[LLDP] refreshPortNeighbors: get_interfaces failed: {}", lldpctl_last_strerror(m_queryConn));
     }
 
     const std::string basePort =

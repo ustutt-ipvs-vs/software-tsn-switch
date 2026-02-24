@@ -1,5 +1,7 @@
 #include "JsonImporter.h"
 
+#include <spdlog/spdlog.h>
+
 #include <fstream>
 #include <iostream>
 #include <nlohmann/json.hpp>
@@ -14,7 +16,7 @@ namespace cnc {
 bool JsonImporter::importFromFile(const std::string& filename, Topology& topology) {
     std::ifstream file(filename);
     if (!file.is_open()) {
-        std::cerr << "[Error] Could not open config file: " << filename << '\n';
+        spdlog::error("[Error] Could not open config file: {}", filename);
         return false;
     }
 
@@ -23,7 +25,7 @@ bool JsonImporter::importFromFile(const std::string& filename, Topology& topolog
         file >> root;
 
         if (!root.contains("nodes") || !root["nodes"].is_array()) {
-            std::cerr << "[Error] JSON root has no 'nodes' array." << '\n';
+            spdlog::error("[Error] JSON root has no 'nodes' array.");
             return false;
         }
 
@@ -93,7 +95,7 @@ bool JsonImporter::importFromFile(const std::string& filename, Topology& topolog
         return true;
 
     } catch (const json::exception& e) {
-        std::cerr << "[Error] JSON Parse Error: " << e.what() << '\n';
+        spdlog::error("[Error] JSON Parse Error: {}", e.what());
         return false;
     }
 }
@@ -103,7 +105,7 @@ InventoryMap JsonImporter::importInventory(const std::string& filename) {
 
     std::ifstream file(filename);
     if (!file.is_open()) {
-        std::cerr << "[Error] Could not open inventory file: " << filename << '\n';
+        spdlog::error("[Error] Could not open inventory file: {}", filename);
         return inventory;
     }
 
@@ -112,7 +114,7 @@ InventoryMap JsonImporter::importInventory(const std::string& filename) {
         file >> root;
 
         if (!root.contains("inventory") || !root["inventory"].is_array()) {
-            std::cerr << "[Error] Inventory JSON missing 'inventory' array." << '\n';
+            spdlog::error("[Error] Inventory JSON missing 'inventory' array.");
             return inventory;
         }
 
@@ -133,7 +135,7 @@ InventoryMap JsonImporter::importInventory(const std::string& filename) {
         }
 
     } catch (const json::exception& e) {
-        std::cerr << "[Error] Inventory JSON Parse Error: " << e.what() << '\n';
+        spdlog::error("[Error] Inventory JSON Parse Error: {}", e.what());
     }
 
     return inventory;
