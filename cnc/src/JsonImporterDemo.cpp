@@ -11,7 +11,7 @@ using namespace cnc;
 int main() {
     spdlog::info("--- JSON Importer Test ---");
 
-    spdlog::info("[DEBUG] Current Working Directory: {}", std::filesystem::current_path());
+    spdlog::info("[DEBUG] Current Working Directory: {}", std::filesystem::current_path().string());
 
     // 1. Create Topology object
     Topology topology;
