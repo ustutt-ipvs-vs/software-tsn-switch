@@ -1,11 +1,11 @@
 #include "include/LldpDaemon.h"
 
+#include <arpa/inet.h>
 #include <spdlog/spdlog.h>
 
 #include <chrono>
 #include <iostream>
 #include <stdexcept>
-#include <arpa/inet.h>
 
 /**
  * @brief Convert a C string to std::string safely.
@@ -61,13 +61,27 @@ uint32_t LldpDaemon::currentTimeMark() {
  * @param lldpVal string value out of the chassis object defining the chassis subtype
  */
 static std::string mapChassisIdSubtype(const std::string& lldpVal) {
-    if (lldpVal == "mac") { return "mac-address"; }
-    if (lldpVal == "ifname") { return "interface-name"; }
-    if (lldpVal == "local") { return "locally-assigned"; }
-    if (lldpVal == "ip") { return "network-address"; }
-    if (lldpVal == "chassis") { return "chassis-component"; }
-    if (lldpVal == "ifalias") { return "interface-alias"; }
-    if (lldpVal == "port") { return "port-component"; }
+    if (lldpVal == "mac") {
+        return "mac-address";
+    }
+    if (lldpVal == "ifname") {
+        return "interface-name";
+    }
+    if (lldpVal == "local") {
+        return "locally-assigned";
+    }
+    if (lldpVal == "ip") {
+        return "network-address";
+    }
+    if (lldpVal == "chassis") {
+        return "chassis-component";
+    }
+    if (lldpVal == "ifalias") {
+        return "interface-alias";
+    }
+    if (lldpVal == "port") {
+        return "port-component";
+    }
     return "";
 }
 
@@ -80,13 +94,27 @@ static std::string mapChassisIdSubtype(const std::string& lldpVal) {
  * @param lldpVal string value out of the neighbor atom defining the port subtype
  */
 static std::string mapPortIdSubtype(const std::string& lldpVal) {
-    if (lldpVal == "ifname") { return "interface-name"; }
-    if (lldpVal == "mac") { return "mac-address"; }
-    if (lldpVal == "local") { return "locally-assigned"; }
-    if (lldpVal == "ip") { return "network-address"; }
-    if (lldpVal == "ifalias") { return "interface-alias"; }
-    if (lldpVal == "port") { return "port-component"; }
-    if (lldpVal == "agent") { return "agent-circuit-id"; }
+    if (lldpVal == "ifname") {
+        return "interface-name";
+    }
+    if (lldpVal == "mac") {
+        return "mac-address";
+    }
+    if (lldpVal == "local") {
+        return "locally-assigned";
+    }
+    if (lldpVal == "ip") {
+        return "network-address";
+    }
+    if (lldpVal == "ifalias") {
+        return "interface-alias";
+    }
+    if (lldpVal == "port") {
+        return "port-component";
+    }
+    if (lldpVal == "agent") {
+        return "agent-circuit-id";
+    }
     return "";
 }
 
@@ -103,21 +131,45 @@ static std::string mapCapabilities(int caps) {
     std::string result;
 
     auto append = [&](const char* bit) {
-        if (!result.empty()) { result += ' ';}
+        if (!result.empty()) {
+            result += ' ';
+        }
         result += bit;
     };
 
-    if ((caps & (1 << 0)) != 0) { append("other"); }
-    if ((caps & (1 << 1)) != 0) { append("repeater"); }
-    if ((caps & (1 << 2)) != 0) { append("bridge"); }
-    if ((caps & (1 << 3)) != 0) { append("wlan-access-point"); }
-    if ((caps & (1 << 4)) != 0) { append("router"); }
-    if ((caps & (1 << 5)) != 0) { append("telephone"); }
-    if ((caps & (1 << 6)) != 0) { append("docsis-cable-device"); }
-    if ((caps & (1 << 7)) != 0) { append("station-only"); }
-    if ((caps & (1 << 8)) != 0) { append("cvlan-component"); }
-    if ((caps & (1 << 9)) != 0) { append("svlan-component"); }
-    if ((caps & (1 << 10)) != 0) { append("two-port-mac-relay"); }
+    if ((caps & (1 << 0)) != 0) {
+        append("other");
+    }
+    if ((caps & (1 << 1)) != 0) {
+        append("repeater");
+    }
+    if ((caps & (1 << 2)) != 0) {
+        append("bridge");
+    }
+    if ((caps & (1 << 3)) != 0) {
+        append("wlan-access-point");
+    }
+    if ((caps & (1 << 4)) != 0) {
+        append("router");
+    }
+    if ((caps & (1 << 5)) != 0) {
+        append("telephone");
+    }
+    if ((caps & (1 << 6)) != 0) {
+        append("docsis-cable-device");
+    }
+    if ((caps & (1 << 7)) != 0) {
+        append("station-only");
+    }
+    if ((caps & (1 << 8)) != 0) {
+        append("cvlan-component");
+    }
+    if ((caps & (1 << 9)) != 0) {
+        append("svlan-component");
+    }
+    if ((caps & (1 << 10)) != 0) {
+        append("two-port-mac-relay");
+    }
 
     return result;
 }
@@ -206,7 +258,7 @@ LldpDaemon::LldpDaemon(sysrepo::Session& operSession) : m_operSess(operSession) 
  * @param chassis   lldpctl chassis atom (may be nullptr).
  */
 void LldpDaemon::writeNeighborData(const std::string& base, lldpctl_atom_t* neigh, lldpctl_atom_t* chassis) {
-    const std::string portId    = getStr(neigh, lldpctl_k_port_id);
+    const std::string portId = getStr(neigh, lldpctl_k_port_id);
     const std::string portDescr = getStr(neigh, lldpctl_k_port_descr);
     const std::string portIdSubtype = mapPortIdSubtype(getStr(neigh, lldpctl_k_port_id_subtype));
 
@@ -222,10 +274,12 @@ void LldpDaemon::writeNeighborData(const std::string& base, lldpctl_atom_t* neig
     }
 
     // --- Chassis fields ---
-    if (chassis == nullptr) {return;}
+    if (chassis == nullptr) {
+        return;
+    }
 
-    const std::string chassisId   = getStr(chassis, lldpctl_k_chassis_id);
-    const std::string systemName  = getStr(chassis, lldpctl_k_chassis_name);
+    const std::string chassisId = getStr(chassis, lldpctl_k_chassis_id);
+    const std::string systemName = getStr(chassis, lldpctl_k_chassis_name);
     const std::string systemDescr = getStr(chassis, lldpctl_k_chassis_descr);
     const std::string chassisIdSubtype = mapChassisIdSubtype(getStr(chassis, lldpctl_k_chassis_id_subtype));
 
@@ -246,9 +300,9 @@ void LldpDaemon::writeNeighborData(const std::string& base, lldpctl_atom_t* neig
 
     // --- Capabilties ---
     const int capsSupported = static_cast<int>(lldpctl_atom_get_int(chassis, lldpctl_k_chassis_cap_available));
-    const int capsEnabled   = static_cast<int>(lldpctl_atom_get_int(chassis, lldpctl_k_chassis_cap_enabled));
+    const int capsEnabled = static_cast<int>(lldpctl_atom_get_int(chassis, lldpctl_k_chassis_cap_enabled));
     const std::string capsSupportedStr = mapCapabilities(capsSupported);
-    const std::string capsEnabledStr   = mapCapabilities(capsEnabled);
+    const std::string capsEnabledStr = mapCapabilities(capsEnabled);
 
     if (!capsSupportedStr.empty()) {
         m_operSess.setItem(base + "/system-capabilities-supported", capsSupportedStr);
@@ -286,8 +340,8 @@ void LldpDaemon::writeNeighborData(const std::string& base, lldpctl_atom_t* neig
                 m_operSess.setItem(mgmtBase + "/address-subtype", addrSubtype);
                 m_operSess.setItem(mgmtBase + "/address", addrHex);
             } catch (const std::exception& e) {
-                spdlog::error("[LLDP] management-address setItem failed. addr={} subtype={} hex={} error: {}",
-                    addr, addrSubtype, addrHex, e.what());
+                spdlog::error("[LLDP] management-address setItem failed. addr={} subtype={} hex={} error: {}", addr,
+                              addrSubtype, addrHex, e.what());
                 continue;
             }
         }
@@ -318,7 +372,7 @@ LldpDaemon::~LldpDaemon() {
  * @brief Initial snapshot sync of all currently known neighbors from lldpd. Writes into sysrepo operational datastore.
  */
 void LldpDaemon::syncInitialNeighbors() {
-    lldpctl_atom_t* iface  = nullptr;
+    lldpctl_atom_t* iface = nullptr;
     lldpctl_atom_t* ifaces = lldpctl_get_interfaces(m_queryConn);
 
     SPDLOG_DEBUG("[LLDP] Reading current neighbors from lldpd...");
@@ -351,16 +405,21 @@ void LldpDaemon::syncInitialNeighbors() {
 
             lldpctl_atom_t* neigh = nullptr;
             lldpctl_atom_foreach(neighbors, neigh) {
-                lldpctl_atom_t* chassis  = lldpctl_atom_get(neigh, lldpctl_k_port_chassis);
-                const uint32_t timeMark  = currentTimeMark();
+                lldpctl_atom_t* chassis = lldpctl_atom_get(neigh, lldpctl_k_port_chassis);
+                const uint32_t timeMark = currentTimeMark();
 
                 const std::string base =
                     "/ieee802-dot1ab-lldp:lldp"
-                    "/port[name='" + ifName + "']"
+                    "/port[name='" +
+                    ifName +
+                    "']"
                     "[dest-mac-address='01-80-c2-00-00-0e']"
                     "/remote-systems-data"
-                    "[time-mark='" + std::to_string(timeMark) + "']"
-                    "[remote-index='" + std::to_string(remoteIndex) + "']";
+                    "[time-mark='" +
+                    std::to_string(timeMark) +
+                    "']"
+                    "[remote-index='" +
+                    std::to_string(remoteIndex) + "']";
 
                 writeNeighborData(base, neigh, chassis);
 
@@ -470,7 +529,7 @@ void LldpDaemon::refreshPortNeighbors(const std::string& ifName) {
             break;
         }
 
-        uint32_t remoteIndex  = 1;
+        uint32_t remoteIndex = 1;
         lldpctl_atom_t* neigh = nullptr;
         lldpctl_atom_foreach(neighbors, neigh) {
             lldpctl_atom_t* chassis = lldpctl_atom_get(neigh, lldpctl_k_port_chassis);
@@ -478,11 +537,16 @@ void LldpDaemon::refreshPortNeighbors(const std::string& ifName) {
 
             const std::string base =
                 "/ieee802-dot1ab-lldp:lldp"
-                "/port[name='" + ifName + "']"
+                "/port[name='" +
+                ifName +
+                "']"
                 "[dest-mac-address='01-80-c2-00-00-0e']"
                 "/remote-systems-data"
-                "[time-mark='" + std::to_string(timeMark) + "']"
-                "[remote-index='" + std::to_string(remoteIndex) + "']";
+                "[time-mark='" +
+                std::to_string(timeMark) +
+                "']"
+                "[remote-index='" +
+                std::to_string(remoteIndex) + "']";
 
             writeNeighborData(base, neigh, chassis);
 
