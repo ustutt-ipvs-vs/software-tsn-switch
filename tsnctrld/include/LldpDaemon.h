@@ -45,6 +45,7 @@ class LldpDaemon {
     static uint32_t currentTimeMark();
 
     void refreshPortNeighbors(const std::string& ifName);
+    void writeNeighborData(const std::string& base, lldpctl_atom_t* neigh, lldpctl_atom_t* chassis);
 };
 
 #endif  // ENPRO_LLDPDAEMON_H
