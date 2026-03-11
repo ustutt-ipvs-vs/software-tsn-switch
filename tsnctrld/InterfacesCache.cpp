@@ -119,7 +119,8 @@ void InterfacesCache::ensureFullLinkData(NetlinkSocket& sock, int ethtool_sock) 
     }
 
     for (auto& [id, iface] : m_interfaces) {
-        LinkManager::getActiveQueues(ethtool_sock, iface);
+        // LinkManager::getActiveQueues(ethtool_sock, iface);
+        LinkManager::getLinkSpeed(ethtool_sock, iface);
     }
 
     m_fullLinkDumpDone = true;

@@ -12,6 +12,7 @@
 #include "LldpDaemon.h"
 #include "NetconfNetlinkMapper.h"
 #include "NetlinkSocket.h"
+#include "PtpManager.h"
 #include "QdiscManager.h"
 
 enum class GclFillOptions : uint8_t {
@@ -39,9 +40,11 @@ inline bool operator&(GclFillOptions a, GclFillOptions b) {
 class tsnctrld {
    private:
     int m_ethtool_sock;
+    int m_ptp_sock;
     NetlinkSocket m_sock;
     QdiscManager m_qm;
     LinkManager m_lm;
+    PtpManager m_ptp;
     NetconfNetlinkMapper m_mapper;
     sysrepo::Connection m_conn;
     sysrepo::Session m_sess;
@@ -73,6 +76,15 @@ class tsnctrld {
                                         const std::optional<std::string>& subXPath,
                                         const std::optional<std::string>& requestXPath, uint32_t requestId,
                                         std::optional<libyang::DataNode>& parent);
+    sysrepo::ErrorCode operPtpCallback(const sysrepo::Session& sess, uint32_t subId, const std::string& moduleName,
+                                       const std::optional<std::string>& subXPath,
+                                       const std::optional<std::string>& requestXPath, uint32_t requestId,
+                                       std::optional<libyang::DataNode>& parent);
+    sysrepo::ErrorCode operPtpPerformanceCallback(const sysrepo::Session& sess, uint32_t subId,
+                                                  const std::string& moduleName,
+                                                  const std::optional<std::string>& subXPath,
+                                                  const std::optional<std::string>& requestXPath, uint32_t requestId,
+                                                  std::optional<libyang::DataNode>& parent);
 
     sysrepo::ErrorCode defaultChangeCallback(sysrepo::Session sess, uint32_t subId, const std::string& moduleName,
                                              const std::optional<std::string>& subXPath, sysrepo::Event event,
@@ -101,6 +113,7 @@ class tsnctrld {
                                     std::optional<libyang::DataNode>& forest);
     static void popuplateAsLldpConfiguration(ietfInterface_t& current, libyang::Context& ctx,
                                              std::optional<libyang::DataNode>& forest);
+    void populatePtpConfig(libyang::Context& ctx, std::optional<libyang::DataNode>& forest);
     void syncHardwareToRunning();
     void setupSubscriptions();
     // ietfInterface_t& getExistingOrNewInterface(const std::string& ifname, std::vector<ietfInterface_t>& interfaces);

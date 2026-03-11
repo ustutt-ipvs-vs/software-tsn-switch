@@ -4,11 +4,15 @@
 #include <ifaddrs.h>
 #include <spdlog/fmt/ostr.h>
 #include <spdlog/spdlog.h>
+#include <sys/socket.h>
+#include <sys/un.h>
 #include <systemd/sd-bus.h>
 
 #include <ctime>
 #include <iostream>
 #include <thread>
+
+#include "PtpManager.h"
 
 static constexpr std::array IEEE8021Q_DEFAULT_TC_MAP = {
     // TC count:                    1  2  3  4  5  6  7  8
@@ -562,6 +566,28 @@ ietfInterface_t *tsnctrld::syncInterfaceFromSysrepo(sysrepo::Session &sess, cons
  * on the current host. Afterwards the datastore is repopulated and callbacks are initialized.
  */
 void tsnctrld::initialize() {
+    // double offset_ns, mean_path_delay_ns;
+    // while (true) {
+    //     if (m_ptp.getCurrentDataSet(offset_ns, mean_path_delay_ns)) {
+    //         std::cout << "PTP Offset: " << offset_ns << " ns\n";
+    //         std::cout << "Path Delay: " << mean_path_delay_ns << " ns\n";
+    //     } else {
+    //         std::cerr << "Failed getCurrentDataSet\n";
+    //     }
+    //
+    //    std::vector<std::string> states;
+    //    if (m_ptp.getPortState(states)) {
+    //        // Usually 9 = Slave, 6 = Master (Based on linuxptp states)
+    //        for (auto state : states) {
+    //            std::cout << "Port State: " << state << "\n";
+    //        }
+    //    } else {
+    //        std::cerr << "Failed getPortState\n";
+    //    }
+    //    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+    //}
+
+    m_ptp.startMonitoring();
     spdlog::info("[INIT] Initializing tsnctrld...");
 
     static const std::vector<std::string> SERVICES_TO_START = {"netopeer2-server.service", "lldpd.service"};
@@ -582,6 +608,8 @@ void tsnctrld::initialize() {
     m_sess.deleteItem("/ieee802-dot1q-bridge:bridges");
     SPDLOG_DEBUG("[INIT] [DEBUG] Cleaning lldp from datastore ");
     m_sess.deleteItem("/ieee802-dot1ab-lldp:lldp");
+    SPDLOG_DEBUG("[INIT] [DEBUG] Cleaning ptp from datastore ");
+    m_sess.deleteItem("/ieee1588-ptp-tt:ptp");
     m_sess.applyChanges();
 
     syncHardwareToRunning();
@@ -879,6 +907,28 @@ void tsnctrld::popuplateAsLldpConfiguration(ietfInterface_t &current, libyang::C
 }
 
 /**
+ * @brief Takes an interface and checks if LLDP makes sense here, in that case, adding the basic configuration to the
+ * datastore.
+ *
+ * @param ptp_node The @ref PtpNode_t instance used to populate the configuration data.
+ * @param ctx The libyang Context under which to start adding the data, used if the @ref forest does not yet exist.
+ * @param forest A libyang DataNode in whose Context the data should be added.
+ */
+void tsnctrld::populatePtpConfig(libyang::Context &ctx, std::optional<libyang::DataNode> &forest) {
+    PtpNode_t ptpNode;
+    m_ptp.fillConfigData(ptpNode);
+    std::string ptp_path = fmt::format("/ieee1588-ptp-tt:ptp/instances/instance[instance-index='{}']", 0);
+
+    auto ptp_res = forest ? forest->newPath2(ptp_path, std::nullopt) : ctx.newPath2(ptp_path, std::nullopt);
+    auto ptp_node = ptp_res.createdNode;
+    if (!ptp_node.has_value()) {
+        spdlog::warn("[SYNC] [LLDP] ptp_node of type std::optional has no value, makes no sense, returning...");
+        return;
+    }
+    ptp_node->newPath2("priority1", std::to_string(ptpNode.defaultDs.priority1));
+}
+
+/**
  * @brief Fills the "running" datastore with the current values as received from the kernel, builds the "ground truth"
  * of this program
  *
@@ -1020,6 +1070,11 @@ sysrepo::ErrorCode tsnctrld::operInterfaceCallback(const sysrepo::Session &sess,
         if (!if_node.has_value()) {
             spdlog::warn("[CB_OPER] [IF] if_node of type std::optional has no value, makes no sense, returning...");
             return sysrepo::ErrorCode::OperationFailed;
+        }
+
+        if (current.speed != (uint32_t)-1) {
+            SPDLOG_DEBUG("[CB_OPER] [IF] Interface {} has valid speed {}", current.name, current.speed);
+            if_node->newPath2("speed", fmt::format("{}", current.speed));
         }
 
         if_node->newPath("oper-status", operStatusToYangString(current.operStatus));
@@ -1172,6 +1227,61 @@ sysrepo::ErrorCode tsnctrld::operLldpCallback(const sysrepo::Session &sess, uint
                                               const std::string &moduleName, const std::optional<std::string> &subXPath,
                                               const std::optional<std::string> &requestXPath, uint32_t requestId,
                                               std::optional<libyang::DataNode> &parent) {
+    m_ifcache.setCurrentRequestId(requestId);
+
+    SPDLOG_DEBUG("[CB_OPER] [IF] Received oper callback for module \"{}\"...", moduleName);
+    SPDLOG_DEBUG("[CB_OPER] [IF] subXPath \"{}\"...", subXPath.value_or("MISSING"));
+    SPDLOG_DEBUG("[CB_OPER] [IF] requestXPath \"{}\"...", requestXPath.value_or("MISSING"));
+    SPDLOG_DEBUG("[CB_OPER] [IF] requestId \"{}\"...", requestId);
+    SPDLOG_DEBUG("[CB_OPER] [IF] module of parent node \"{}\"...", parent ? parent->schema().module().name() : "ROOT");
+    SPDLOG_DEBUG("[CB_OPER] [IF] name of parent node \"{}\"...", parent ? parent->schema().name() : "ROOT");
+
+    return sysrepo::ErrorCode::Ok;
+}
+
+/**
+ * @brief A callback for getting operational data related to ptp.
+ * @param sess
+ * @param subId
+ * @param moduleName
+ * @param subXPath
+ * @param requestXPath
+ * @param requestId
+ * @param parent
+ * @return
+ */
+sysrepo::ErrorCode tsnctrld::operPtpCallback(const sysrepo::Session &sess, uint32_t subId,
+                                             const std::string &moduleName, const std::optional<std::string> &subXPath,
+                                             const std::optional<std::string> &requestXPath, uint32_t requestId,
+                                             std::optional<libyang::DataNode> &parent) {
+    m_ifcache.setCurrentRequestId(requestId);
+
+    SPDLOG_DEBUG("[CB_OPER] [IF] Received oper callback for module \"{}\"...", moduleName);
+    SPDLOG_DEBUG("[CB_OPER] [IF] subXPath \"{}\"...", subXPath.value_or("MISSING"));
+    SPDLOG_DEBUG("[CB_OPER] [IF] requestXPath \"{}\"...", requestXPath.value_or("MISSING"));
+    SPDLOG_DEBUG("[CB_OPER] [IF] requestId \"{}\"...", requestId);
+    SPDLOG_DEBUG("[CB_OPER] [IF] module of parent node \"{}\"...", parent ? parent->schema().module().name() : "ROOT");
+    SPDLOG_DEBUG("[CB_OPER] [IF] name of parent node \"{}\"...", parent ? parent->schema().name() : "ROOT");
+
+    return sysrepo::ErrorCode::Ok;
+}
+
+/**
+ * @brief A callback for getting the operational performance metrics data related to ptp.
+ * @param sess
+ * @param subId
+ * @param moduleName
+ * @param subXPath
+ * @param requestXPath
+ * @param requestId
+ * @param parent
+ * @return
+ */
+sysrepo::ErrorCode tsnctrld::operPtpPerformanceCallback(const sysrepo::Session &sess, uint32_t subId,
+                                                        const std::string &moduleName,
+                                                        const std::optional<std::string> &subXPath,
+                                                        const std::optional<std::string> &requestXPath,
+                                                        uint32_t requestId, std::optional<libyang::DataNode> &parent) {
     m_ifcache.setCurrentRequestId(requestId);
 
     SPDLOG_DEBUG("[CB_OPER] [IF] Received oper callback for module \"{}\"...", moduleName);
@@ -1473,6 +1583,7 @@ sysrepo::ErrorCode tsnctrld::changeGptCallback(sysrepo::Session sess, uint32_t s
                 } catch (const std::exception &e) {
                     spdlog::error("[CB_CHANGE] [GPT] [ERROR] Hardware rejected config: {}", e.what());
                     m_pathsToReset.clear();
+                    sess.setErrorMessage(e.what());
                     return sysrepo::ErrorCode::OperationFailed;
                 }
             }
@@ -1567,21 +1678,24 @@ void tsnctrld::setupSubscriptions() {
     // auto defaultOperCb = std::bind_front(&tsnctrld::defaultOperCallback, this);
 
     auto operInterfaceCb = std::bind_front(&tsnctrld::operInterfaceCallback, this);
-    m_subs.push_back(m_sess.onOperGet("ietf-interfaces", operInterfaceCb, "/ietf-interfaces:interfaces/interface",
-                                      sysrepo::SubscribeOptions::OperMerge));
+    m_subs.push_back(m_sess.onOperGet("ietf-interfaces", operInterfaceCb, "/ietf-interfaces:interfaces/interface"));
 
     auto operBridgeCb = std::bind_front(&tsnctrld::operBridgeCallback, this);
-    m_subs.push_back(m_sess.onOperGet("ieee802-dot1q-bridge", operBridgeCb, "/ieee802-dot1q-bridge:bridges",
-                                      sysrepo::SubscribeOptions::OperMerge));
+    m_subs.push_back(m_sess.onOperGet("ieee802-dot1q-bridge", operBridgeCb, "/ieee802-dot1q-bridge:bridges"));
 
     auto operBridgePortCb = std::bind_front(&tsnctrld::operBridgePortCallback, this);
     m_subs.push_back(m_sess.onOperGet("ietf-interfaces", operBridgePortCb,
-                                      "/ietf-interfaces:interfaces/interface/ieee802-dot1q-bridge:bridge-port",
-                                      sysrepo::SubscribeOptions::OperMerge));
+                                      "/ietf-interfaces:interfaces/interface/ieee802-dot1q-bridge:bridge-port"));
 
     auto operLldpCb = std::bind_front(&tsnctrld::operLldpCallback, this);
-    m_subs.push_back(m_sess.onOperGet("ieee802-dot1ab-lldp", operLldpCb, "/ieee802-dot1ab-lldp:lldp",
-                                      sysrepo::SubscribeOptions::OperMerge));
+    m_subs.push_back(m_sess.onOperGet("ieee802-dot1ab-lldp", operLldpCb, "/ieee802-dot1ab-lldp:lldp"));
+
+    auto operPtpCb = std::bind_front(&tsnctrld::operPtpCallback, this);
+    m_subs.push_back(m_sess.onOperGet("ieee1588-ptp-tt", operPtpCb, "/ieee1588-ptp-tt:ptp"));
+
+    auto operPtpPerfCb = std::bind_front(&tsnctrld::operPtpPerformanceCallback, this);
+    m_subs.push_back(m_sess.onOperGet("ieee1588-ptp-tt", operPtpPerfCb,
+                                      "/ieee1588-ptp-tt:ptp/instances/instance/performance-monitoring-ds"));
 
     SPDLOG_DEBUG("[INIT] [SUBS] Registered oper callbacks...");
 }
@@ -1598,6 +1712,14 @@ tsnctrld::tsnctrld() : m_sess(m_conn.sessionStart()), m_operSess(m_conn.sessionS
     if (m_ethtool_sock < 0) {
         throw std::runtime_error("Could not open ethtool socket");
     }
+
+    // m_ptp_sock = socket(AF_LOCAL, SOCK_DGRAM, 0);
+    // if (m_ptp_sock < 0) {
+    //     throw std::runtime_error("Could not open ptp socket");
+    // }
+    // struct sockaddr_un local_addr;
+    // local_addr.sun_family = AF_LOCAL;
+    // strncpy(local_addr.sun_path, "/var/run/tsnctrld/ptp.sock", sizeof(local_addr.sun_path));
 }
 
 /**
@@ -1619,6 +1741,7 @@ int main() {
             std::this_thread::sleep_for(std::chrono::seconds(1));
         }
     } catch (const std::exception &e) {
+        spdlog::critical(e.what());
         return EXIT_FAILURE;
     }
 }

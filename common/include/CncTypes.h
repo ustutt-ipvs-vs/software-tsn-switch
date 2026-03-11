@@ -239,6 +239,7 @@ struct ietfInterface_t {
     // --- Capabilities / Logic ---
     uint32_t numTxQueues = 1;        // Derived from IFLA_NUM_TX_QUEUES, contains the maximum supported number of queues
     uint32_t numActiveTxQueues = 1;  // Derived via ethtools, contains the number of active queues
+    uint64_t speed = 0;              // Derived via ethtools
 
     BridgePort_t bridgePort;
     LldpNeighbor_t lldpNeighbor;
@@ -249,4 +250,35 @@ struct CncNode_t {
     std::string hostName;
     std::vector<ietfInterface_t> interfaces;
     std::string ipAddress;
+};
+
+struct DefaultDs_t {
+    uint16_t numPorts;
+    uint8_t priority1;
+    std::string clockIdentity;
+    PtpTime_t currentTime;
+};
+struct CurrentDs_t {};
+struct ParentDs_t {};
+struct PortDs {};
+
+struct PerformanceRecord_t {
+    uint16_t index;
+    bool periodComplete;
+    uint32_t pmTime;
+};
+
+struct PtpPort_t {
+    uint16_t portIndex;
+    std::string underlyingInterface;
+    PortDs portDs;
+};
+
+struct PtpNode_t {
+    DefaultDs_t defaultDs;
+    CurrentDs_t currentDs;
+    ParentDs_t parentDs;
+    std::vector<PerformanceRecord_t> performanceRecords15m;
+    std::vector<PerformanceRecord_t> performanceRecords24h;
+    std::vector<PtpPort_t> ports;
 };

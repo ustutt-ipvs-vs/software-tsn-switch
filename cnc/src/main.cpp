@@ -27,8 +27,8 @@ int main() {
     spdlog::info("========================================");
 
     // 1. Hardcoded path to file
-    const std::string TOPOLOGY_FILE = "cnc/examples/simple_example_schedule_v4.json";
-    const std::string INVENTORY_FILE = "cnc/config/inventory.json";
+    const std::string TOPOLOGY_FILE = "../../cnc/examples/simple_example_schedule_v4.json";
+    const std::string INVENTORY_FILE = "../../cnc/config/inventory.json";
 
     spdlog::info("[INFO] Topology File:  {}", TOPOLOGY_FILE);
     spdlog::info("[INFO] Inventory File: {}", INVENTORY_FILE);

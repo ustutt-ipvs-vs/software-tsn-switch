@@ -22,6 +22,7 @@ class LinkManager {
     static void getInterfacesInResponse(const NetlinkSocket& sock, std::map<int, ietfInterface_t>& interfacesMap,
                                         uint32_t currentReqId);
     static void getActiveQueues(int sock, ietfInterface_t& iface);
+    static void getLinkSpeed(int sock, ietfInterface_t& iface);
 };
 
 #endif  // ENPRO_SWITCH_LINKMANAGER_H

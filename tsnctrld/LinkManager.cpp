@@ -247,3 +247,95 @@ void LinkManager::getActiveQueues(int sock, ietfInterface_t& iface) {
     active = (channels.combined_count > 0) ? channels.combined_count : channels.tx_count;
     iface.numActiveTxQueues = active;
 }
+
+/**
+ * @brief Uses a simple socket to query the kernel for the supported speed of the interface given by @ref iface.
+ * @param sock A socket created via `socket(AF_INET, SOCK_DGRAM, 0);`
+ * @param iface An @ref ietfInterface_t struct with the `name` set. This instance will be modified and
+ * `speed` will be set to the correct number.
+ */
+void LinkManager::getLinkSpeed(int sock, ietfInterface_t& iface) {
+    uint64_t speed;
+    struct ifreq ifr = {};
+
+    memset(&ifr, 0, sizeof(ifr));
+    strncpy(ifr.ifr_name, iface.name.c_str(), IFNAMSIZ - 1);
+
+    // 1. Try the modern API (ETHTOOL_GLINKSETTINGS)
+    // std::vector safely allocates the memory for the struct + flexible array
+    size_t req_sz = sizeof(struct ethtool_link_settings) + 3 * 128 * sizeof(__u32);
+    std::vector<char> buffer(req_sz, 0);
+    struct ethtool_link_settings* req = (struct ethtool_link_settings*)buffer.data();
+
+    req->cmd = ETHTOOL_GLINKSETTINGS;
+    req->link_mode_masks_nwords = 0;  // 0 forces the handshake
+    ifr.ifr_data = (char*)req;
+
+    if (ioctl(sock, SIOCETHTOOL, &ifr) != -1) {
+        // Kernel responds with a negative number indicating the required size
+        if (req->link_mode_masks_nwords < 0) {
+            req->link_mode_masks_nwords = -req->link_mode_masks_nwords;
+            req->cmd = ETHTOOL_GLINKSETTINGS;  // Re-apply command just in case
+
+            // Second call fetches the actual data
+            if (ioctl(sock, SIOCETHTOOL, &ifr) != -1) {
+                // If cable is unplugged, speed is SPEED_UNKNOWN (-1)
+                if (req->speed == (uint32_t)-1) {
+                    SPDLOG_DEBUG("[LM] [SPEED] speed is unknown");
+                    speed = req->speed;
+                } else {
+                    // Convert Mbps to bps for YANG standard compliance
+                    speed = static_cast<uint64_t>(req->speed) * 1000000ULL;
+                }
+            }
+        } else {
+            SPDLOG_DEBUG("[LM] [SPEED] found wrong value for link_mode_masks_nwords");
+        }
+    } else {
+        spdlog::warn("[LM] [SPEED] Invalid/no response to ETHTOOL_GLINKSETTINGS, trying ETHTOOL_GSET for interface {}",
+                     iface.name);
+        // 2. FALLBACK: Try the older API (ETHTOOL_GSET)
+        // If we reach here, the driver didn't support GLINKSETTINGS.
+        struct ethtool_cmd ecmd;
+        memset(&ecmd, 0, sizeof(ecmd));
+        ecmd.cmd = ETHTOOL_GSET;
+        ifr.ifr_data = (char*)&ecmd;
+
+        if (ioctl(sock, SIOCETHTOOL, &ifr) != -1) {
+            speed = ethtool_cmd_speed(&ecmd);  // Macro from linux/ethtool.h
+            if (speed == (uint32_t)-1) {       // Cable unplugged check
+                SPDLOG_DEBUG("[LM] [SPEED] speed is unknown");
+            } else {
+                speed = static_cast<uint64_t>(speed) * 1000000ULL;
+            }
+        }
+    }
+
+    // char buffer[sizeof(struct ethtool_link_settings) + sizeof(__u32) * 3 * 128];
+    // struct ethtool_link_settings* ethtoolLinkSettings = (struct ethtool_link_settings*)buffer;
+    // memset(buffer, 0, sizeof(buffer));
+    // ethtoolLinkSettings->cmd = ETHTOOL_GLINKSETTINGS;
+    // ifr.ifr_data = (caddr_t)ethtoolLinkSettings;
+    //
+    // if (ioctl(sock, SIOCETHTOOL, &ifr) != -1)
+    //{
+    //    if (ethtoolLinkSettings->link_mode_masks_nwords < 0)
+    //    {
+    //        ethtoolLinkSettings->cmd = ETHTOOL_GLINKSETTINGS;
+    //        ethtoolLinkSettings->link_mode_masks_nwords = -ethtoolLinkSettings->link_mode_masks_nwords;
+    //
+    //        if (ioctl(sock, SIOCETHTOOL, &ifr) != -1)
+    //        {
+    //            speed = ethtoolLinkSettings->speed;
+    //        } else {
+    //            spdlog::warn("[LM] [SPEED] After handshake bad/no response");
+    //        }
+    //    } else {
+    //        SPDLOG_DEBUG("[LM] [SPEED] found wrong value for link_mode_masks_nwords");
+    //    }
+    //} else {
+    //    spdlog::warn("[LM] [SPEED] Invalid/no response to ETHTOOL_GLINKSETTINGS");
+    //}
+
+    iface.speed = speed;
+}

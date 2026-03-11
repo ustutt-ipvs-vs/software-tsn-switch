@@ -6,6 +6,9 @@ set(SOURCE_FILES
         LinkManager.cpp
         InterfacesCache.cpp
         LldpDaemon.cpp
+		PtpManager.cpp
+		check_clocks.c
+		include/ptpStructs.h
 )
 
 add_library(tsnctrld_lib STATIC ${SOURCE_FILES})
