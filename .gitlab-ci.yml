@@ -9,7 +9,7 @@ stages:
   - test
   - docs
 
-image: gitlab-vs.informatik.uni-stuttgart.de:5050/software-tsn-switch/enpro-switch/test-pipeline:005
+image: gitlab-vs.informatik.uni-stuttgart.de:5050/software-tsn-switch/enpro-switch/test-pipeline:006
 
 format:
   stage: format

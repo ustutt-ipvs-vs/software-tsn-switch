@@ -76,7 +76,7 @@ RUN useradd enpro -p '12345' && \
     sysrepoctl -i ieee802-dot1ab-types.yang -o enpro -g enpro -p 660 && \
     sysrepoctl -i ieee802-dot1ab-lldp.yang -o enpro -g enpro -p 660 && \
     sysrepoctl -i ieee1588-ptp-tt.yang  -o enpro -g enpro -p 660 && \
-    sysrepoctl -i ieee1802-dot1as-gptp.yang  -o enpro -g enpro -p 660 && \
+    sysrepoctl -i ieee802-dot1as-gptp.yang  -o enpro -g enpro -p 660 && \
     # Netconf configuration
     cd .. && \
     echo '<nacm xmlns="urn:ietf:params:xml:ns:yang:ietf-netconf-acm"><enable-nacm>true</enable-nacm><read-default>permit</read-default><write-default>deny</write-default><groups><group><name>admin</name><user-name>root</user-name><user-name>enpro</user-name></group></groups><rule-list><name>admin-full-access</name><group>admin</group><rule><name>permit-all</name><module-name>*</module-name><access-operations>*</access-operations><action>permit</action></rule></rule-list></nacm>' > nacm_init.xml && \
