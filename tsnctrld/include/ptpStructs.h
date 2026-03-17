@@ -15,6 +15,18 @@ namespace ptp {
 #define MID_TIME_PROPERTIES_DATA_SET 0x2003
 #define MID_PORT_DATA_SET 0x2004
 
+// Helper to enforce the YANG "maximum range" saturation rule
+inline int64_t toTimeInterval(double val) {
+    if (std::isnan(val)) return 0;
+
+    // Clamp to max/min limits to prevent undefined behavior and satisfy YANG
+    if (val >= static_cast<double>(INT64_MAX)) return INT64_MAX;
+    if (val <= static_cast<double>(INT64_MIN)) return INT64_MIN;
+
+    // Use std::round to ensure we don't truncate fractional scaled nanoseconds
+    return static_cast<int64_t>(std::round(val));
+}
+
 struct PortIdentity {
     std::array<uint8_t, 8> clockIdentity;
     uint16_t portNumber;
@@ -59,7 +71,7 @@ struct PtpManagementErrorTlv {
     uint64_t reserved;
 } __attribute__((packed));
 
-enum class PortState {
+enum class PortState : uint8_t {
     INITIALIZING = 1,
     FAULTY,
     DISABLED,
@@ -78,6 +90,7 @@ struct ClockQuality {
 } __attribute__((packed));
 
 struct DefaultDs {
+    uint8_t flags;
     uint8_t reserved1;
     uint16_t numberPorts;
     uint8_t priority1;
@@ -108,7 +121,7 @@ struct ParentDS {
 
 struct PortDs {
     PortIdentity portIdentity;
-    uint8_t portState;
+    PortState portState;
     int8_t logMinDelayReqInterval;
     int64_t meanLinkDelay;
     int8_t logAnnounceInterval;
@@ -126,6 +139,7 @@ struct PortAddress {
 };
 
 struct ClockDescription {
+    PortIdentity source;
     uint16_t clockType;
     std::string physicalLayerProtocol;
     std::string physicalAddress;
@@ -140,6 +154,84 @@ struct ClockDescription {
 struct ResponseWithSourceIdentity {
     PortIdentity source;
     std::vector<uint8_t> bytes;
+};
+
+struct RunningStats {
+    uint32_t count = 0;
+    int64_t min = INT64_MAX;
+    int64_t max = INT64_MIN;
+    double mean = 0.0;
+    double m2 = 0.0;  // Sum of squares of differences from the mean
+    uint32_t startTime10ms = 0;
+
+    void reset(uint32_t now10ms) {
+        count = 0;
+        min = INT64_MAX;
+        max = INT64_MIN;
+        mean = 0.0;
+        m2 = 0.0;
+        startTime10ms = now10ms;
+    }
+
+    void update(int64_t val) {
+        count++;
+        if (val < min) min = val;
+        if (val > max) max = val;
+
+        double delta = val - mean;
+        mean += delta / count;
+        double delta2 = val - mean;
+        m2 += delta * delta2;
+    }
+
+    void reset() {
+        count = 0;
+        min = INT64_MAX;
+        max = INT64_MIN;
+        mean = 0.0;
+        m2 = 0.0;
+    }
+
+    double getStdDev() const {
+        return (count < 2) ? 0.0 : std::sqrt(m2 / (count - 1));
+    }
+
+    PtpPerformanceParameters_t toParameters() const {
+        if (count == 0) {
+            // If no data, return 0s. The 'measurementValid = false' flag
+            // in the parent struct tells Sysrepo to ignore this record.
+            return {0, 0, 0, 0};
+        }
+
+        int64_t final_stddev = 0;
+        if (count > 1) {
+            double variance = m2 / (count - 1);
+            final_stddev = toTimeInterval(std::sqrt(variance));
+        }
+
+        return {toTimeInterval(mean),
+                min,  // min is already an int64_t, no conversion needed
+                max,  // max is already an int64_t, no conversion needed
+                final_stddev};
+    }
+};
+
+struct PerformanceRecord {
+    uint32_t startTime10ms = 0;
+
+    // Instance-level stats
+    RunningStats offsetFromMaster;
+    RunningStats meanPathDelay;
+
+    // Port-level stats (Key = portNumber)
+    std::map<uint16_t, RunningStats> portMeanLinkDelay;
+
+    void reset(uint32_t now10ms) {
+        startTime10ms = now10ms;
+        offsetFromMaster.reset();
+        meanPathDelay.reset();
+        portMeanLinkDelay.clear();
+    }
 };
 
 // struct parentDs {

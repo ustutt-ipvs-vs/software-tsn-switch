@@ -8,7 +8,9 @@
 
 #include <cmath>
 #include <cstring>
+#include <deque>
 #include <iostream>
+#include <map>
 #include <mutex>
 #include <stdexcept>
 #include <string>
@@ -18,66 +20,37 @@
 #include "../../common/include/CncTypes.h"
 #include "ptpStructs.h"
 
-struct RunningStats {
-    uint32_t count = 0;
-    int64_t min = INT64_MAX;
-    int64_t max = INT64_MIN;
-    double mean = 0.0;
-    double m2 = 0.0;  // Sum of squares of differences from the mean
-    uint32_t startTime10ms = 0;
-
-    void reset(uint32_t now10ms) {
-        count = 0;
-        min = INT64_MAX;
-        max = INT64_MIN;
-        mean = 0.0;
-        m2 = 0.0;
-        startTime10ms = now10ms;
-    }
-
-    void update(int64_t val) {
-        count++;
-        if (val < min) min = val;
-        if (val > max) max = val;
-
-        double delta = val - mean;
-        mean += delta / count;
-        double delta2 = val - mean;
-        m2 += delta * delta2;
-    }
-
-    double getStdDev() const {
-        return (count < 2) ? 0.0 : std::sqrt(m2 / (count - 1));
-    }
-};
-
 class PtpManager {
    public:
     PtpManager(const std::string& ptp4l_socket = "/var/run/ptp4l", uint8_t transport_specific = 1);
 
     ~PtpManager();
 
-    // -------------------------------------------------------------
-    // COMMAND 1: GET CURRENT_DATA_SET (Standard IEEE 1588)
-    // -------------------------------------------------------------
-    bool getCurrentDataSet(double& offset_ns, double& mean_path_delay_ns);
-
-    // -------------------------------------------------------------
-    // COMMAND 2: GET PORT_PROPERTIES_NP (linuxptp specific)
-    // -------------------------------------------------------------
-    bool getPortState(std::vector<std::string>& states);
     void fillConfigData(PtpNode_t& node_to_fill);
+    void fillStateData(PtpNode_t& node_to_fill);
+    void getPerformance15m(std::vector<PtpPerformanceRecord_t>& out);
+    void getPerformance24h(std::vector<PtpPerformanceRecord_t>& out);
+    void getPortPerformance15m(uint16_t portIndex, std::vector<PtpPortPerformanceRecord_t>& out);
+    void getPortPerformance24h(uint16_t portIndex, std::vector<PtpPortPerformanceRecord_t>& out);
     void startMonitoring();
+    void stopMonitoring();
 
    private:
     int m_fd;
     uint16_t m_assumedPortCount;
     std::thread m_pollThread;
     std::mutex m_socketMutex;
+    std::mutex m_perfMutex;
     std::atomic<bool> m_running{false};
 
-    RunningStats m_current15m;
-    RunningStats m_current24h;
+    ptp::PerformanceRecord m_current15m;
+    ptp::PerformanceRecord m_current24h;
+
+    std::deque<PtpPerformanceRecord_t> m_completedRecords15m;
+    std::deque<PtpPerformanceRecord_t> m_completedRecords24h;
+
+    std::map<uint16_t, std::deque<PtpPortPerformanceRecord_t>> m_completedPortRecords15m;
+    std::map<uint16_t, std::deque<PtpPortPerformanceRecord_t>> m_completedPortRecords24h;
 
     std::string m_local_path;
     std::string m_target_path;

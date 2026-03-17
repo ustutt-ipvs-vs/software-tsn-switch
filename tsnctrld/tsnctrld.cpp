@@ -587,7 +587,6 @@ void tsnctrld::initialize() {
     //    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     //}
 
-    m_ptp.startMonitoring();
     spdlog::info("[INIT] Initializing tsnctrld...");
 
     static const std::vector<std::string> SERVICES_TO_START = {"netopeer2-server.service", "lldpd.service"};
@@ -614,6 +613,10 @@ void tsnctrld::initialize() {
 
     syncHardwareToRunning();
     setupSubscriptions();
+
+    // Start relevant monitoring threads
+    m_ptp.startMonitoring();
+
     spdlog::info("[INIT] Setup done...");
 }
 
@@ -897,6 +900,10 @@ void tsnctrld::popuplateAsLldpConfiguration(ietfInterface_t &current, libyang::C
             "/ieee802-dot1ab-lldp:lldp/port[name='{}'][dest-mac-address='01-80-c2-00-00-0e']", current.name);
 
         auto lldp_res = forest ? forest->newPath2(lldp_path, std::nullopt) : ctx.newPath2(lldp_path, std::nullopt);
+        if (!forest && lldp_res.createdParent) {
+            forest = lldp_res.createdParent;
+        }
+
         auto lldp_node = lldp_res.createdNode;
         if (!lldp_node.has_value()) {
             spdlog::warn("[SYNC] [LLDP] lldp_node of type std::optional has no value, makes no sense, returning...");
@@ -907,25 +914,84 @@ void tsnctrld::popuplateAsLldpConfiguration(ietfInterface_t &current, libyang::C
 }
 
 /**
- * @brief Takes an interface and checks if LLDP makes sense here, in that case, adding the basic configuration to the
- * datastore.
+ * @brief Queries the ptp daemon to fill a struct of type @ref PtpNode_t and uses this to populate the initial values in
+ * the "/ptp" subtree of the datastore
  *
- * @param ptp_node The @ref PtpNode_t instance used to populate the configuration data.
  * @param ctx The libyang Context under which to start adding the data, used if the @ref forest does not yet exist.
  * @param forest A libyang DataNode in whose Context the data should be added.
  */
 void tsnctrld::populatePtpConfig(libyang::Context &ctx, std::optional<libyang::DataNode> &forest) {
+    SPDLOG_DEBUG("[SYNC] [PTP] Populating /ptp");
+
     PtpNode_t ptpNode;
     m_ptp.fillConfigData(ptpNode);
     std::string ptp_path = fmt::format("/ieee1588-ptp-tt:ptp/instances/instance[instance-index='{}']", 0);
 
     auto ptp_res = forest ? forest->newPath2(ptp_path, std::nullopt) : ctx.newPath2(ptp_path, std::nullopt);
+    if (!forest && ptp_res.createdParent) {
+        forest = ptp_res.createdParent;
+    }
+
     auto ptp_node = ptp_res.createdNode;
     if (!ptp_node.has_value()) {
         spdlog::warn("[SYNC] [LLDP] ptp_node of type std::optional has no value, makes no sense, returning...");
         return;
     }
-    ptp_node->newPath2("priority1", std::to_string(ptpNode.defaultDs.priority1));
+
+    auto default_ds_res = ptp_node->newPath2("default-ds", std::nullopt);
+    auto default_ds_node = default_ds_res.createdNode;
+    if (!default_ds_node.has_value()) {
+        spdlog::warn("[SYNC] [LLDP] default_ds_node of type std::optional has no value, makes no sense, returning...");
+        return;
+    }
+    // default_ds_node->newPath2("priority1", "111");
+    default_ds_node->newPath2("priority1", std::to_string(ptpNode.defaultDs.priority1));
+    if (ptpNode.defaultDs.instanceType != PtpInstanceType_t::PTP_INSTANCE_INVALID) {
+        default_ds_node->newPath2("instance-type", ptpInstanceTypeToEnum(ptpNode.defaultDs.instanceType));
+    }
+
+    auto current_ds_res = ptp_node->newPath2("current-ds", std::nullopt);
+    auto current_ds_node = current_ds_res.createdNode;
+    if (!current_ds_node.has_value()) {
+        spdlog::warn("[SYNC] [LLDP] current_ds_node of type std::optional has no value, makes no sense, returning...");
+        return;
+    }
+
+    auto parent_ds_res = ptp_node->newPath2("parent-ds", std::nullopt);
+    auto parent_ds_node = parent_ds_res.createdNode;
+    if (!parent_ds_node.has_value()) {
+        spdlog::warn("[SYNC] [LLDP] parent_ds_node of type std::optional has no value, makes no sense, returning...");
+        return;
+    }
+
+    auto performance_monitoring_ds_res = ptp_node->newPath2("performance-monitoring-ds", std::nullopt);
+    auto performance_monitoring_ds_node = performance_monitoring_ds_res.createdNode;
+    if (!performance_monitoring_ds_node.has_value()) {
+        spdlog::warn(
+            "[SYNC] [LLDP] performance_monitoring_ds_node of type std::optional has no value, makes no sense, "
+            "returning...");
+        return;
+    }
+
+    auto ports_res = ptp_node->newPath2("ports", std::nullopt);
+    auto ports_node = ports_res.createdNode;
+    if (!ports_node.has_value()) {
+        spdlog::warn("[SYNC] [LLDP] ports_node of type std::optional has no value, makes no sense, returning...");
+        return;
+    }
+
+    for (uint16_t i = 0; i < ptpNode.defaultDs.numPorts; ++i) {
+        auto port_path = fmt::format("port[port-index='{}']", i);
+        auto port_res = ports_node->newPath2(port_path, std::nullopt);
+        auto port_node = port_res.createdNode;
+        if (!port_node.has_value()) {
+            spdlog::warn(
+                "[SYNC] [LLDP] port_node Nr {} of type std::optional has no value, makes no sense, returning...", i);
+            return;
+        }
+    }
+
+    SPDLOG_DEBUG("[SYNC] [PTP] Finished populating /ptp");
 }
 
 /**
@@ -938,7 +1004,9 @@ void tsnctrld::syncHardwareToRunning() {
     SPDLOG_DEBUG("[SYNC] Populating internal list m_interfaces from kernel");
     m_sess.switchDatastore(sysrepo::Datastore::Running);
     auto ctx = m_sess.getContext();
-    std::optional<libyang::DataNode> forest;
+    std::optional<libyang::DataNode> forest_if_bridge;
+    std::optional<libyang::DataNode> forest_lldp;
+    std::optional<libyang::DataNode> forest_ptp;
 
     m_ifcache.setCurrentRequestId(0);
     m_ifcache.ensureFullLinkData(m_sock, m_ethtool_sock);
@@ -960,26 +1028,53 @@ void tsnctrld::syncHardwareToRunning() {
         // std::string mac_ieee = mac_to_string(s->sll_addr, s->sll_halen, '-');
 
         // --- PASS 1: Bridges (Only if it's a bridge and NOT loopback) ---
-        populateAsBridge(current, ctx, forest);
+        populateAsBridge(current, ctx, forest_if_bridge);
 
         // --- PASS 2: Interface Core ---
-        populateAsInterface(current, ctx, forest);
+        populateAsInterface(current, ctx, forest_if_bridge);
 
-        popuplateAsLldpConfiguration(current, ctx, forest);
+        popuplateAsLldpConfiguration(current, ctx, forest_lldp);
     }
 
-    if (forest) {
-        SPDLOG_DEBUG("[SYNC] Applying Batch to Datastore...");
-        SPDLOG_DEBUG("[SYNC] Switching to first sibling...");
-        forest = forest->firstSibling();
-        SPDLOG_TRACE("  -> [SYNC DEBUG] Data forest:\n {}",
-                     forest->printStr(libyang::DataFormat::XML, libyang::PrintFlags::Siblings).value_or("MISSING"));
-        SPDLOG_DEBUG("[SYNC] Editing batch...");
-        m_sess.editBatch(*forest, sysrepo::DefaultOperation::Merge);
+    populatePtpConfig(ctx, forest_ptp);
+
+    SPDLOG_DEBUG("[SYNC] Applying batched changes to Datastore...");
+    if (forest_if_bridge) {
+        SPDLOG_DEBUG("[SYNC] Changes present in tree for interfaces and bridges...");
+        SPDLOG_TRACE("[SYNC] Switching to first sibling...");
+        forest_if_bridge = forest_if_bridge->firstSibling();
+        SPDLOG_TRACE(
+            "  -> [SYNC DEBUG] Data forest:\n {}",
+            forest_if_bridge->printStr(libyang::DataFormat::XML, libyang::PrintFlags::Siblings).value_or("MISSING"));
+        SPDLOG_TRACE("[SYNC] Editing batch...");
+        m_sess.editBatch(*forest_if_bridge, sysrepo::DefaultOperation::Merge);
         SPDLOG_DEBUG("[SYNC] Applying changes...");
         m_sess.applyChanges();
-        SPDLOG_DEBUG("[SYNC] Datastore synchronized.");
     }
+    if (forest_lldp) {
+        SPDLOG_DEBUG("[SYNC] Changes present in tree for LLDP...");
+        SPDLOG_TRACE("[SYNC] Switching to first sibling...");
+        forest_lldp = forest_lldp->firstSibling();
+        SPDLOG_TRACE(
+            "  -> [SYNC DEBUG] Data forest:\n {}",
+            forest_lldp->printStr(libyang::DataFormat::XML, libyang::PrintFlags::Siblings).value_or("MISSING"));
+        SPDLOG_TRACE("[SYNC] Editing batch...");
+        m_sess.editBatch(*forest_lldp, sysrepo::DefaultOperation::Merge);
+        SPDLOG_DEBUG("[SYNC] Applying changes...");
+        m_sess.applyChanges();
+    }
+    if (forest_ptp) {
+        SPDLOG_DEBUG("[SYNC] Changes present in tree for PTP...");
+        SPDLOG_TRACE("[SYNC] Switching to first sibling...");
+        forest_ptp = forest_ptp->firstSibling();
+        SPDLOG_TRACE("  -> [SYNC DEBUG] Data forest:\n {}",
+                     forest_ptp->printStr(libyang::DataFormat::XML, libyang::PrintFlags::Siblings).value_or("MISSING"));
+        SPDLOG_TRACE("[SYNC] Editing batch...");
+        m_sess.editBatch(*forest_ptp, sysrepo::DefaultOperation::Merge);
+        SPDLOG_DEBUG("[SYNC] Applying changes...");
+        m_sess.applyChanges();
+    }
+    SPDLOG_DEBUG("[SYNC] Datastore synchronized.");
 
     m_lldpDaemon = std::make_unique<LldpDaemon>(m_operSess);
     m_lldpDaemon->syncInitialNeighbors();
@@ -1256,12 +1351,81 @@ sysrepo::ErrorCode tsnctrld::operPtpCallback(const sysrepo::Session &sess, uint3
                                              std::optional<libyang::DataNode> &parent) {
     m_ifcache.setCurrentRequestId(requestId);
 
-    SPDLOG_DEBUG("[CB_OPER] [IF] Received oper callback for module \"{}\"...", moduleName);
-    SPDLOG_DEBUG("[CB_OPER] [IF] subXPath \"{}\"...", subXPath.value_or("MISSING"));
-    SPDLOG_DEBUG("[CB_OPER] [IF] requestXPath \"{}\"...", requestXPath.value_or("MISSING"));
-    SPDLOG_DEBUG("[CB_OPER] [IF] requestId \"{}\"...", requestId);
-    SPDLOG_DEBUG("[CB_OPER] [IF] module of parent node \"{}\"...", parent ? parent->schema().module().name() : "ROOT");
-    SPDLOG_DEBUG("[CB_OPER] [IF] name of parent node \"{}\"...", parent ? parent->schema().name() : "ROOT");
+    SPDLOG_DEBUG("[CB_OPER] [PTP] Received oper callback for module \"{}\"...", moduleName);
+    SPDLOG_DEBUG("[CB_OPER] [PTP] subXPath \"{}\"...", subXPath.value_or("MISSING"));
+    SPDLOG_DEBUG("[CB_OPER] [PTP] requestXPath \"{}\"...", requestXPath.value_or("MISSING"));
+    SPDLOG_DEBUG("[CB_OPER] [PTP] requestId \"{}\"...", requestId);
+    SPDLOG_DEBUG("[CB_OPER] [PTP] module of parent node \"{}\"...", parent ? parent->schema().module().name() : "ROOT");
+    SPDLOG_DEBUG("[CB_OPER] [PTP] name of parent node \"{}\"...", parent ? parent->schema().name() : "ROOT");
+
+    auto ctx = sess.getContext();
+    std::string ptp_path = fmt::format("/ieee1588-ptp-tt:ptp/instances/instance[instance-index='{}']", 0);
+
+    auto ptp_res = parent ? parent->newPath2(ptp_path, std::nullopt) : ctx.newPath2(ptp_path, std::nullopt);
+    if (!parent && ptp_res.createdParent) {
+        parent = ptp_res.createdParent;
+    }
+    auto ptp_node = ptp_res.createdNode;
+    if (!ptp_node.has_value()) {
+        spdlog::warn("[CB_OPER] [PTP_ROOT] ptp_node of type std::optional has no value, makes no sense, returning...");
+        return sysrepo::ErrorCode::OperationFailed;
+    }
+    PtpNode_t ptpNode;
+    m_ptp.fillStateData(ptpNode);
+
+    auto default_ds_res = ptp_node->newPath2("default-ds", std::nullopt);
+    auto default_ds_node = default_ds_res.createdNode;
+    if (!default_ds_node.has_value()) {
+        spdlog::warn("[CB_OPER] [IF] default_ds_node of type std::optional has no value, makes no sense, returning...");
+        return sysrepo::ErrorCode::OperationFailed;
+    }
+    default_ds_node->newPath2("number-ports", std::to_string(ptpNode.defaultDs.numPorts));
+    default_ds_node->newPath2("clock-identity", ptpNode.defaultDs.clockIdentity);
+    // default_ds_node->newPath2("current-time/seconds-field", std::to_string(0));
+    // default_ds_node->newPath2("current-time/nanoseconds-field", std::to_string(0));
+
+    auto current_ds_res = ptp_node->newPath2("current-ds", std::nullopt);
+    auto current_ds_node = current_ds_res.createdNode;
+    if (!current_ds_node.has_value()) {
+        spdlog::warn("[CB_OPER] [IF] current_ds_node of type std::optional has no value, makes no sense, returning...");
+        return sysrepo::ErrorCode::OperationFailed;
+    }
+    current_ds_node->newPath2("steps-removed", std::to_string(ptpNode.currentDs.stepsRemoved));
+    current_ds_node->newPath2("offset-from-time-transmitter",
+                              std::to_string(ptpNode.currentDs.offsetFromTimeTransmitter));
+
+    auto parent_ds_res = ptp_node->newPath2("parent-ds", std::nullopt);
+    auto parent_ds_node = parent_ds_res.createdNode;
+    if (!parent_ds_node.has_value()) {
+        spdlog::warn("[CB_OPER] [IF] parent_ds_node of type std::optional has no value, makes no sense, returning...");
+        return sysrepo::ErrorCode::OperationFailed;
+    }
+    parent_ds_node->newPath2("parent-port-identity/clock-identity", ptpNode.parentDs.parentClockIdentity);
+    parent_ds_node->newPath2("parent-port-identity/port-number", std::to_string(ptpNode.parentDs.parentPortNumber));
+    parent_ds_node->newPath2("grandmaster-identity", ptpNode.parentDs.grandParentClockIdentity);
+
+    auto ports_res = ptp_node->newPath2("ports", std::nullopt);
+    auto ports_node = ports_res.createdNode;
+    if (!ports_node.has_value()) {
+        spdlog::warn("[CB_OPER] [IF] ports_node of type std::optional has no value, makes no sense, returning...");
+        return sysrepo::ErrorCode::OperationFailed;
+    }
+    for (auto port : ptpNode.ports) {
+        auto port_path = fmt::format("port[port-index='{}']", port.portIndex);
+        auto port_res = ports_node->newPath2(port_path, std::nullopt);
+        auto port_node = port_res.createdNode;
+        if (!port_node.has_value()) {
+            spdlog::warn(
+                "[CB_OPER] [IF] port_node with index {} of type std::optional has no value, makes no sense, "
+                "returning...",
+                port.portIndex);
+            return sysrepo::ErrorCode::OperationFailed;
+        }
+        port_node->newPath2("port-ds/port-identity/clock-identity", port.portDs.portClockIdentity);
+        port_node->newPath2("port-ds/port-identity/port-number", std::to_string(port.portDs.portPortNumber));
+        port_node->newPath2("port-ds/port-state", portStateToString(port.portDs.portState));
+        port_node->newPath2("port-ds/mean-link-delay", std::to_string(port.portDs.meanLinkDelay));
+    }
 
     return sysrepo::ErrorCode::Ok;
 }
@@ -1284,12 +1448,195 @@ sysrepo::ErrorCode tsnctrld::operPtpPerformanceCallback(const sysrepo::Session &
                                                         uint32_t requestId, std::optional<libyang::DataNode> &parent) {
     m_ifcache.setCurrentRequestId(requestId);
 
-    SPDLOG_DEBUG("[CB_OPER] [IF] Received oper callback for module \"{}\"...", moduleName);
-    SPDLOG_DEBUG("[CB_OPER] [IF] subXPath \"{}\"...", subXPath.value_or("MISSING"));
-    SPDLOG_DEBUG("[CB_OPER] [IF] requestXPath \"{}\"...", requestXPath.value_or("MISSING"));
-    SPDLOG_DEBUG("[CB_OPER] [IF] requestId \"{}\"...", requestId);
-    SPDLOG_DEBUG("[CB_OPER] [IF] module of parent node \"{}\"...", parent ? parent->schema().module().name() : "ROOT");
-    SPDLOG_DEBUG("[CB_OPER] [IF] name of parent node \"{}\"...", parent ? parent->schema().name() : "ROOT");
+    SPDLOG_DEBUG("[CB_OPER] [PTP_PERF] Received oper callback for module \"{}\"...", moduleName);
+    SPDLOG_DEBUG("[CB_OPER] [PTP_PERF] subXPath \"{}\"...", subXPath.value_or("MISSING"));
+    SPDLOG_DEBUG("[CB_OPER] [PTP_PERF] requestXPath \"{}\"...", requestXPath.value_or("MISSING"));
+    SPDLOG_DEBUG("[CB_OPER] [PTP_PERF] requestId \"{}\"...", requestId);
+    SPDLOG_DEBUG("[CB_OPER] [PTP_PERF] module of parent node \"{}\"...",
+                 parent ? parent->schema().module().name() : "ROOT");
+    SPDLOG_DEBUG("[CB_OPER] [PTP_PERF] name of parent node \"{}\"...", parent ? parent->schema().name() : "ROOT");
+
+    std::vector<PtpPerformanceRecord_t> Records15m;
+    std::vector<PtpPerformanceRecord_t> Records24h;
+
+    m_ptp.getPerformance15m(Records15m);
+    m_ptp.getPerformance24h(Records24h);
+
+    auto ctx = sess.getContext();
+    std::string ptp_path =
+        fmt::format("/ieee1588-ptp-tt:ptp/instances/instance[instance-index='{}']/performance-monitoring-ds", 0);
+
+    auto perf_ds_res =
+        parent ? parent->newPath2("performance-monitoring-ds", std::nullopt) : ctx.newPath2(ptp_path, std::nullopt);
+    if (!parent && perf_ds_res.createdParent) {
+        parent = perf_ds_res.createdParent;
+    }
+    auto perf_ds_node = perf_ds_res.createdNode;
+    if (!perf_ds_node.has_value()) {
+        spdlog::warn(
+            "[CB_OPER] [PTP_PERF] perf_ds_node of type std::optional has no value, makes no sense, returning...");
+        return sysrepo::ErrorCode::OperationFailed;
+    }
+
+    for (uint16_t i = 0; i < Records15m.size(); i++) {
+        auto perf_rec_path = fmt::format("record-list[index='{}']", i);
+        auto perf_rec_res = perf_ds_node->newPath2(perf_rec_path, std::nullopt);
+        auto perf_rec_node = perf_rec_res.createdNode;
+        if (!perf_rec_node.has_value()) {
+            spdlog::warn(
+                "[CB_OPER] [PTP_PERF] perf_rec_node with index {} of type std::optional has no value, makes no sense, "
+                "returning...",
+                i);
+            return sysrepo::ErrorCode::OperationFailed;
+        }
+        auto &portRecord = Records15m[i];
+        perf_rec_node->newPath2("measurement-valid", portRecord.measurementValid ? "true" : "false");
+        perf_rec_node->newPath2("period-complete", portRecord.periodComplete ? "true" : "false");
+        perf_rec_node->newPath2("pm-time", std::to_string(portRecord.pmTime));
+
+        perf_rec_node->newPath2("average-mean-path-delay", std::to_string(portRecord.meanPathDelay.avg));
+        perf_rec_node->newPath2("minimum-mean-path-delay", std::to_string(portRecord.meanPathDelay.min));
+        perf_rec_node->newPath2("maximum-mean-path-delay", std::to_string(portRecord.meanPathDelay.max));
+        perf_rec_node->newPath2("stddev-mean-path-delay", std::to_string(portRecord.meanPathDelay.stddev));
+
+        perf_rec_node->newPath2("average-offset-from-time-transmitter",
+                                std::to_string(portRecord.offsetFromTimeTransmitter.avg));
+        perf_rec_node->newPath2("minimum-offset-from-time-transmitter",
+                                std::to_string(portRecord.offsetFromTimeTransmitter.min));
+        perf_rec_node->newPath2("maximum-offset-from-time-transmitter",
+                                std::to_string(portRecord.offsetFromTimeTransmitter.max));
+        perf_rec_node->newPath2("stddev-offset-from-time-transmitter",
+                                std::to_string(portRecord.offsetFromTimeTransmitter.stddev));
+    }
+
+    for (uint16_t i = 0; i < Records24h.size(); i++) {
+        auto perf_rec_path = fmt::format("record-list[index='{}']", 97 + i);
+        auto perf_rec_res = perf_ds_node->newPath2(perf_rec_path, std::nullopt);
+        auto perf_rec_node = perf_rec_res.createdNode;
+        if (!perf_rec_node.has_value()) {
+            spdlog::warn(
+                "[CB_OPER] [IF] port_perf_rec_node with index {} of type std::optional has no value, makes no sense, "
+                "returning...",
+                i);
+            return sysrepo::ErrorCode::OperationFailed;
+        }
+        auto &portRecord = Records24h[i];
+        perf_rec_node->newPath2("measurement-valid", portRecord.measurementValid ? "true" : "false");
+        perf_rec_node->newPath2("period-complete", portRecord.periodComplete ? "true" : "false");
+        perf_rec_node->newPath2("pm-time", std::to_string(portRecord.pmTime));
+
+        perf_rec_node->newPath2("average-mean-path-delay", std::to_string(portRecord.meanPathDelay.avg));
+        perf_rec_node->newPath2("minimum-mean-path-delay", std::to_string(portRecord.meanPathDelay.min));
+        perf_rec_node->newPath2("maximum-mean-path-delay", std::to_string(portRecord.meanPathDelay.max));
+        perf_rec_node->newPath2("stddev-mean-path-delay", std::to_string(portRecord.meanPathDelay.stddev));
+
+        perf_rec_node->newPath2("average-offset-from-time-transmitter",
+                                std::to_string(portRecord.offsetFromTimeTransmitter.avg));
+        perf_rec_node->newPath2("minimum-offset-from-time-transmitter",
+                                std::to_string(portRecord.offsetFromTimeTransmitter.min));
+        perf_rec_node->newPath2("maximum-offset-from-time-transmitter",
+                                std::to_string(portRecord.offsetFromTimeTransmitter.max));
+        perf_rec_node->newPath2("stddev-offset-from-time-transmitter",
+                                std::to_string(portRecord.offsetFromTimeTransmitter.stddev));
+    }
+
+    return sysrepo::ErrorCode::Ok;
+}
+
+/**
+ * @brief A callback for getting the operational performance metrics data related to ptp.
+ * @param sess
+ * @param subId
+ * @param moduleName
+ * @param subXPath
+ * @param requestXPath
+ * @param requestId
+ * @param parent
+ * @return
+ */
+sysrepo::ErrorCode tsnctrld::operPtpPortPerformanceCallback(const sysrepo::Session &sess, uint32_t subId,
+                                                            const std::string &moduleName,
+                                                            const std::optional<std::string> &subXPath,
+                                                            const std::optional<std::string> &requestXPath,
+                                                            uint32_t requestId,
+                                                            std::optional<libyang::DataNode> &parent) {
+    m_ifcache.setCurrentRequestId(requestId);
+
+    SPDLOG_DEBUG("[CB_OPER] [PTP_PORT_PERF] Received oper callback for module \"{}\"...", moduleName);
+    SPDLOG_DEBUG("[CB_OPER] [PTP_PORT_PERF] subXPath \"{}\"...", subXPath.value_or("MISSING"));
+    SPDLOG_DEBUG("[CB_OPER] [PTP_PORT_PERF] requestXPath \"{}\"...", requestXPath.value_or("MISSING"));
+    SPDLOG_DEBUG("[CB_OPER] [PTP_PORT_PERF] requestId \"{}\"...", requestId);
+    SPDLOG_DEBUG("[CB_OPER] [PTP_PORT_PERF] module of parent node \"{}\"...",
+                 parent ? parent->schema().module().name() : "ROOT");
+    SPDLOG_DEBUG("[CB_OPER] [PTP_PORT_PERF] name of parent node \"{}\"...", parent ? parent->schema().name() : "ROOT");
+
+    uint16_t portIndex = getLeaf<uint16_t>(parent, "port-index");
+    SPDLOG_DEBUG("[CB_OPER] [PTP_PORT_PERF] index of parent node \"{}\"...", portIndex);
+    // auto portIndexNode = parent->findPath("port-index");
+    // if (portIndexNode) {
+    //     SPDLOG_DEBUG("[CB_OPER] [PTP_PORT_PERF] index of parent node \"{}\"...", portIndexNode->asTerm().valueStr());
+    // }
+    std::vector<PtpPortPerformanceRecord_t> portRecords15m;
+    std::vector<PtpPortPerformanceRecord_t> portRecords24h;
+
+    m_ptp.getPortPerformance15m(portIndex, portRecords15m);
+    m_ptp.getPortPerformance24h(portIndex, portRecords24h);
+
+    auto ctx = sess.getContext();
+    std::string ptp_path = fmt::format(
+        "/ieee1588-ptp-tt:ptp/instances/instance[instance-index='{}']/ports/port[port-index='{}']/"
+        "performance-monitoring-port-ds",
+        0, portIndex);
+
+    auto port_perf_ds_res = parent ? parent->newPath2("performance-monitoring-port-ds", std::nullopt)
+                                   : ctx.newPath2(ptp_path, std::nullopt);
+    if (!parent && port_perf_ds_res.createdParent) {
+        parent = port_perf_ds_res.createdParent;
+    }
+    auto port_perf_ds_node = port_perf_ds_res.createdNode;
+    if (!port_perf_ds_node.has_value()) {
+        spdlog::warn(
+            "[CB_OPER] [PTP_ROOT] port_perf_ds_node of type std::optional has no value, makes no sense, returning...");
+        return sysrepo::ErrorCode::OperationFailed;
+    }
+
+    for (uint16_t i = 0; i < portRecords15m.size(); i++) {
+        auto port_path = fmt::format("record-list-peer-delay[index='{}']", i);
+        auto port_perf_rec_res = port_perf_ds_node->newPath2(port_path, std::nullopt);
+        auto port_perf_rec_node = port_perf_rec_res.createdNode;
+        if (!port_perf_rec_node.has_value()) {
+            spdlog::warn(
+                "[CB_OPER] [IF] port_perf_rec_node with index {} of type std::optional has no value, makes no sense, "
+                "returning...",
+                i);
+            return sysrepo::ErrorCode::OperationFailed;
+        }
+        auto &portRecord = portRecords15m[i];
+        port_perf_rec_node->newPath2("pm-time", std::to_string(portRecord.pmTime));
+        port_perf_rec_node->newPath2("average-mean-link-delay", std::to_string(portRecord.meanLinkDelay.avg));
+        port_perf_rec_node->newPath2("min-mean-link-delay", std::to_string(portRecord.meanLinkDelay.min));
+        port_perf_rec_node->newPath2("max-mean-link-delay", std::to_string(portRecord.meanLinkDelay.max));
+        port_perf_rec_node->newPath2("stddev-mean-link-delay", std::to_string(portRecord.meanLinkDelay.stddev));
+    }
+
+    for (uint16_t i = 0; i < portRecords24h.size(); i++) {
+        auto port_path = fmt::format("record-list-peer-delay[index='{}']", 97 + i);
+        auto port_perf_rec_res = port_perf_ds_node->newPath2(port_path, std::nullopt);
+        auto port_perf_rec_node = port_perf_rec_res.createdNode;
+        if (!port_perf_rec_node.has_value()) {
+            spdlog::warn(
+                "[CB_OPER] [IF] port_perf_rec_node with index {} of type std::optional has no value, makes no sense, "
+                "returning...",
+                i);
+            return sysrepo::ErrorCode::OperationFailed;
+        }
+        auto &portRecord = portRecords24h[i];
+        port_perf_rec_node->newPath2("pm-time", std::to_string(portRecord.pmTime));
+        port_perf_rec_node->newPath2("average-mean-link-delay", std::to_string(portRecord.meanLinkDelay.avg));
+        port_perf_rec_node->newPath2("min-mean-link-delay", std::to_string(portRecord.meanLinkDelay.min));
+        port_perf_rec_node->newPath2("max-mean-link-delay", std::to_string(portRecord.meanLinkDelay.max));
+        port_perf_rec_node->newPath2("stddev-mean-link-delay", std::to_string(portRecord.meanLinkDelay.stddev));
+    }
 
     return sysrepo::ErrorCode::Ok;
 }
@@ -1691,11 +2038,16 @@ void tsnctrld::setupSubscriptions() {
     m_subs.push_back(m_sess.onOperGet("ieee802-dot1ab-lldp", operLldpCb, "/ieee802-dot1ab-lldp:lldp"));
 
     auto operPtpCb = std::bind_front(&tsnctrld::operPtpCallback, this);
-    m_subs.push_back(m_sess.onOperGet("ieee1588-ptp-tt", operPtpCb, "/ieee1588-ptp-tt:ptp"));
+    m_subs.push_back(m_sess.onOperGet("ieee1588-ptp-tt", operPtpCb, "/ieee1588-ptp-tt:ptp/instances/instance"));
 
     auto operPtpPerfCb = std::bind_front(&tsnctrld::operPtpPerformanceCallback, this);
     m_subs.push_back(m_sess.onOperGet("ieee1588-ptp-tt", operPtpPerfCb,
                                       "/ieee1588-ptp-tt:ptp/instances/instance/performance-monitoring-ds"));
+
+    auto operPtpPortPerfCb = std::bind_front(&tsnctrld::operPtpPortPerformanceCallback, this);
+    m_subs.push_back(
+        m_sess.onOperGet("ieee1588-ptp-tt", operPtpPortPerfCb,
+                         "/ieee1588-ptp-tt:ptp/instances/instance/ports/port/performance-monitoring-port-ds"));
 
     SPDLOG_DEBUG("[INIT] [SUBS] Registered oper callbacks...");
 }

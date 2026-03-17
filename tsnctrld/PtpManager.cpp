@@ -8,8 +8,20 @@
 #include "../common/include/CncTypes.h"
 #include "spdlog/fmt/bin_to_hex.h"
 
+#define MONITORING_PERIOD 1000
+#define COLLECTION_INTERVAL_15M 900  // 900 Seconds in 15m
+#define COLLECTION_INTERVAL_24H 86400  // 86400 Seconds in 24h
+#define NUMBER_RECORDS_15M 97 - 1   // One less in history, because this spot is used by the currently active record
+#define NUMBER_RECORDS_24H 2 - 1    // One less in history, because this spot is used by the currently active record
+
+std::string clockIdentityBytesToString(std::array<uint8_t, 8> clockIdentity) {
+    return fmt::format("{:02X}-{:02X}-{:02X}-{:02X}-{:02X}-{:02X}-{:02X}-{:02X}", clockIdentity[0], clockIdentity[1],
+                       clockIdentity[2], clockIdentity[3], clockIdentity[4], clockIdentity[5], clockIdentity[6],
+                       clockIdentity[7]);
+}
+
 PtpManager::PtpManager(const std::string& ptp4l_socket, uint8_t transport_specific)
-    : m_target_path(ptp4l_socket), m_sequence_id(1), m_transport_specific(transport_specific) {
+    : m_target_path(ptp4l_socket), m_sequence_id(1), m_transport_specific(transport_specific), m_assumedPortCount(0) {
     m_fd = socket(AF_LOCAL, SOCK_DGRAM, 0);
     if (m_fd < 0) throw std::runtime_error("Failed to create UDS socket");
 
@@ -28,6 +40,7 @@ PtpManager::PtpManager(const std::string& ptp4l_socket, uint8_t transport_specif
 }
 
 PtpManager::~PtpManager() {
+    stopMonitoring();
     if (m_fd >= 0) close(m_fd);
     unlink(m_local_path.c_str());
 }
@@ -37,24 +50,62 @@ uint32_t getTimestamp10ms() {
     clock_gettime(CLOCK_BOOTTIME, &ts);
     return (uint32_t)(ts.tv_sec * 100 + ts.tv_nsec / 10000000);
 }
+
+template <typename T>
+void pushSlidingWindow(std::deque<T>& dq, T&& item, size_t max_size) {
+    dq.push_front(std::forward<T>(item));
+    if (dq.size() > max_size) {
+        dq.pop_back();
+    }
+}
+void rolloverPeriod(ptp::PerformanceRecord& current, std::deque<PtpPerformanceRecord_t>& global_records,
+                    std::map<uint16_t, std::deque<PtpPortPerformanceRecord_t>>& port_records, size_t max_size,
+                    uint32_t now, int expectedEntries) {
+    SPDLOG_DEBUG("[PTP] [ROLLOVER] current: start at {}, expected entries={}", current.startTime10ms, expectedEntries);
+    SPDLOG_DEBUG("[PTP] [ROLLOVER] current: mpd: c={} avg={} min={} max={} stddev={}", current.meanPathDelay.count,
+                 current.meanPathDelay.mean, current.meanPathDelay.min, current.meanPathDelay.max,
+                 current.meanPathDelay.getStdDev());
+    SPDLOG_DEBUG("[PTP] [ROLLOVER] current: off: c={} avg={} min={} max={} stddev={}", current.offsetFromMaster.count,
+                 current.offsetFromMaster.mean, current.offsetFromMaster.min, current.offsetFromMaster.max,
+                 current.offsetFromMaster.getStdDev());
+
+    // 1. Snapshot the Instance-level record
+    PtpPerformanceRecord_t globalRecord{
+        true, current.startTime10ms,
+        current.offsetFromMaster.count == expectedEntries && current.meanPathDelay.count == expectedEntries,
+        current.offsetFromMaster.toParameters(), current.meanPathDelay.toParameters()};
+    pushSlidingWindow(global_records, std::move(globalRecord), max_size);
+
+    // 2. Snapshot the Port-level records
+    for (const auto& [portId, stats] : current.portMeanLinkDelay) {
+        SPDLOG_DEBUG("[PTP] [ROLLOVER] current: ports: id={} c={} avg={} min={} max={} stddev={}", portId, stats.count,
+                     stats.mean, stats.min, stats.max, stats.getStdDev());
+
+        PtpPortPerformanceRecord_t portRecord{true, current.startTime10ms, (stats.count == expectedEntries),
+                                              stats.toParameters()};
+        pushSlidingWindow(port_records[portId], std::move(portRecord), max_size);
+    }
+
+    // 3. Reset the accumulator for the next period
+    current.reset(now);
+}
+
 void PtpManager::finalizePeriod(int type) {
-    std::lock_guard<std::mutex> lock(m_socketMutex);
-    uint32_t now = getTimestamp10ms();
+    uint32_t now = getTimestamp10ms();  // Your existing time fetcher
 
     if (type == 15) {
-        std::cout << "[STATS] 15-min Period Complete. Start: " << m_current15m.startTime10ms
-                  << " Avg: " << m_current15m.mean << " StdDev: " << m_current15m.getStdDev() << std::endl;
-
-        // TODO: Push m_current15m to your historical record list (indices 1-96)
-
-        m_current15m.reset(now);
+        rolloverPeriod(m_current15m, m_completedRecords15m, m_completedPortRecords15m, NUMBER_RECORDS_15M, now,
+                       COLLECTION_INTERVAL_15M);
     } else if (type == 24) {
-        std::cout << "[STATS] 24-hour Period Complete. Start: " << m_current24h.startTime10ms
-                  << " Avg: " << m_current24h.mean << std::endl;
+        rolloverPeriod(m_current24h, m_completedRecords24h, m_completedPortRecords24h, NUMBER_RECORDS_24H, now,
+                       COLLECTION_INTERVAL_24H);
+    }
+}
 
-        // TODO: Move current 24h (index 97) to previous (index 98)
-
-        m_current24h.reset(now);
+void PtpManager::stopMonitoring() {
+    m_running = false;
+    if (m_pollThread.joinable()) {
+        m_pollThread.join();
     }
 }
 void PtpManager::startMonitoring() {
@@ -70,24 +121,42 @@ void PtpManager::startMonitoring() {
         m_current15m.reset(now);
         m_current24h.reset(now);
         while (m_running) {
+            next_tick += std::chrono::milliseconds(MONITORING_PERIOD);
+
             ptp::CurrentDs current_ds;
             getCurrentDataSet(current_ds);
-            SPDLOG_DEBUG("");
 
-            std::vector<ptp::PortDs> port_dses;
-            getPortDataSets(port_dses);
-            // 2. Check for Rollovers
-            seconds_counter++;
+            {
+                std::lock_guard<std::mutex> lock(m_perfMutex);
+                m_current15m.meanPathDelay.update(current_ds.meanDelay);
+                m_current24h.meanPathDelay.update(current_ds.meanDelay);
 
-            // 15 Minutes = 900 seconds
-            if (seconds_counter % 900 == 0) {
-                finalizePeriod(15);
+                m_current15m.offsetFromMaster.update(current_ds.offsetFromTimeTransmitter);
+                m_current24h.offsetFromMaster.update(current_ds.offsetFromTimeTransmitter);
+
+                std::vector<ptp::PortDs> port_dses;
+                getPortDataSets(port_dses);
+                for (auto port_ds : port_dses) {
+                    m_current15m.portMeanLinkDelay[port_ds.portIdentity.portNumber].update(port_ds.meanLinkDelay);
+                    m_current24h.portMeanLinkDelay[port_ds.portIdentity.portNumber].update(port_ds.meanLinkDelay);
+                }
             }
 
-            // 24 Hours = 86400 seconds
-            if (seconds_counter % 86400 == 0) {
-                finalizePeriod(24);
-                seconds_counter = 0;  // Reset main counter
+            {
+                std::lock_guard<std::mutex> lock(m_perfMutex);
+                // 2. Check for Rollovers
+                seconds_counter++;
+
+                // 15 Minutes = 900 seconds
+                if (seconds_counter % COLLECTION_INTERVAL_15M == 0) {
+                    finalizePeriod(15);
+                }
+
+                // 24 Hours = 86400 seconds
+                if (seconds_counter % COLLECTION_INTERVAL_24H == 0) {
+                    finalizePeriod(24);
+                    seconds_counter = 0;  // Reset main counter
+                }
             }
 
             std::this_thread::sleep_until(next_tick);
@@ -96,58 +165,8 @@ void PtpManager::startMonitoring() {
     });
 }
 
-bool PtpManager::getCurrentDataSet(double& offset_ns, double& mean_path_delay_ns) {
-    int32_t seq = sendManagementGet(MID_CURRENT_DATA_SET);
-    if (seq < 0) {
-        return false;
-    }
-
-    ptp::ResponseWithSourceIdentity rx_data;
-    if (!receiveManagementResponse(MID_CURRENT_DATA_SET, seq, rx_data)) {
-        return false;
-    }
-
-    if (rx_data.bytes.size() < 18) {
-        return false;
-    }
-
-    uint64_t offset_net;
-    memcpy(&offset_net, &rx_data.bytes[2], 8);
-    offset_ns = static_cast<int64_t>(be64toh(offset_net)) / 65536.0;
-
-    uint64_t delay_net;
-    memcpy(&delay_net, &rx_data.bytes[10], 8);
-    mean_path_delay_ns = static_cast<int64_t>(be64toh(delay_net)) / 65536.0;
-
-    return true;
-}
-bool PtpManager::getPortState(std::vector<std::string>& states) {
-    // The Intel code relies on PORT_DATA_SET, which is standard IEEE 1588
-    int32_t seq = sendManagementGet(MID_PORT_DATA_SET);
-    if (seq < 0) {
-        return false;
-    }
-
-    ptp::ResponseWithSourceIdentity rx_data;
-    bool atLeastOne = false;
-    for (uint16_t i = 0; i < m_assumedPortCount || m_assumedPortCount == 0; i++) {
-        if (!receiveManagementResponse(MID_PORT_DATA_SET, seq, rx_data)) {
-            break;
-        }
-        atLeastOne = true;
-        if (rx_data.bytes.size() >= 11) {
-            uint16_t portNum = be16toh(rx_data.source.portNumber);
-            states.emplace_back(fmt::format(
-                "{:02X}-{:02X}-{:02X}-{:02X}-{:02X}-{:02X}-{:02X}-{:02X} Port {}: State {}",
-                rx_data.source.clockIdentity[0], rx_data.source.clockIdentity[1], rx_data.source.clockIdentity[2],
-                rx_data.source.clockIdentity[3], rx_data.source.clockIdentity[4], rx_data.source.clockIdentity[5],
-                rx_data.source.clockIdentity[6], rx_data.source.clockIdentity[7], portNum, rx_data.bytes[10]));
-        }
-    }
-    return atLeastOne;
-}
-
 bool PtpManager::getDefaultDataSet(ptp::DefaultDs& default_ds) {
+    std::lock_guard<std::mutex> lock(m_socketMutex);
     int32_t seq = sendManagementGet(MID_DEFAULT_DATA_SET);
     if (seq < 0) {
         return false;
@@ -170,6 +189,7 @@ bool PtpManager::getDefaultDataSet(ptp::DefaultDs& default_ds) {
 }
 
 bool PtpManager::getCurrentDataSet(ptp::CurrentDs& current_ds) {
+    std::lock_guard<std::mutex> lock(m_socketMutex);
     int32_t seq = sendManagementGet(MID_CURRENT_DATA_SET);
     if (seq < 0) {
         return false;
@@ -190,6 +210,7 @@ bool PtpManager::getCurrentDataSet(ptp::CurrentDs& current_ds) {
     return true;
 }
 bool PtpManager::getParentDataSet(ptp::ParentDS& parent_ds) {
+    std::lock_guard<std::mutex> lock(m_socketMutex);
     int32_t seq = sendManagementGet(MID_PARENT_DATA_SET);
     if (seq < 0) {
         return false;
@@ -212,6 +233,7 @@ bool PtpManager::getParentDataSet(ptp::ParentDS& parent_ds) {
     return true;
 }
 bool PtpManager::getPortDataSets(std::vector<ptp::PortDs>& port_dses) {
+    std::lock_guard<std::mutex> lock(m_socketMutex);
     int32_t seq = sendManagementGet(MID_PORT_DATA_SET);
     if (seq < 0) {
         return false;
@@ -223,13 +245,16 @@ bool PtpManager::getPortDataSets(std::vector<ptp::PortDs>& port_dses) {
         if (!receiveManagementResponse(MID_PORT_DATA_SET, seq, rx_data)) {
             break;
         }
-        auto port = port_dses.emplace_back();
+        auto& port = port_dses.emplace_back();
         std::memcpy(&port, rx_data.bytes.data(), sizeof(ptp::PortDs));
-        // TODO: Correcting byteorder
+
+        port.portIdentity.portNumber = be16toh(port.portIdentity.portNumber);
+        port.meanLinkDelay = be64toh(port.meanLinkDelay);
     }
-    // throw std::runtime_error("PtpManager::getPortDataSets not really implemented yet");
+    return true;
 }
 bool PtpManager::getClockDescriptions(std::vector<ptp::ClockDescription>& clock_descriptions) {
+    std::lock_guard<std::mutex> lock(m_socketMutex);
     int32_t seq = sendManagementGet(MID_CLOCK_DESCRIPTION);
     if (seq < 0) {
         return false;
@@ -241,18 +266,96 @@ bool PtpManager::getClockDescriptions(std::vector<ptp::ClockDescription>& clock_
         if (!receiveManagementResponse(MID_CLOCK_DESCRIPTION, seq, rx_data)) {
             break;
         }
-        auto clock_description = clock_descriptions.emplace_back();
-        std::memcpy(&clock_description.clockType, rx_data.bytes.data(), sizeof(uint16_t));
+        auto& clock_description = clock_descriptions.emplace_back();
+        clock_description.source = rx_data.source;
 
+        std::memcpy(&clock_description.clockType, rx_data.bytes.data(), sizeof(uint16_t));
         clock_description.clockType = be16toh(clock_description.clockType);
     }
-    spdlog::warn("[PTP] [CLOCK_DESC] Only clockType is implemented, rest is undef");
+    spdlog::warn("[PTP] [CLOCK_DESC] Only clockType and custom field \"source\" is implemented, rest is undef");
     return true;
+}
+void PtpManager::getPerformance15m(std::vector<PtpPerformanceRecord_t>& out) {
+    std::lock_guard<std::mutex> lock(m_perfMutex);
+    out.clear();
+    out.reserve(NUMBER_RECORDS_15M + 1);
+    out.emplace_back(false, m_current15m.startTime10ms, false, m_current15m.offsetFromMaster.toParameters(),
+                     m_current15m.meanPathDelay.toParameters());
+    std::copy(m_completedRecords15m.begin(), m_completedRecords15m.end(), std::back_inserter(out));
+}
+void PtpManager::getPerformance24h(std::vector<PtpPerformanceRecord_t>& out) {
+    std::lock_guard<std::mutex> lock(m_perfMutex);
+    out.clear();
+    out.reserve(NUMBER_RECORDS_24H + 1);
+    out.emplace_back(false, m_current24h.startTime10ms, false, m_current24h.offsetFromMaster.toParameters(),
+                     m_current24h.meanPathDelay.toParameters());
+    std::copy(m_completedRecords24h.begin(), m_completedRecords24h.end(), std::back_inserter(out));
+}
+void PtpManager::getPortPerformance15m(uint16_t portIndex, std::vector<PtpPortPerformanceRecord_t>& out) {
+    std::lock_guard<std::mutex> lock(m_perfMutex);
+    out.clear();
+    out.reserve(NUMBER_RECORDS_15M + 1);
+    out.emplace_back(false, m_current15m.startTime10ms, false,
+                     m_current15m.portMeanLinkDelay[portIndex].toParameters());
+    std::copy(m_completedPortRecords15m[portIndex].begin(), m_completedPortRecords15m[portIndex].end(), std::back_inserter(out));
+}
+void PtpManager::getPortPerformance24h(uint16_t portIndex, std::vector<PtpPortPerformanceRecord_t>& out) {
+    std::lock_guard<std::mutex> lock(m_perfMutex);
+    out.clear();
+    out.reserve(NUMBER_RECORDS_24H + 1);
+    out.emplace_back(false, m_current24h.startTime10ms, false,
+                     m_current24h.portMeanLinkDelay[portIndex].toParameters());
+    std::copy(m_completedPortRecords24h[portIndex].begin(), m_completedPortRecords24h[portIndex].end(), std::back_inserter(out));
+}
+void PtpManager::fillStateData(PtpNode_t& node_to_fill) {
+    ptp::DefaultDs default_ds = {};
+    if (!getDefaultDataSet(default_ds)) {
+        return;
+    }
+    ptp::CurrentDs current_ds = {};
+    if (!getCurrentDataSet(current_ds)) {
+        return;
+    }
+    ptp::ParentDS parent_ds = {};
+    if (!getParentDataSet(parent_ds)) {
+        return;
+    }
+    std::vector<ptp::PortDs> port_dses = {};
+    if (!getPortDataSets(port_dses)) {
+        return;
+    }
+    if (default_ds.numberPorts != port_dses.size()) {
+        uint16_t portsNum;
+        std::memcpy(&portsNum, &default_ds.numberPorts, sizeof(uint16_t));
+
+        SPDLOG_WARN(
+            "[PTP] [FILL_STATE] Number of ports does not match between reported number {} and number of port datasets "
+            "{}",
+            portsNum, port_dses.size());
+    }
+    node_to_fill.defaultDs.numPorts = default_ds.numberPorts;
+    node_to_fill.defaultDs.clockIdentity = clockIdentityBytesToString(default_ds.clockIdentity);
+
+    node_to_fill.currentDs.stepsRemoved = current_ds.stepsRemoved;
+    node_to_fill.currentDs.offsetFromTimeTransmitter = current_ds.offsetFromTimeTransmitter;
+
+    node_to_fill.parentDs.parentClockIdentity = clockIdentityBytesToString(parent_ds.parentPortIdentity.clockIdentity);
+    node_to_fill.parentDs.parentPortNumber = parent_ds.parentPortIdentity.portNumber;
+    node_to_fill.parentDs.grandParentClockIdentity = clockIdentityBytesToString(parent_ds.grandmasterIdentity);
+
+    for (auto port_ds : port_dses) {
+        auto& port = node_to_fill.ports.emplace_back();
+        port.portIndex = port_ds.portIdentity.portNumber;
+        port.portDs.portClockIdentity = clockIdentityBytesToString(port_ds.portIdentity.clockIdentity);
+        port.portDs.portPortNumber = port_ds.portIdentity.portNumber;
+        port.portDs.portState = static_cast<PtpPortState_t>(port_ds.portState);
+        port.portDs.meanLinkDelay = port_ds.meanLinkDelay;
+    }
 }
 
 void PtpManager::fillConfigData(PtpNode_t& node_to_fill) {
-    ptp::DefaultDs default_ds;
-    std::vector<ptp::ClockDescription> clock_descriptions;
+    ptp::DefaultDs default_ds = {};
+    std::vector<ptp::ClockDescription> clock_descriptions = {};
     if (!getDefaultDataSet(default_ds)) {
         return;
     }
@@ -260,13 +363,21 @@ void PtpManager::fillConfigData(PtpNode_t& node_to_fill) {
         return;
     }
 
+    PtpInstanceType_t type = PtpInstanceType_t::PTP_INSTANCE_INVALID;
+    if ((clock_descriptions[0].clockType & (1 << 8 + 7)) != 0) {
+        type = PtpInstanceType_t::PTP_INSTANCE_OC;
+    } else if ((clock_descriptions[0].clockType & (1 << 8 + 6)) != 0) {
+        type = PtpInstanceType_t::PTP_INSTANCE_BC;
+    } else if ((clock_descriptions[0].clockType & (1 << 8 + 5)) != 0) {
+        type = PtpInstanceType_t::PTP_INSTANCE_P2P_TC;
+    } else if ((clock_descriptions[0].clockType & (1 << 8 + 4)) != 0) {
+        type = PtpInstanceType_t::PTP_INSTANCE_E2E_TC;
+    }
+    node_to_fill.defaultDs.instanceType = type;
+
     node_to_fill.defaultDs.numPorts = default_ds.numberPorts;
     node_to_fill.defaultDs.priority1 = default_ds.priority1;
-    node_to_fill.defaultDs.clockIdentity =
-        fmt::format("{:02X}-{:02X}-{:02X}-{:02X}-{:02X}-{:02X}-{:02X}-{:02X}", default_ds.clockIdentity[0],
-                    default_ds.clockIdentity[1], default_ds.clockIdentity[2], default_ds.clockIdentity[3],
-                    default_ds.clockIdentity[4], default_ds.clockIdentity[5], default_ds.clockIdentity[6],
-                    default_ds.clockIdentity[7]);
+    node_to_fill.defaultDs.clockIdentity = clockIdentityBytesToString(default_ds.clockIdentity);
 }
 
 int32_t PtpManager::sendManagementGet(uint16_t managementId) {
@@ -388,6 +499,8 @@ bool PtpManager::receiveManagementResponse(uint16_t expectedId, uint16_t expecte
     }
 
     std::memcpy(&out_data.source, &msg.header.sourcePortIdentity, sizeof(ptp::PortIdentity));
+    out_data.source.portNumber = be16toh(out_data.source.portNumber);
+
     int payload_len = ntohs(tlv.lengthField) - 2;
     if (payload_len == 0) {
         SPDLOG_TRACE("[PTP] [RECV_RESP] Empty response", expectedId);

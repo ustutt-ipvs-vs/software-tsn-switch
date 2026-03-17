@@ -85,6 +85,11 @@ class tsnctrld {
                                                   const std::optional<std::string>& subXPath,
                                                   const std::optional<std::string>& requestXPath, uint32_t requestId,
                                                   std::optional<libyang::DataNode>& parent);
+    sysrepo::ErrorCode operPtpPortPerformanceCallback(const sysrepo::Session& sess, uint32_t subId,
+                                                  const std::string& moduleName,
+                                                  const std::optional<std::string>& subXPath,
+                                                  const std::optional<std::string>& requestXPath, uint32_t requestId,
+                                                  std::optional<libyang::DataNode>& parent);
 
     sysrepo::ErrorCode defaultChangeCallback(sysrepo::Session sess, uint32_t subId, const std::string& moduleName,
                                              const std::optional<std::string>& subXPath, sysrepo::Event event,

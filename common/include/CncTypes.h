@@ -252,33 +252,143 @@ struct CncNode_t {
     std::string ipAddress;
 };
 
+enum class PtpInstanceType_t : uint8_t {
+    PTP_INSTANCE_OC = 0,
+    PTP_INSTANCE_BC,
+    PTP_INSTANCE_P2P_TC,
+    PTP_INSTANCE_E2E_TC,
+    PTP_INSTANCE_INVALID,
+};
+
+inline const std::optional<std::string>& ptpInstanceTypeToEnum(PtpInstanceType_t type) {
+    // These are initialized once the first time the function is called
+    static const std::optional<std::string> s_oc = "oc";
+    static const std::optional<std::string> s_bc = "bc";
+    static const std::optional<std::string> s_p2p_tc = "p2p-tc";
+    static const std::optional<std::string> s_e2e_tc = "e2e-tc";
+    static const std::optional<std::string> s_none = std::nullopt;
+
+    switch (type) {
+        case PtpInstanceType_t::PTP_INSTANCE_OC:
+            return s_oc;
+        case PtpInstanceType_t::PTP_INSTANCE_BC:
+            return s_bc;
+        case PtpInstanceType_t::PTP_INSTANCE_P2P_TC:
+            return s_p2p_tc;
+        case PtpInstanceType_t::PTP_INSTANCE_E2E_TC:
+            return s_e2e_tc;
+        default:
+            return s_none;
+    }
+}
+
+enum class PtpPortState_t : uint8_t {
+    INITIALIZING = 1,
+    FAULTY,
+    DISABLED,
+    LISTENING,
+    PRE_TIME_TRANSMITTER,
+    TIME_TRANSMITTER,
+    PASSIVE,
+    UNCALIBRATED,
+    TIME_RECEIVER
+};
+
+inline const std::optional<std::string>& portStateToString(PtpPortState_t state) {
+    // Initialized once on first call
+    static const std::optional<std::string> s_initializing = "initializing";
+    static const std::optional<std::string> s_faulty = "faulty";
+    static const std::optional<std::string> s_disabled = "disabled";
+    static const std::optional<std::string> s_listening = "listening";
+    static const std::optional<std::string> s_pre_time_transmitter = "pre-time-transmitter";
+    static const std::optional<std::string> s_time_transmitter = "time-transmitter";
+    static const std::optional<std::string> s_passive = "passive";
+    static const std::optional<std::string> s_uncalibrated = "uncalibrated";
+    static const std::optional<std::string> s_time_receiver = "time-receiver";
+    static const std::optional<std::string> s_none = std::nullopt;
+
+    switch (state) {
+        case PtpPortState_t::INITIALIZING:
+            return s_initializing;
+        case PtpPortState_t::FAULTY:
+            return s_faulty;
+        case PtpPortState_t::DISABLED:
+            return s_disabled;
+        case PtpPortState_t::LISTENING:
+            return s_listening;
+        case PtpPortState_t::PRE_TIME_TRANSMITTER:
+            return s_pre_time_transmitter;
+        case PtpPortState_t::TIME_TRANSMITTER:
+            return s_time_transmitter;
+        case PtpPortState_t::PASSIVE:
+            return s_passive;
+        case PtpPortState_t::UNCALIBRATED:
+            return s_uncalibrated;
+        case PtpPortState_t::TIME_RECEIVER:
+            return s_time_receiver;
+        default:
+            return s_none;
+    }
+}
+
+struct PtpPerformanceParameters_t {
+    int64_t avg;
+    int64_t min;
+    int64_t max;
+    int64_t stddev;
+};
+
+struct PtpPerformanceRecord_t {
+    bool periodComplete;
+    uint32_t pmTime;
+    bool measurementValid;
+    PtpPerformanceParameters_t offsetFromTimeTransmitter;
+    PtpPerformanceParameters_t meanPathDelay;
+};
+struct PtpPortPerformanceRecord_t {
+    bool periodComplete;
+    uint32_t pmTime;
+    bool measurementValid;
+    PtpPerformanceParameters_t meanLinkDelay;
+};
+
 struct DefaultDs_t {
     uint16_t numPorts;
     uint8_t priority1;
     std::string clockIdentity;
     PtpTime_t currentTime;
+    PtpInstanceType_t instanceType;
 };
-struct CurrentDs_t {};
-struct ParentDs_t {};
-struct PortDs {};
-
-struct PerformanceRecord_t {
-    uint16_t index;
-    bool periodComplete;
-    uint32_t pmTime;
+struct CurrentDs_t {
+    uint16_t stepsRemoved;
+    int64_t offsetFromTimeTransmitter;
+    int64_t meanDelay;
+};
+struct ParentDs_t {
+    std::string parentClockIdentity;
+    uint16_t parentPortNumber;
+    std::string grandParentClockIdentity;
+};
+struct PortDs_t {
+    std::string portClockIdentity;
+    uint16_t portPortNumber;
+    PtpPortState_t portState;
+    int64_t meanLinkDelay;
 };
 
 struct PtpPort_t {
     uint16_t portIndex;
     std::string underlyingInterface;
-    PortDs portDs;
+    PortDs_t portDs;
+    std::vector<PtpPortPerformanceRecord_t> portPerformanceRecords15m;
+    std::vector<PtpPortPerformanceRecord_t> portPerformanceRecords24h;
 };
 
 struct PtpNode_t {
     DefaultDs_t defaultDs;
     CurrentDs_t currentDs;
     ParentDs_t parentDs;
-    std::vector<PerformanceRecord_t> performanceRecords15m;
-    std::vector<PerformanceRecord_t> performanceRecords24h;
+    std::vector<PtpPerformanceRecord_t> performanceRecords15m;
+    std::vector<PtpPerformanceRecord_t> performanceRecords24h;
     std::vector<PtpPort_t> ports;
 };
