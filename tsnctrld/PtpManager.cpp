@@ -9,10 +9,10 @@
 #include "spdlog/fmt/bin_to_hex.h"
 
 #define MONITORING_PERIOD 1000
-#define COLLECTION_INTERVAL_15M 900  // 900 Seconds in 15m
+#define COLLECTION_INTERVAL_15M 900    // 900 Seconds in 15m
 #define COLLECTION_INTERVAL_24H 86400  // 86400 Seconds in 24h
-#define NUMBER_RECORDS_15M 97 - 1   // One less in history, because this spot is used by the currently active record
-#define NUMBER_RECORDS_24H 2 - 1    // One less in history, because this spot is used by the currently active record
+#define NUMBER_RECORDS_15M 97 - 1      // One less in history, because this spot is used by the currently active record
+#define NUMBER_RECORDS_24H 2 - 1       // One less in history, because this spot is used by the currently active record
 
 std::string clockIdentityBytesToString(std::array<uint8_t, 8> clockIdentity) {
     return fmt::format("{:02X}-{:02X}-{:02X}-{:02X}-{:02X}-{:02X}-{:02X}-{:02X}", clockIdentity[0], clockIdentity[1],
@@ -297,7 +297,8 @@ void PtpManager::getPortPerformance15m(uint16_t portIndex, std::vector<PtpPortPe
     out.reserve(NUMBER_RECORDS_15M + 1);
     out.emplace_back(false, m_current15m.startTime10ms, false,
                      m_current15m.portMeanLinkDelay[portIndex].toParameters());
-    std::copy(m_completedPortRecords15m[portIndex].begin(), m_completedPortRecords15m[portIndex].end(), std::back_inserter(out));
+    std::copy(m_completedPortRecords15m[portIndex].begin(), m_completedPortRecords15m[portIndex].end(),
+              std::back_inserter(out));
 }
 void PtpManager::getPortPerformance24h(uint16_t portIndex, std::vector<PtpPortPerformanceRecord_t>& out) {
     std::lock_guard<std::mutex> lock(m_perfMutex);
@@ -305,7 +306,8 @@ void PtpManager::getPortPerformance24h(uint16_t portIndex, std::vector<PtpPortPe
     out.reserve(NUMBER_RECORDS_24H + 1);
     out.emplace_back(false, m_current24h.startTime10ms, false,
                      m_current24h.portMeanLinkDelay[portIndex].toParameters());
-    std::copy(m_completedPortRecords24h[portIndex].begin(), m_completedPortRecords24h[portIndex].end(), std::back_inserter(out));
+    std::copy(m_completedPortRecords24h[portIndex].begin(), m_completedPortRecords24h[portIndex].end(),
+              std::back_inserter(out));
 }
 void PtpManager::fillStateData(PtpNode_t& node_to_fill) {
     ptp::DefaultDs default_ds = {};
