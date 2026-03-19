@@ -860,21 +860,39 @@ void tsnctrld::populateAsTsnCapableInterface(ietfInterface_t &current, libyang::
  * @param ctx The libyang Context under which to start adding the data, used if the @ref forest does not yet exist.
  * @param forest A libyang DataNode in whose Context the data should be added.
  */
-void tsnctrld::popuplateAsLldpConfiguration(ietfInterface_t &current, libyang::Context &ctx,
+void tsnctrld::popuplateAsLldpConfiguration(LldpNode_t &current, libyang::Context &ctx,
                                             std::optional<libyang::DataNode> &forest) {
-    if (current.type == IfType::ETHERNET) {
-        // TODO: Get real values
-        SPDLOG_DEBUG("[SYNC] [LLDP] Enabling discovery on: {}", current.name);
-        std::string lldp_path = fmt::format(
-            "/ieee802-dot1ab-lldp:lldp/port[name='{}'][dest-mac-address='01-80-c2-00-00-0e']", current.name);
+    SPDLOG_DEBUG("[SYNC] [LLDP] Populating running datastore with lldp config");
+    std::string lldp_path = fmt::format("/ieee802-dot1ab-lldp:lldp");
+    // std::string lldp_path = fmt::format(
+    //     "/ieee802-dot1ab-lldp:lldp/port[name='{}'][dest-mac-address='01-80-c2-00-00-0e']", current.name);
 
-        auto lldp_res = forest ? forest->newPath2(lldp_path, std::nullopt) : ctx.newPath2(lldp_path, std::nullopt);
-        auto lldp_node = lldp_res.createdNode;
-        if (!lldp_node.has_value()) {
-            spdlog::warn("[SYNC] [LLDP] lldp_node of type std::optional has no value, makes no sense, returning...");
+    auto lldp_res = forest ? forest->newPath2(lldp_path, std::nullopt) : ctx.newPath2(lldp_path, std::nullopt);
+    if (!forest && lldp_res.createdParent) {
+        forest = lldp_res.createdParent;
+    }
+
+    auto lldp_node = lldp_res.createdNode;
+    if (!lldp_node.has_value()) {
+        spdlog::warn("[SYNC] [LLDP] lldp_node of type std::optional has no value, makes no sense, returning...");
+        return;
+    }
+    lldp_node->newPath2("message-fast-tx", std::to_string(current.messageFastTx));
+    lldp_node->newPath2("message-tx-hold-multiplier", std::to_string(current.messageTxHoldMultiplier));
+    lldp_node->newPath2("message-tx-interval", std::to_string(current.messageTxInterval));
+
+    for (auto &port : current.ports) {
+        auto port_path = fmt::format("port[name='{}'][dest-mac-address='{}']", port.name, port.destMacAddress);
+        auto port_res = lldp_node->newPath2(port_path, std::nullopt);
+        auto port_node = port_res.createdNode;
+        if (!port_node.has_value()) {
+            spdlog::warn(
+                "[SYNC] [LLDP] port_node with name {} of type std::optional has no value, makes no sense, "
+                "returning...",
+                port.name);
             return;
         }
-        lldp_node->newPath2("admin-status", "tx-and-rx");
+        port_node->newPath2("admin-status", port.adminStatus);
     }
 }
 
@@ -914,8 +932,6 @@ void tsnctrld::syncHardwareToRunning() {
 
         // --- PASS 2: Interface Core ---
         populateAsInterface(current, ctx, forest);
-
-        popuplateAsLldpConfiguration(current, ctx, forest);
     }
 
     if (forest) {
@@ -931,7 +947,24 @@ void tsnctrld::syncHardwareToRunning() {
         SPDLOG_DEBUG("[SYNC] Datastore synchronized.");
     }
 
+    forest.reset();
     m_lldpDaemon = std::make_unique<LldpDaemon>(m_operSess);
+    LldpNode_t lldp_node;
+    m_lldpDaemon->getConfigData(lldp_node);
+    popuplateAsLldpConfiguration(lldp_node, ctx, forest);
+    if (forest) {
+        SPDLOG_DEBUG("[SYNC] Applying Batch to Datastore...");
+        SPDLOG_DEBUG("[SYNC] Switching to first sibling...");
+        forest = forest->firstSibling();
+        SPDLOG_TRACE("  -> [SYNC DEBUG] Data forest:\n {}",
+                     forest->printStr(libyang::DataFormat::XML, libyang::PrintFlags::Siblings).value_or("MISSING"));
+        SPDLOG_DEBUG("[SYNC] Editing batch...");
+        m_sess.editBatch(*forest, sysrepo::DefaultOperation::Merge);
+        SPDLOG_DEBUG("[SYNC] Applying changes...");
+        m_sess.applyChanges();
+        SPDLOG_DEBUG("[SYNC] Datastore synchronized.");
+    }
+
     m_lldpDaemon->syncInitialNeighbors();
     m_lldpDaemon->startWatching();
 }
@@ -1180,6 +1213,38 @@ sysrepo::ErrorCode tsnctrld::operLldpCallback(const sysrepo::Session &sess, uint
     SPDLOG_DEBUG("[CB_OPER] [IF] requestId \"{}\"...", requestId);
     SPDLOG_DEBUG("[CB_OPER] [IF] module of parent node \"{}\"...", parent ? parent->schema().module().name() : "ROOT");
     SPDLOG_DEBUG("[CB_OPER] [IF] name of parent node \"{}\"...", parent ? parent->schema().name() : "ROOT");
+
+    LldpNode_t lldpNode;
+    m_lldpDaemon->getLocalInfo(lldpNode);
+
+    auto ctx = sess.getContext();
+
+    std::string lldp_path = fmt::format("/ieee802-dot1ab-lldp:lldp");
+    auto lldp_res = parent ? parent->newPath2(lldp_path, std::nullopt) : ctx.newPath2(lldp_path, std::nullopt);
+    if (!parent && lldp_res.createdParent) {
+        parent = lldp_res.createdParent;
+    }
+    auto lldp_node = lldp_res.createdNode;
+    if (!lldp_node.has_value()) {
+        spdlog::warn("[CB_OPER] [BR] lldp_node of type std::optional has no value, makes no sense, returning...");
+        return sysrepo::ErrorCode::OperationFailed;
+    }
+
+    auto local_system_res = lldp_node->newPath2("local-system-data", std::nullopt);
+    auto local_system_node = local_system_res.createdNode;
+    if (!local_system_node.has_value()) {
+        spdlog::warn(
+            "[CB_OPER] [LLDP] local_system_node of type std::optional has no value, makes no sense, "
+            "returning...");
+        return sysrepo::ErrorCode::OperationFailed;
+    }
+
+    local_system_node->newPath2("chassis-id-subtype", lldpNode.localSystemData.chassisIdSubtype);
+    local_system_node->newPath2("chassis-id", lldpNode.localSystemData.chassisId);
+    local_system_node->newPath2("system-name", lldpNode.localSystemData.systemName);
+    local_system_node->newPath2("system-description", lldpNode.localSystemData.systemDescription);
+    local_system_node->newPath2("system-capabilities-supported", lldpNode.localSystemData.systemCapabilitiesSupported);
+    local_system_node->newPath2("system-capabilities-enabled", lldpNode.localSystemData.systemCapabilitiesEnabled);
 
     return sysrepo::ErrorCode::Ok;
 }
