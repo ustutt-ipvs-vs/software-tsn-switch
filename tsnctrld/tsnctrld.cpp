@@ -2035,7 +2035,8 @@ void tsnctrld::setupSubscriptions() {
                                       "/ietf-interfaces:interfaces/interface/ieee802-dot1q-bridge:bridge-port"));
 
     auto operLldpCb = std::bind_front(&tsnctrld::operLldpCallback, this);
-    m_subs.push_back(m_sess.onOperGet("ieee802-dot1ab-lldp", operLldpCb, "/ieee802-dot1ab-lldp:lldp"));
+    m_subs.push_back(m_sess.onOperGet("ieee802-dot1ab-lldp", operLldpCb, "/ieee802-dot1ab-lldp:lldp",
+                                      sysrepo::SubscribeOptions::OperMerge));
 
     auto operPtpCb = std::bind_front(&tsnctrld::operPtpCallback, this);
     m_subs.push_back(m_sess.onOperGet("ieee1588-ptp-tt", operPtpCb, "/ieee1588-ptp-tt:ptp/instances/instance"));
