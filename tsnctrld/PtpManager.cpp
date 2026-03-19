@@ -81,8 +81,7 @@ void rolloverPeriod(ptp::PerformanceRecord& current, std::deque<PtpPerformanceRe
         SPDLOG_DEBUG("[PTP] [ROLLOVER] current: ports: id={} c={} avg={} min={} max={} stddev={}", portId, stats.count,
                      stats.mean, stats.min, stats.max, stats.getStdDev());
 
-        PtpPortPerformanceRecord_t portRecord{true, current.startTime10ms, (stats.count == expectedEntries),
-                                              stats.toParameters()};
+        PtpPortPerformanceRecord_t portRecord{current.startTime10ms, stats.toParameters()};
         pushSlidingWindow(port_records[portId], std::move(portRecord), max_size);
     }
 
@@ -295,8 +294,7 @@ void PtpManager::getPortPerformance15m(uint16_t portIndex, std::vector<PtpPortPe
     std::lock_guard<std::mutex> lock(m_perfMutex);
     out.clear();
     out.reserve(NUMBER_RECORDS_15M + 1);
-    out.emplace_back(false, m_current15m.startTime10ms, false,
-                     m_current15m.portMeanLinkDelay[portIndex].toParameters());
+    out.emplace_back(m_current15m.startTime10ms, m_current15m.portMeanLinkDelay[portIndex].toParameters());
     std::copy(m_completedPortRecords15m[portIndex].begin(), m_completedPortRecords15m[portIndex].end(),
               std::back_inserter(out));
 }
@@ -304,8 +302,7 @@ void PtpManager::getPortPerformance24h(uint16_t portIndex, std::vector<PtpPortPe
     std::lock_guard<std::mutex> lock(m_perfMutex);
     out.clear();
     out.reserve(NUMBER_RECORDS_24H + 1);
-    out.emplace_back(false, m_current24h.startTime10ms, false,
-                     m_current24h.portMeanLinkDelay[portIndex].toParameters());
+    out.emplace_back(m_current24h.startTime10ms, m_current24h.portMeanLinkDelay[portIndex].toParameters());
     std::copy(m_completedPortRecords24h[portIndex].begin(), m_completedPortRecords24h[portIndex].end(),
               std::back_inserter(out));
 }

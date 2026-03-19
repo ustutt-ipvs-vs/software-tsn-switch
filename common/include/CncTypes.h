@@ -242,14 +242,6 @@ struct ietfInterface_t {
     uint64_t speed = 0;              // Derived via ethtools
 
     BridgePort_t bridgePort;
-    LldpNeighbor_t lldpNeighbor;
-};
-
-struct CncNode_t {
-    uint32_t id;
-    std::string hostName;
-    std::vector<ietfInterface_t> interfaces;
-    std::string ipAddress;
 };
 
 enum class PtpInstanceType_t : uint8_t {
@@ -346,9 +338,7 @@ struct PtpPerformanceRecord_t {
     PtpPerformanceParameters_t meanPathDelay;
 };
 struct PtpPortPerformanceRecord_t {
-    bool periodComplete;
     uint32_t pmTime;
-    bool measurementValid;
     PtpPerformanceParameters_t meanLinkDelay;
 };
 
@@ -393,7 +383,6 @@ struct PtpNode_t {
     std::vector<PtpPort_t> ports;
 };
 
-
 struct LldpLocalSystemData_t {
     std::string chassisIdSubtype;
     std::string chassisId;
@@ -407,7 +396,7 @@ struct LldpPort_t {
     std::string name;
     std::string destMacAddress;
     std::string adminStatus;
-    // std::vector<LldpNeighbor_t> neighbors; // TODO: Needs to be implemented
+    std::vector<LldpNeighbor_t> neighbors;  // TODO: Needs to be implemented
 };
 
 struct LldpNode_t {
@@ -416,4 +405,13 @@ struct LldpNode_t {
     uint32_t messageFastTx;
     LldpLocalSystemData_t localSystemData;
     std::vector<LldpPort_t> ports;
+};
+
+struct CncNode_t {
+    uint32_t id;
+    std::string hostName;
+    std::vector<ietfInterface_t> interfaces;
+    std::string ipAddress;
+    PtpNode_t ptpAllData;
+    LldpNode_t lldpAllData;
 };
