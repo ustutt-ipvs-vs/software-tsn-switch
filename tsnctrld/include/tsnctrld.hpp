@@ -116,7 +116,8 @@ class tsnctrld {
     static void populateAsTsnCapableInterface(ietfInterface_t& current, libyang::DataNode& if_node);
     static void populateAsInterface(ietfInterface_t& current, libyang::Context& ctx,
                                     std::optional<libyang::DataNode>& forest);
-    static void popuplateAsLldpConfiguration(ietfInterface_t& current, libyang::Context& ctx,
+
+    static void popuplateAsLldpConfiguration(LldpNode_t& current, libyang::Context& ctx,
                                              std::optional<libyang::DataNode>& forest);
     void populatePtpConfig(libyang::Context& ctx, std::optional<libyang::DataNode>& forest);
     void syncHardwareToRunning();

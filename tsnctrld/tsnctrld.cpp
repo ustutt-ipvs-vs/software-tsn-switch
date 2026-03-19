@@ -566,27 +566,6 @@ ietfInterface_t *tsnctrld::syncInterfaceFromSysrepo(sysrepo::Session &sess, cons
  * on the current host. Afterwards the datastore is repopulated and callbacks are initialized.
  */
 void tsnctrld::initialize() {
-    // double offset_ns, mean_path_delay_ns;
-    // while (true) {
-    //     if (m_ptp.getCurrentDataSet(offset_ns, mean_path_delay_ns)) {
-    //         std::cout << "PTP Offset: " << offset_ns << " ns\n";
-    //         std::cout << "Path Delay: " << mean_path_delay_ns << " ns\n";
-    //     } else {
-    //         std::cerr << "Failed getCurrentDataSet\n";
-    //     }
-    //
-    //    std::vector<std::string> states;
-    //    if (m_ptp.getPortState(states)) {
-    //        // Usually 9 = Slave, 6 = Master (Based on linuxptp states)
-    //        for (auto state : states) {
-    //            std::cout << "Port State: " << state << "\n";
-    //        }
-    //    } else {
-    //        std::cerr << "Failed getPortState\n";
-    //    }
-    //    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-    //}
-
     spdlog::info("[INIT] Initializing tsnctrld...");
 
     static const std::vector<std::string> SERVICES_TO_START = {"netopeer2-server.service", "lldpd.service"};
@@ -891,25 +870,39 @@ void tsnctrld::populateAsTsnCapableInterface(ietfInterface_t &current, libyang::
  * @param ctx The libyang Context under which to start adding the data, used if the @ref forest does not yet exist.
  * @param forest A libyang DataNode in whose Context the data should be added.
  */
-void tsnctrld::popuplateAsLldpConfiguration(ietfInterface_t &current, libyang::Context &ctx,
+void tsnctrld::popuplateAsLldpConfiguration(LldpNode_t &current, libyang::Context &ctx,
                                             std::optional<libyang::DataNode> &forest) {
-    if (current.type == IfType::ETHERNET) {
-        // TODO: Get real values
-        SPDLOG_DEBUG("[SYNC] [LLDP] Enabling discovery on: {}", current.name);
-        std::string lldp_path = fmt::format(
-            "/ieee802-dot1ab-lldp:lldp/port[name='{}'][dest-mac-address='01-80-c2-00-00-0e']", current.name);
+    SPDLOG_DEBUG("[SYNC] [LLDP] Populating running datastore with lldp config");
+    std::string lldp_path = fmt::format("/ieee802-dot1ab-lldp:lldp");
+    // std::string lldp_path = fmt::format(
+    //     "/ieee802-dot1ab-lldp:lldp/port[name='{}'][dest-mac-address='01-80-c2-00-00-0e']", current.name);
 
-        auto lldp_res = forest ? forest->newPath2(lldp_path, std::nullopt) : ctx.newPath2(lldp_path, std::nullopt);
-        if (!forest && lldp_res.createdParent) {
-            forest = lldp_res.createdParent;
-        }
+    auto lldp_res = forest ? forest->newPath2(lldp_path, std::nullopt) : ctx.newPath2(lldp_path, std::nullopt);
+    if (!forest && lldp_res.createdParent) {
+        forest = lldp_res.createdParent;
+    }
 
-        auto lldp_node = lldp_res.createdNode;
-        if (!lldp_node.has_value()) {
-            spdlog::warn("[SYNC] [LLDP] lldp_node of type std::optional has no value, makes no sense, returning...");
+    auto lldp_node = lldp_res.createdNode;
+    if (!lldp_node.has_value()) {
+        spdlog::warn("[SYNC] [LLDP] lldp_node of type std::optional has no value, makes no sense, returning...");
+        return;
+    }
+    lldp_node->newPath2("message-fast-tx", std::to_string(current.messageFastTx));
+    lldp_node->newPath2("message-tx-hold-multiplier", std::to_string(current.messageTxHoldMultiplier));
+    lldp_node->newPath2("message-tx-interval", std::to_string(current.messageTxInterval));
+
+    for (auto &port : current.ports) {
+        auto port_path = fmt::format("port[name='{}'][dest-mac-address='{}']", port.name, port.destMacAddress);
+        auto port_res = lldp_node->newPath2(port_path, std::nullopt);
+        auto port_node = port_res.createdNode;
+        if (!port_node.has_value()) {
+            spdlog::warn(
+                "[SYNC] [LLDP] port_node with name {} of type std::optional has no value, makes no sense, "
+                "returning...",
+                port.name);
             return;
         }
-        lldp_node->newPath2("admin-status", "tx-and-rx");
+        port_node->newPath2("admin-status", port.adminStatus);
     }
 }
 
@@ -1032,11 +1025,8 @@ void tsnctrld::syncHardwareToRunning() {
 
         // --- PASS 2: Interface Core ---
         populateAsInterface(current, ctx, forest_if_bridge);
-
-        popuplateAsLldpConfiguration(current, ctx, forest_lldp);
     }
 
-    populatePtpConfig(ctx, forest_ptp);
 
     SPDLOG_DEBUG("[SYNC] Applying batched changes to Datastore...");
     if (forest_if_bridge) {
@@ -1051,6 +1041,14 @@ void tsnctrld::syncHardwareToRunning() {
         SPDLOG_DEBUG("[SYNC] Applying changes...");
         m_sess.applyChanges();
     }
+
+
+    m_lldpDaemon = std::make_unique<LldpDaemon>(m_operSess);
+
+    LldpNode_t lldp_node;
+    m_lldpDaemon->getConfigData(lldp_node);
+    popuplateAsLldpConfiguration(lldp_node, ctx, forest_lldp);
+
     if (forest_lldp) {
         SPDLOG_DEBUG("[SYNC] Changes present in tree for LLDP...");
         SPDLOG_TRACE("[SYNC] Switching to first sibling...");
@@ -1063,6 +1061,12 @@ void tsnctrld::syncHardwareToRunning() {
         SPDLOG_DEBUG("[SYNC] Applying changes...");
         m_sess.applyChanges();
     }
+    m_lldpDaemon->syncInitialNeighbors();
+    m_lldpDaemon->startWatching();
+
+
+    populatePtpConfig(ctx, forest_ptp);
+
     if (forest_ptp) {
         SPDLOG_DEBUG("[SYNC] Changes present in tree for PTP...");
         SPDLOG_TRACE("[SYNC] Switching to first sibling...");
@@ -1076,9 +1080,6 @@ void tsnctrld::syncHardwareToRunning() {
     }
     SPDLOG_DEBUG("[SYNC] Datastore synchronized.");
 
-    m_lldpDaemon = std::make_unique<LldpDaemon>(m_operSess);
-    m_lldpDaemon->syncInitialNeighbors();
-    m_lldpDaemon->startWatching();
 }
 
 /**
@@ -1330,6 +1331,38 @@ sysrepo::ErrorCode tsnctrld::operLldpCallback(const sysrepo::Session &sess, uint
     SPDLOG_DEBUG("[CB_OPER] [IF] requestId \"{}\"...", requestId);
     SPDLOG_DEBUG("[CB_OPER] [IF] module of parent node \"{}\"...", parent ? parent->schema().module().name() : "ROOT");
     SPDLOG_DEBUG("[CB_OPER] [IF] name of parent node \"{}\"...", parent ? parent->schema().name() : "ROOT");
+
+    LldpNode_t lldpNode;
+    m_lldpDaemon->getLocalInfo(lldpNode);
+
+    auto ctx = sess.getContext();
+
+    std::string lldp_path = fmt::format("/ieee802-dot1ab-lldp:lldp");
+    auto lldp_res = parent ? parent->newPath2(lldp_path, std::nullopt) : ctx.newPath2(lldp_path, std::nullopt);
+    if (!parent && lldp_res.createdParent) {
+        parent = lldp_res.createdParent;
+    }
+    auto lldp_node = lldp_res.createdNode;
+    if (!lldp_node.has_value()) {
+        spdlog::warn("[CB_OPER] [BR] lldp_node of type std::optional has no value, makes no sense, returning...");
+        return sysrepo::ErrorCode::OperationFailed;
+    }
+
+    auto local_system_res = lldp_node->newPath2("local-system-data", std::nullopt);
+    auto local_system_node = local_system_res.createdNode;
+    if (!local_system_node.has_value()) {
+        spdlog::warn(
+            "[CB_OPER] [LLDP] local_system_node of type std::optional has no value, makes no sense, "
+            "returning...");
+        return sysrepo::ErrorCode::OperationFailed;
+    }
+
+    local_system_node->newPath2("chassis-id-subtype", lldpNode.localSystemData.chassisIdSubtype);
+    local_system_node->newPath2("chassis-id", lldpNode.localSystemData.chassisId);
+    local_system_node->newPath2("system-name", lldpNode.localSystemData.systemName);
+    local_system_node->newPath2("system-description", lldpNode.localSystemData.systemDescription);
+    local_system_node->newPath2("system-capabilities-supported", lldpNode.localSystemData.systemCapabilitiesSupported);
+    local_system_node->newPath2("system-capabilities-enabled", lldpNode.localSystemData.systemCapabilitiesEnabled);
 
     return sysrepo::ErrorCode::Ok;
 }
@@ -2065,14 +2098,6 @@ tsnctrld::tsnctrld() : m_sess(m_conn.sessionStart()), m_operSess(m_conn.sessionS
     if (m_ethtool_sock < 0) {
         throw std::runtime_error("Could not open ethtool socket");
     }
-
-    // m_ptp_sock = socket(AF_LOCAL, SOCK_DGRAM, 0);
-    // if (m_ptp_sock < 0) {
-    //     throw std::runtime_error("Could not open ptp socket");
-    // }
-    // struct sockaddr_un local_addr;
-    // local_addr.sun_family = AF_LOCAL;
-    // strncpy(local_addr.sun_path, "/var/run/tsnctrld/ptp.sock", sizeof(local_addr.sun_path));
 }
 
 /**

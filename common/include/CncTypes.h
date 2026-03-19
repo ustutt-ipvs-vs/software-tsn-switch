@@ -392,3 +392,28 @@ struct PtpNode_t {
     std::vector<PtpPerformanceRecord_t> performanceRecords24h;
     std::vector<PtpPort_t> ports;
 };
+
+
+struct LldpLocalSystemData_t {
+    std::string chassisIdSubtype;
+    std::string chassisId;
+    std::string systemName;
+    std::string systemDescription;
+    std::string systemCapabilitiesSupported;
+    std::string systemCapabilitiesEnabled;
+};
+
+struct LldpPort_t {
+    std::string name;
+    std::string destMacAddress;
+    std::string adminStatus;
+    // std::vector<LldpNeighbor_t> neighbors; // TODO: Needs to be implemented
+};
+
+struct LldpNode_t {
+    uint32_t messageTxInterval;
+    uint32_t messageTxHoldMultiplier;
+    uint32_t messageFastTx;
+    LldpLocalSystemData_t localSystemData;
+    std::vector<LldpPort_t> ports;
+};

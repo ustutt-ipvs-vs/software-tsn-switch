@@ -8,6 +8,8 @@
 #include <sysrepo-cpp/Session.hpp>
 #include <thread>
 
+#include "../../common/include/CncTypes.h"
+
 /**
  * @brief This class provides methods to collect and process information provided by the lldp protocol, based on the
  * IEEE 802.1AB lldp yang model.
@@ -30,6 +32,9 @@ class LldpDaemon {
     void startWatching();
     void processEvent(lldpctl_change_t type, lldpctl_atom_t* iface, lldpctl_atom_t* neigh);
 
+    void getConfigData(LldpNode_t& lldp_node);
+    void getLocalInfo(LldpNode_t& lldp_node);
+
     LldpDaemon(const LldpDaemon&) = delete;
     LldpDaemon& operator=(const LldpDaemon&) = delete;
 
@@ -39,6 +44,7 @@ class LldpDaemon {
     lldpctl_conn_t* m_watchConn{nullptr};
     std::thread m_watchThread;
     std::mutex m_sessMutex;
+    std::mutex m_queryMutex;
     std::atomic<bool> m_stop{false};
 
     static std::string getStr(lldpctl_atom_t* atom, lldpctl_key_t key);

@@ -325,6 +325,9 @@ void LldpDaemon::writeNeighborData(const std::string& base, lldpctl_atom_t* neig
             const std::string addrSubtype = isIpv6 ? "ietf-routing:ipv6" : "ietf-routing:ipv4";
             const std::string addrHex = isIpv6 ? ipv6ToHex(addr) : ipv4ToHex(addr);
 
+            uint32_t ifId = lldpctl_atom_get_int(mgmt, lldpctl_k_mgmt_iface_index);
+            std::string ifSubtype = "port-ref";  // One of unknown or port-ref or system-port-number
+
             std::string mgmtBase;
             mgmtBase.reserve(base.size() + 64);
             mgmtBase.append(base);
@@ -337,8 +340,8 @@ void LldpDaemon::writeNeighborData(const std::string& base, lldpctl_atom_t* neig
             mgmtBase.append("']");
 
             try {
-                m_operSess.setItem(mgmtBase + "/address-subtype", addrSubtype);
-                m_operSess.setItem(mgmtBase + "/address", addrHex);
+                m_operSess.setItem(mgmtBase + "/if-subtype", ifSubtype);
+                m_operSess.setItem(mgmtBase + "/if-id", std::to_string(ifId));
             } catch (const std::exception& e) {
                 spdlog::error("[LLDP] management-address setItem failed. addr={} subtype={} hex={} error: {}", addr,
                               addrSubtype, addrHex, e.what());
@@ -368,20 +371,125 @@ LldpDaemon::~LldpDaemon() {
     }
 }
 
+void LldpDaemon::getConfigData(LldpNode_t& lldp_node) {
+    lldpctl_atom_t* lldp_config = nullptr;
+    {
+        std::lock_guard guard(m_queryMutex);
+
+        lldp_config = lldpctl_get_configuration(m_queryConn);
+
+        SPDLOG_DEBUG("[LLDP] Reading local config from lldpd...");
+
+        if (lldp_config == nullptr) {
+            spdlog::error("[LLDP] Failed to get config: {}", lldpctl_last_strerror(m_queryConn));
+            return;
+        }
+    }
+    lldp_node.messageTxInterval = lldpctl_atom_get_int(lldp_config, lldpctl_k_config_tx_interval);
+    lldp_node.messageTxHoldMultiplier = lldpctl_atom_get_int(lldp_config, lldpctl_k_config_tx_hold);
+    lldp_node.messageFastTx = lldpctl_atom_get_int(lldp_config, lldpctl_k_config_fast_start_interval);
+
+    int receive_only = lldpctl_atom_get_int(lldp_config, lldpctl_k_config_receiveonly);
+
+    lldpctl_atom_t* iface = nullptr;
+    lldpctl_atom_t* ifaces = nullptr;
+
+    {
+        std::lock_guard guard(m_queryMutex);
+        ifaces = lldpctl_get_interfaces(m_queryConn);
+
+        SPDLOG_DEBUG("[LLDP] Reading interfaces from lldpd...");
+
+        if (ifaces == nullptr) {
+            spdlog::error("[LLDP] Failed to get interfaces: {}", lldpctl_last_strerror(m_queryConn));
+            return;
+        }
+    }
+
+    lldpctl_atom_foreach(ifaces, iface) {
+        const std::string ifName = getStr(iface, lldpctl_k_interface_name);
+
+        auto& currentPort = lldp_node.ports.emplace_back();
+        currentPort.name = ifName;
+        currentPort.destMacAddress = "01-80-c2-00-00-0e";
+        if (receive_only == 0) {
+            currentPort.adminStatus = "rx-only";
+        } else {
+            lldpctl_atom_t* port = lldpctl_get_port(iface);
+            int status = lldpctl_atom_get_int(port, lldpctl_k_port_status);
+
+            switch (status) {
+                case 1:  // LLDPD_RXTX_TXONLY
+                    currentPort.adminStatus = "tx-only";
+                    break;
+                case 2:  // LLDPD_RXTX_RXONLY
+                    currentPort.adminStatus = "rx-only";
+                    break;
+                case 3:  // LLDPD_RXTX_BOTH
+                    currentPort.adminStatus = "tx-rx";
+                    break;
+                case 4:  // LLDPD_RXTX_DISABLED
+                default:
+                    currentPort.adminStatus = "disabled";
+                    break;
+            }
+        }
+    }
+
+    lldpctl_atom_dec_ref(lldp_config);
+    lldpctl_atom_dec_ref(ifaces);
+}
+
+void LldpDaemon::getLocalInfo(LldpNode_t& lldp_node) {
+    lldpctl_atom_t* chassis = nullptr;
+    {
+        std::lock_guard guard(m_queryMutex);
+
+        chassis = lldpctl_get_local_chassis(m_queryConn);
+
+        if (chassis == nullptr) {
+            spdlog::error("[LLDP] Failed to get chassis: {}", lldpctl_last_strerror(m_queryConn));
+            return;
+        }
+    }
+
+    const std::string chassisId = getStr(chassis, lldpctl_k_chassis_id);
+    const std::string systemName = getStr(chassis, lldpctl_k_chassis_name);
+    const std::string systemDescr = getStr(chassis, lldpctl_k_chassis_descr);
+    const std::string chassisIdSubtype = mapChassisIdSubtype(getStr(chassis, lldpctl_k_chassis_id_subtype));
+
+    const int capsSupported = static_cast<int>(lldpctl_atom_get_int(chassis, lldpctl_k_chassis_cap_available));
+    const int capsEnabled = static_cast<int>(lldpctl_atom_get_int(chassis, lldpctl_k_chassis_cap_enabled));
+    const std::string capsSupportedStr = mapCapabilities(capsSupported);
+    const std::string capsEnabledStr = mapCapabilities(capsEnabled);
+
+    lldp_node.localSystemData.chassisId = chassisId;
+    lldp_node.localSystemData.systemName = systemName;
+    lldp_node.localSystemData.systemDescription = systemDescr;
+    lldp_node.localSystemData.chassisIdSubtype = chassisIdSubtype;
+
+    lldp_node.localSystemData.systemCapabilitiesSupported = capsSupportedStr;
+    lldp_node.localSystemData.systemCapabilitiesEnabled = capsEnabledStr;
+}
+
 /**
  * @brief Initial snapshot sync of all currently known neighbors from lldpd. Writes into sysrepo operational datastore.
  */
 void LldpDaemon::syncInitialNeighbors() {
     lldpctl_atom_t* iface = nullptr;
-    lldpctl_atom_t* ifaces = lldpctl_get_interfaces(m_queryConn);
+    lldpctl_atom_t* ifaces = nullptr;
+    {
+        std::lock_guard guard(m_queryMutex);
 
-    SPDLOG_DEBUG("[LLDP] Reading current neighbors from lldpd...");
+        ifaces = lldpctl_get_interfaces(m_queryConn);
 
-    if (ifaces == nullptr) {
-        spdlog::error("[LLDP] Failed to get interfaces: {}", lldpctl_last_strerror(m_queryConn));
-        return;
+        SPDLOG_DEBUG("[LLDP] Reading current neighbors from lldpd...");
+
+        if (ifaces == nullptr) {
+            spdlog::error("[LLDP] Failed to get interfaces: {}", lldpctl_last_strerror(m_queryConn));
+            return;
+        }
     }
-
     {
         std::lock_guard guard(m_sessMutex);
 
@@ -502,11 +610,14 @@ void LldpDaemon::processEvent(lldpctl_change_t type, lldpctl_atom_t* iface, lldp
  * @param neigh Neighbor atom (may be nullptr depending on event).
  */
 void LldpDaemon::refreshPortNeighbors(const std::string& ifName) {
-    lldpctl_atom_t* ifaces = lldpctl_get_interfaces(m_queryConn);
-    if (ifaces == nullptr) {
-        spdlog::error("[LLDP] refreshPortNeighbors: get_interfaces failed: {}", lldpctl_last_strerror(m_queryConn));
+    lldpctl_atom_t* ifaces = nullptr;
+    {
+        std::lock_guard guard(m_queryMutex);
+        ifaces = lldpctl_get_interfaces(m_queryConn);
+        if (ifaces == nullptr) {
+            spdlog::error("[LLDP] refreshPortNeighbors: get_interfaces failed: {}", lldpctl_last_strerror(m_queryConn));
+        }
     }
-
     const std::string basePort =
         "/ieee802-dot1ab-lldp:lldp/port[name='" + ifName + "'][dest-mac-address='01-80-c2-00-00-0e']";
     m_operSess.deleteItem(basePort + "/remote-systems-data");
