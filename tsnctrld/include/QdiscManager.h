@@ -9,7 +9,7 @@
 #include "NetlinkSocket.h"
 #include "TaprioModel.h"
 
-enum : std::uint16_t { BUFFER_SIZE = 8192 };
+constexpr size_t BUFFER_SIZE = 8192;
 
 /**
  * @brief This class is used to query, set/modify, or remove qdiscs of the interfaces present on the host
@@ -35,8 +35,6 @@ class QdiscManager {
     static void fillTaprioOptions(const rtattr* rta, int len, ietfInterface_t& ifToFill);
     static void fillTaprioAdminSched(const rtattr* rta, int len, ietfInterface_t& ifToFill);
     static void fillTaprioSchedEntry(const rtattr* rta, int len, std::vector<GclEntry_t>& gclEntriesToFill);
-    static void parseAdminSchedule(const rtattr* rta, int len);
-    static void parseEntryList(const rtattr* rta, int len);
     static void parsePriomap(const rtattr* rta, ietfInterface_t& ifToFill);
 
    public:

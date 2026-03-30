@@ -5,28 +5,61 @@
 #include <poll.h>
 #include <spdlog/spdlog.h>
 
+#include <utility>
+
 #include "../common/include/CncTypes.h"
 #include "spdlog/fmt/bin_to_hex.h"
 
-#define MONITORING_PERIOD 1000
-#define COLLECTION_INTERVAL_15M 900    // 900 Seconds in 15m
-#define COLLECTION_INTERVAL_24H 86400  // 86400 Seconds in 24h
-#define NUMBER_RECORDS_15M 97 - 1      // One less in history, because this spot is used by the currently active record
-#define NUMBER_RECORDS_24H 2 - 1       // One less in history, because this spot is used by the currently active record
+// Time constants
+constexpr int MONITORING_PERIOD_MS = 1000;  // How many milliseconds between gathering PTP statistics
+constexpr uint32_t COLLECTION_INTERVAL_15M_PERIOD_COUNT = 900;  // Periods to complete this interval, 900 Seconds in 15m
+constexpr uint32_t COLLECTION_INTERVAL_24H_PERIOD_COUNT =
+    86400;  // Periods to complete this interval, 86400 Seconds in 24h
 
+// Sizing constants
+constexpr size_t NUMBER_RECORDS_15M = 97 - 1;  // Count defined by the standard, leave space for current record
+constexpr size_t NUMBER_RECORDS_24H = 2 - 1;   // Count defined by the standard, leave space for current record
+
+/**
+ * @brief Enum to hold the management IDs for communicating with the PTP daemon.
+ */
+enum : uint16_t {
+    MID_CLOCK_DESCRIPTION = 0x0001,
+    MID_DEFAULT_DATA_SET = 0x2000,
+    MID_CURRENT_DATA_SET = 0x2001,
+    MID_PARENT_DATA_SET = 0x2002,
+    MID_TIME_PROPERTIES_DATA_SET = 0x2003,
+    MID_PORT_DATA_SET = 0x2004,
+};
+
+/**
+ * @brief Helper method to convert a bytearray to a string following the format of a `clock-identity` of the YANG model.
+ * @param clockIdentity
+ * @return
+ */
 std::string clockIdentityBytesToString(std::array<uint8_t, 8> clockIdentity) {
     return fmt::format("{:02X}-{:02X}-{:02X}-{:02X}-{:02X}-{:02X}-{:02X}-{:02X}", clockIdentity[0], clockIdentity[1],
                        clockIdentity[2], clockIdentity[3], clockIdentity[4], clockIdentity[5], clockIdentity[6],
                        clockIdentity[7]);
 }
 
-PtpManager::PtpManager(const std::string& ptp4l_socket, uint8_t transport_specific)
-    : m_target_path(ptp4l_socket), m_sequence_id(1), m_transport_specific(transport_specific), m_assumedPortCount(0) {
+/**
+ * @brief Constructor for the PtpManager. Creates and binds the used socket.
+ * @param ptp4l_socket
+ * @param transport_specific
+ * @param m_assumedPortCount
+ */
+PtpManager::PtpManager(std::string ptp4l_socket, uint8_t transport_specific, uint16_t m_assumedPortCount)
+    : m_target_path(std::move(ptp4l_socket)),
+      m_transport_specific(transport_specific),
+      m_assumedPortCount(m_assumedPortCount) {
     m_fd = socket(AF_LOCAL, SOCK_DGRAM, 0);
-    if (m_fd < 0) throw std::runtime_error("Failed to create UDS socket");
+    if (m_fd < 0) {
+        throw std::runtime_error("Failed to create UDS socket");
+    }
 
     // CRITICAL FIX: Use /var/run to avoid Systemd PrivateTmp isolation!
-    m_local_path = "/var/run/ptp_mgr_" + std::to_string(getpid());
+    m_local_path = "/var/run/tsnctrld_ptp";
     unlink(m_local_path.c_str());
 
     struct sockaddr_un local_addr{};
@@ -39,18 +72,31 @@ PtpManager::PtpManager(const std::string& ptp4l_socket, uint8_t transport_specif
     }
 }
 
+/**
+ * @brief Destructor for the PtpManager. Ensures the thread monitoring the PTP statistics is stopped and closes the
+ * socket.
+ */
 PtpManager::~PtpManager() {
     stopMonitoring();
-    if (m_fd >= 0) close(m_fd);
+    if (m_fd >= 0) {
+        close(m_fd);
+    }
     unlink(m_local_path.c_str());
 }
 
+/**
+ * @brief Helper method to return the current timestamp according to the format desired in the YANG model.
+ * @return The current time since boot, where one unit corresponds to 10 milliseconds.
+ */
 uint32_t getTimestamp10ms() {
     struct timespec ts;
     clock_gettime(CLOCK_BOOTTIME, &ts);
-    return (uint32_t)(ts.tv_sec * 100 + ts.tv_nsec / 10000000);
+    return (uint32_t)((ts.tv_sec * 100) + (ts.tv_nsec / 10000000));
 }
 
+/**
+ * @brief Helper method to ensure the maximum number of performance-records allowed of a given type is not exceeded.
+ */
 template <typename T>
 void pushSlidingWindow(std::deque<T>& dq, T&& item, size_t max_size) {
     dq.push_front(std::forward<T>(item));
@@ -58,9 +104,22 @@ void pushSlidingWindow(std::deque<T>& dq, T&& item, size_t max_size) {
         dq.pop_back();
     }
 }
+
+/**
+ * @brief Takes the current @ref ptp::PerformanceRecord and adds its data to the end of the deques for @ref
+ * PtpPerformanceRecord_t and @ref PtpPortPerformanceRecord_t structs.
+ * @param current The current @ref ptp::PerformanceRecord containing the statistics for the host and each port.
+ * @param global_records A double-ended queue of @ref PtpPerformanceRecord_t structs to which the host-statistics are to
+ * be appended.
+ * @param port_records A map from port-index to a double-ended queue of @ref PtpPortPerformanceRecord_t structs. Each
+ * port-statistic from the @current parameter is appended to its corresponding queue.
+ * @param max_size The maximum number of periods in these queues.
+ * @param now The current timestamp in the format required by the YANG model.
+ * @param expectedEntries The number of times the statistic should have been collected within this period.
+ */
 void rolloverPeriod(ptp::PerformanceRecord& current, std::deque<PtpPerformanceRecord_t>& global_records,
                     std::map<uint16_t, std::deque<PtpPortPerformanceRecord_t>>& port_records, size_t max_size,
-                    uint32_t now, int expectedEntries) {
+                    uint32_t now, uint32_t expectedEntries) {
     SPDLOG_DEBUG("[PTP] [ROLLOVER] current: start at {}, expected entries={}", current.startTime10ms, expectedEntries);
     SPDLOG_DEBUG("[PTP] [ROLLOVER] current: mpd: c={} avg={} min={} max={} stddev={}", current.meanPathDelay.count,
                  current.meanPathDelay.mean, current.meanPathDelay.min, current.meanPathDelay.max,
@@ -70,10 +129,12 @@ void rolloverPeriod(ptp::PerformanceRecord& current, std::deque<PtpPerformanceRe
                  current.offsetFromMaster.getStdDev());
 
     // 1. Snapshot the Instance-level record
-    PtpPerformanceRecord_t globalRecord{
-        true, current.startTime10ms,
-        current.offsetFromMaster.count == expectedEntries && current.meanPathDelay.count == expectedEntries,
-        current.offsetFromMaster.toParameters(), current.meanPathDelay.toParameters()};
+    PtpPerformanceRecord_t globalRecord{.periodComplete = true,
+                                        .pmTime = current.startTime10ms,
+                                        .measurementValid = current.offsetFromMaster.isValid(expectedEntries) &&
+                                                            current.meanPathDelay.isValid(expectedEntries),
+                                        .offsetFromTimeTransmitter = current.offsetFromMaster.toParameters(),
+                                        .meanPathDelay = current.meanPathDelay.toParameters()};
     pushSlidingWindow(global_records, std::move(globalRecord), max_size);
 
     // 2. Snapshot the Port-level records
@@ -89,24 +150,39 @@ void rolloverPeriod(ptp::PerformanceRecord& current, std::deque<PtpPerformanceRe
     current.reset(now);
 }
 
+/**
+ * @brief Calls @ref PtpManager::rolloverPeriod with th appropriate arguments
+ * @param type The type of period that was just completed. Implemented according to the standard are 15min and 24hours.
+ */
 void PtpManager::finalizePeriod(int type) {
-    uint32_t now = getTimestamp10ms();  // Your existing time fetcher
+    uint32_t now = getTimestamp10ms();
 
     if (type == 15) {
         rolloverPeriod(m_current15m, m_completedRecords15m, m_completedPortRecords15m, NUMBER_RECORDS_15M, now,
-                       COLLECTION_INTERVAL_15M);
+                       COLLECTION_INTERVAL_15M_PERIOD_COUNT);
     } else if (type == 24) {
         rolloverPeriod(m_current24h, m_completedRecords24h, m_completedPortRecords24h, NUMBER_RECORDS_24H, now,
-                       COLLECTION_INTERVAL_24H);
+                       COLLECTION_INTERVAL_24H_PERIOD_COUNT);
     }
 }
 
+/**
+ * @brief Stops the monitoring thread after the current interval.
+ */
 void PtpManager::stopMonitoring() {
     m_running = false;
     if (m_pollThread.joinable()) {
         m_pollThread.join();
     }
 }
+
+/**
+ * @brief Starts the monitoring thread.
+ *
+ * The thread queries the PTP socket for relevant data, updates this class's internal statistics, and checks if any
+ * statistics need to be consolidated. It then waits until the next querying-interval is supposed to start and loops
+ * continues until the thread is stopped.
+ */
 void PtpManager::startMonitoring() {
     if (m_pollThread.joinable()) {
         return;
@@ -115,12 +191,12 @@ void PtpManager::startMonitoring() {
     m_pollThread = std::thread([this]() {
         SPDLOG_DEBUG("[PTP] Monitor thread starting.");
         auto next_tick = std::chrono::steady_clock::now();
-        int seconds_counter = 0;
+        int periods_completed_counter = 0;
         uint32_t now = getTimestamp10ms();
         m_current15m.reset(now);
         m_current24h.reset(now);
         while (m_running) {
-            next_tick += std::chrono::milliseconds(MONITORING_PERIOD);
+            next_tick += std::chrono::milliseconds(MONITORING_PERIOD_MS);
 
             ptp::CurrentDs current_ds;
             getCurrentDataSet(current_ds);
@@ -144,17 +220,17 @@ void PtpManager::startMonitoring() {
             {
                 std::lock_guard<std::mutex> lock(m_perfMutex);
                 // 2. Check for Rollovers
-                seconds_counter++;
+                periods_completed_counter++;
 
                 // 15 Minutes = 900 seconds
-                if (seconds_counter % COLLECTION_INTERVAL_15M == 0) {
+                if (periods_completed_counter % COLLECTION_INTERVAL_15M_PERIOD_COUNT == 0) {
                     finalizePeriod(15);
                 }
 
                 // 24 Hours = 86400 seconds
-                if (seconds_counter % COLLECTION_INTERVAL_24H == 0) {
+                if (periods_completed_counter % COLLECTION_INTERVAL_24H_PERIOD_COUNT == 0) {
                     finalizePeriod(24);
-                    seconds_counter = 0;  // Reset main counter
+                    periods_completed_counter = 0;  // Reset main counter
                 }
             }
 
@@ -164,6 +240,12 @@ void PtpManager::startMonitoring() {
     });
 }
 
+/**
+ * @brief Queries the PTP management socket for the DEFAULT_DATA_SET.
+ *
+ * @param default_ds The struct that should be filled with the response.
+ * @return True if the struct was filled successfully, False otherwise.
+ */
 bool PtpManager::getDefaultDataSet(ptp::DefaultDs& default_ds) {
     std::lock_guard<std::mutex> lock(m_socketMutex);
     int32_t seq = sendManagementGet(MID_DEFAULT_DATA_SET);
@@ -187,6 +269,12 @@ bool PtpManager::getDefaultDataSet(ptp::DefaultDs& default_ds) {
     return true;
 }
 
+/**
+ * @brief Queries the PTP management socket for the CURRENT_DATA_SET.
+ *
+ * @param current_ds The struct that should be filled with the response.
+ * @return True if the struct was filled successfully, False otherwise.
+ */
 bool PtpManager::getCurrentDataSet(ptp::CurrentDs& current_ds) {
     std::lock_guard<std::mutex> lock(m_socketMutex);
     int32_t seq = sendManagementGet(MID_CURRENT_DATA_SET);
@@ -208,6 +296,13 @@ bool PtpManager::getCurrentDataSet(ptp::CurrentDs& current_ds) {
 
     return true;
 }
+
+/**
+ * @brief Queries the PTP management socket for the PARENT_DATA_SET.
+ *
+ * @param parent_ds The struct that should be filled with the response.
+ * @return True if the struct was filled successfully, False otherwise.
+ */
 bool PtpManager::getParentDataSet(ptp::ParentDS& parent_ds) {
     std::lock_guard<std::mutex> lock(m_socketMutex);
     int32_t seq = sendManagementGet(MID_PARENT_DATA_SET);
@@ -231,6 +326,13 @@ bool PtpManager::getParentDataSet(ptp::ParentDS& parent_ds) {
 
     return true;
 }
+
+/**
+ * @brief Queries the PTP management socket for the PORT_DATA_SET(s).
+ *
+ * @param port_dses A list that should be filled with the @ref ptp::PortDs structs parsed from the response.
+ * @return True if the list was filled successfully, False otherwise.
+ */
 bool PtpManager::getPortDataSets(std::vector<ptp::PortDs>& port_dses) {
     std::lock_guard<std::mutex> lock(m_socketMutex);
     int32_t seq = sendManagementGet(MID_PORT_DATA_SET);
@@ -252,6 +354,15 @@ bool PtpManager::getPortDataSets(std::vector<ptp::PortDs>& port_dses) {
     }
     return true;
 }
+
+/**
+ * @brief Queries the PTP management socket for the CLOCK_DESCRIPTION(s). Note that only the fields @ref
+ * ptp::ClockDescription::source and @ref ptp::ClockDescription::clockType are implemented.
+ *
+ * @param clock_descriptions A list that should be filled with the @ref ptp::ClockDescription structs parsed from the
+ * response.
+ * @return True if the list was filled successfully, False otherwise.
+ */
 bool PtpManager::getClockDescriptions(std::vector<ptp::ClockDescription>& clock_descriptions) {
     std::lock_guard<std::mutex> lock(m_socketMutex);
     int32_t seq = sendManagementGet(MID_CLOCK_DESCRIPTION);
@@ -274,30 +385,61 @@ bool PtpManager::getClockDescriptions(std::vector<ptp::ClockDescription>& clock_
     spdlog::warn("[PTP] [CLOCK_DESC] Only clockType and custom field \"source\" is implemented, rest is undef");
     return true;
 }
+
+/**
+ * @brief Creates a list of @ref PtpPerformanceRecord_t structs that contains the record for the currently active
+ * 15-minute period at the first index, followed by the records of the completed 15-minute periods.
+ *
+ * @param out The list to be filled.
+ */
 void PtpManager::getPerformance15m(std::vector<PtpPerformanceRecord_t>& out) {
     std::lock_guard<std::mutex> lock(m_perfMutex);
     out.clear();
     out.reserve(NUMBER_RECORDS_15M + 1);
     out.emplace_back(false, m_current15m.startTime10ms, false, m_current15m.offsetFromMaster.toParameters(),
                      m_current15m.meanPathDelay.toParameters());
-    std::copy(m_completedRecords15m.begin(), m_completedRecords15m.end(), std::back_inserter(out));
+    std::ranges::copy(m_completedRecords15m, std::back_inserter(out));
 }
+
+/**
+ * @brief Creates a list of @ref PtpPerformanceRecord_t structs that contains the record for the currently active
+ * 24-hour period at the first index, followed by the records of the completed 24-hour periods.
+ *
+ * @param out The list to be filled.
+ */
 void PtpManager::getPerformance24h(std::vector<PtpPerformanceRecord_t>& out) {
     std::lock_guard<std::mutex> lock(m_perfMutex);
     out.clear();
     out.reserve(NUMBER_RECORDS_24H + 1);
     out.emplace_back(false, m_current24h.startTime10ms, false, m_current24h.offsetFromMaster.toParameters(),
                      m_current24h.meanPathDelay.toParameters());
-    std::copy(m_completedRecords24h.begin(), m_completedRecords24h.end(), std::back_inserter(out));
+    std::ranges::copy(m_completedRecords24h, std::back_inserter(out));
 }
+
+/**
+ * @brief For a given port-index, this function creates a list of @ref PtpPortPerformanceRecord_t structs that contains
+ * the record for the currently active 15-minute period at the first index, followed by the records of the completed
+ * 15-minute periods.
+ *
+ * @param portIndex The index of the port for which this list should contain its entries.
+ * @param out The list to be filled.
+ */
 void PtpManager::getPortPerformance15m(uint16_t portIndex, std::vector<PtpPortPerformanceRecord_t>& out) {
     std::lock_guard<std::mutex> lock(m_perfMutex);
     out.clear();
     out.reserve(NUMBER_RECORDS_15M + 1);
     out.emplace_back(m_current15m.startTime10ms, m_current15m.portMeanLinkDelay[portIndex].toParameters());
-    std::copy(m_completedPortRecords15m[portIndex].begin(), m_completedPortRecords15m[portIndex].end(),
-              std::back_inserter(out));
+    std::ranges::copy(m_completedPortRecords15m[portIndex], std::back_inserter(out));
 }
+
+/**
+ * @brief For a given port-index, this function creates a list of @ref PtpPortPerformanceRecord_t structs that contains
+ * the record for the currently active 24-hour period at the first index, followed by the records of the completed
+ * 24-hour periods.
+ *
+ * @param portIndex The index of the port for which this list should contain its entries.
+ * @param out The list to be filled.
+ */
 void PtpManager::getPortPerformance24h(uint16_t portIndex, std::vector<PtpPortPerformanceRecord_t>& out) {
     std::lock_guard<std::mutex> lock(m_perfMutex);
     out.clear();
@@ -306,6 +448,13 @@ void PtpManager::getPortPerformance24h(uint16_t portIndex, std::vector<PtpPortPe
     std::copy(m_completedPortRecords24h[portIndex].begin(), m_completedPortRecords24h[portIndex].end(),
               std::back_inserter(out));
 }
+
+/**
+ * @brief This function queries all datasets and fills the provided @ref PtpNode_t with the relevant data defined as
+ * `config false;` in the YANG model.
+ *
+ * @param node_to_fill The @ref PtpNode_t that should be filled
+ */
 void PtpManager::fillStateData(PtpNode_t& node_to_fill) {
     ptp::DefaultDs default_ds = {};
     if (!getDefaultDataSet(default_ds)) {
@@ -352,6 +501,12 @@ void PtpManager::fillStateData(PtpNode_t& node_to_fill) {
     }
 }
 
+/**
+ * @brief This function queries the default dataset and clock description, and fills the provided @ref PtpNode_t with
+ * the relevant configuration data as defined in the YANG model.
+ *
+ * @param node_to_fill The @ref PtpNode_t that should be filled
+ */
 void PtpManager::fillConfigData(PtpNode_t& node_to_fill) {
     ptp::DefaultDs default_ds = {};
     std::vector<ptp::ClockDescription> clock_descriptions = {};
@@ -379,6 +534,12 @@ void PtpManager::fillConfigData(PtpNode_t& node_to_fill) {
     node_to_fill.defaultDs.clockIdentity = clockIdentityBytesToString(default_ds.clockIdentity);
 }
 
+/**
+ * @brief Internal helper to send messages to the PTP socket.
+ *
+ * @param managementId The management ID of the message to be sent.
+ * @return The sequence ID of this message. Used to correlate a request with a response.
+ */
 int32_t PtpManager::sendManagementGet(uint16_t managementId) {
     SPDLOG_TRACE("[PTP] [SEND_GET] Sending request with MID {}", managementId);
     // Lean payload size (exactly 54 bytes, mimicking Intel's get_req)
@@ -418,12 +579,23 @@ int32_t PtpManager::sendManagementGet(uint16_t managementId) {
 
     if (sendto(m_fd, buffer.data(), buffer.size(), 0, (struct sockaddr*)&target_addr, sizeof(target_addr)) !=
         buffer.size()) {
-        spdlog::warn("Sending of buffer failed for MID {}", managementId);
+        spdlog::warn("Sending of buffer failed for MID {} with errno {}", managementId, errno);
         return -1;
     }
 
     return current_seq;
 }
+
+/**
+ * @brief Internal helper method to receive responses from the PTP daemon. If a request can generate multiple responses,
+ * this function must be called at least that many times, or until no more responses are received.
+ *
+ * @param expectedId The management ID of the request, must be the same as in the response.
+ * @param expectedSeq The sequence ID of the request, must be the same as in the response.
+ * @param out_data The @ref ptp::ResponseWithSourceIdentity struct into which the data should be written. This struct
+ * contains the identity of the port about which the response is, as well as the list of raw bytes.
+ * @return True if the data was received successfully, False otherwise.
+ */
 bool PtpManager::receiveManagementResponse(uint16_t expectedId, uint16_t expectedSeq,
                                            ptp::ResponseWithSourceIdentity& out_data) {
     SPDLOG_TRACE("[PTP] [RECV_RESP] Receiving response with expected MID {}", expectedId);
@@ -435,7 +607,8 @@ bool PtpManager::receiveManagementResponse(uint16_t expectedId, uint16_t expecte
     // Use poll() to mirror the Intel code's bulletproof receive logic
     int ret = poll(&pfd, 1, 50);
     if (ret <= 0) {  // Timeout or error
-        spdlog::warn("[PTP] [RECV_RESP] Timeout (or Error) when receiving response with expected MID {}", expectedId);
+        spdlog::warn("[PTP] [RECV_RESP] Timeout (or Error) when receiving response with expected MID {} with code {}",
+                     expectedId, errno);
         return false;
     }
 

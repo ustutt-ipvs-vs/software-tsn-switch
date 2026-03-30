@@ -1,3 +1,5 @@
+#define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_TRACE
+
 #include "./include/QdiscManager.h"
 
 #include <linux/netlink.h>
@@ -230,7 +232,6 @@ void QdiscManager::getInterfacesInResponse(const NetlinkSocket& sock, std::map<i
 
         ietfInterface_t& current = interfacesMap[ifindex];
 
-        current.lastQdiscUpdateId = currentReqId;
         current.ifindex = ifindex;
 
         unsigned long len = nlh->nlmsg_len - NLMSG_LENGTH(sizeof(*tcm));
@@ -245,6 +246,8 @@ void QdiscManager::getInterfacesInResponse(const NetlinkSocket& sock, std::map<i
                     break;
                 case TCA_OPTIONS:
                     if (kind == "taprio") {
+                        SPDLOG_TRACE("[QM] [Parse Full Response] kind is taprio, filling", kind.c_str());
+                        current.lastQdiscUpdateId = currentReqId;
                         fillTaprioOptions((rtattr*)RTA_DATA(rta), RTA_PAYLOAD(rta), current);
                     }
                     break;

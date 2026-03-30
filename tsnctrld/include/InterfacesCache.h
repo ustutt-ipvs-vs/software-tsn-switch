@@ -28,12 +28,18 @@ class InterfacesCache {
    private:
     std::map<int, ietfInterface_t> m_interfaces;
 
+    int m_ethtool_sock;
+
     // Track what we have fetched for the CURRENT request
     uint32_t m_currentRequestId = -1;
     bool m_fullLinkDumpDone = false;
     bool m_fullQdiscDumpDone = false;
 
    public:
+    InterfacesCache();
+
+    ~InterfacesCache();
+
     void setCurrentRequestId(uint32_t reqId);
     ietfInterface_t* getInterface(int ifindex);
     ietfInterface_t* getInterface(const std::string& name);
@@ -41,7 +47,7 @@ class InterfacesCache {
 
     // ietfInterface_t* ensureLinkData(NetlinkSocket& sock, int ifindex);
     // ietfInterface_t* ensureLinkData(NetlinkSocket& sock, const std::string& name);
-    void ensureFullLinkData(NetlinkSocket& sock, int ethtool_sock);
+    void ensureFullLinkData(NetlinkSocket& sock);
 
     // ietfInterface_t* ensureQdiscData(NetlinkSocket& sock, int ifindex);
     // ietfInterface_t* ensureQdiscData(NetlinkSocket& sock, const std::string& name);

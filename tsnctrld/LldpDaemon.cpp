@@ -101,7 +101,7 @@ static std::string mapPortIdSubtype(const std::string& lldpVal) {
         return "mac-address";
     }
     if (lldpVal == "local") {
-        return "locally-assigned";
+        return "local";
     }
     if (lldpVal == "ip") {
         return "network-address";

@@ -15,21 +15,6 @@
 #include "PtpManager.h"
 #include "QdiscManager.h"
 
-enum class GclFillOptions : uint8_t {
-    OnlyDefault = 0b00,
-    FillAdmin = 0b01,
-    FillOper = 0b10,
-    Both = FillAdmin | FillOper,
-};
-
-// Bitwise boilerplate
-inline GclFillOptions operator|(GclFillOptions a, GclFillOptions b) {
-    return static_cast<GclFillOptions>(static_cast<uint8_t>(a) | static_cast<uint8_t>(b));
-}
-inline bool operator&(GclFillOptions a, GclFillOptions b) {
-    return (static_cast<uint8_t>(a) & static_cast<uint8_t>(b)) != 0;
-}
-
 /**
  * @brief The main class of the "tsnctrld" control daemon for bridging the gap between sysrepo and kernel.
  *
@@ -40,7 +25,6 @@ inline bool operator&(GclFillOptions a, GclFillOptions b) {
 class tsnctrld {
    private:
     int m_ethtool_sock;
-    int m_ptp_sock;
     NetlinkSocket m_sock;
     QdiscManager m_qm;
     LinkManager m_lm;
@@ -109,6 +93,9 @@ class tsnctrld {
     sysrepo::ErrorCode changeLldpCallback(sysrepo::Session sess, uint32_t subId, const std::string& moduleName,
                                           const std::optional<std::string>& subXPath, sysrepo::Event event,
                                           uint32_t requestId);
+    sysrepo::ErrorCode changePtpCallback(sysrepo::Session sess, uint32_t subId, const std::string& moduleName,
+                                         const std::optional<std::string>& subXPath, sysrepo::Event event,
+                                         uint32_t requestId);
 
     static int ensureRunningDaemons(const std::vector<std::string>& services);
     static void populateAsBridge(const ietfInterface_t& current, libyang::Context& ctx,

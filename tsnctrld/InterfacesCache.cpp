@@ -1,9 +1,31 @@
 #include "InterfacesCache.h"
 
 #include <net/if.h>
+#include <unistd.h>
+
+#include <stdexcept>
 
 #include "LinkManager.h"
 #include "QdiscManager.h"
+
+/**
+ * @brief Constructor for the InterfacesCache. Creates the required socket.
+ */
+InterfacesCache::InterfacesCache() {
+    m_ethtool_sock = socket(AF_INET, SOCK_DGRAM, 0);
+    if (m_ethtool_sock < 0) {
+        throw std::runtime_error("Could not open ethtool socket");
+    }
+}
+
+/**
+ * @brief Destructor for the InterfacesCache, ensures the socket is closed.
+ */
+InterfacesCache::~InterfacesCache() {
+    if (m_ethtool_sock >= 0) {
+        close(m_ethtool_sock);
+    }
+}
 
 /**
  * @brief Must be called before trying to ensure freshness of the cache or accessing any interface.
@@ -90,7 +112,7 @@ std::map<int, ietfInterface_t>& InterfacesCache::getAllInterfaces() {
  * @param sock An instance of a @ref NetlinkSocket which is used to send the message and retrieve the response.
  * @param ethtool_sock A simple socket used to query the kernel for the number of active TX-queues of an interface.
  */
-void InterfacesCache::ensureFullLinkData(NetlinkSocket& sock, int ethtool_sock) {
+void InterfacesCache::ensureFullLinkData(NetlinkSocket& sock) {
     if (m_fullLinkDumpDone) {
         return;
     }
@@ -119,42 +141,12 @@ void InterfacesCache::ensureFullLinkData(NetlinkSocket& sock, int ethtool_sock) 
     }
 
     for (auto& [id, iface] : m_interfaces) {
-        // LinkManager::getActiveQueues(ethtool_sock, iface);
-        LinkManager::getLinkSpeed(ethtool_sock, iface);
+        LinkManager::getActiveQueues(m_ethtool_sock, iface);
+        LinkManager::getLinkSpeed(m_ethtool_sock, iface);
     }
 
     m_fullLinkDumpDone = true;
 }
-
-// ietfInterface_t* InterfacesCache::ensureQdiscData(NetlinkSocket& sock, int ifindex) {
-//     ietfInterface_t* iface = ensureLinkData(sock, ifindex);
-//     if (!iface) return nullptr;
-//
-//     // 1. Freshness Check
-//     if (iface->lastQdiscUpdateId == m_currentRequestId) {
-//         return iface;
-//     }
-//
-//     // 2. Fetch Targeted
-//     // Note: QdiscManager::sendGetQdiscTargeted must set tcm_ifindex
-//     try {
-//         QdiscManager::sendGetQdiscTargeted(sock, ifindex);
-//     } catch (...) {
-//         return iface;  // Return what we have, even if QDisc fetch failed
-//     }
-//
-//     // 3. Parse & Upsert (Targeted Filter)
-//     // Pass ifindex to parser to avoid processing unrelated noise if kernel dumps too much
-//     QdiscManager::getInterfacesInResponse(sock, m_interfaces, m_currentRequestId, ifindex);
-//
-//     return findByIndex(ifindex);
-// }
-//
-// ietfInterface_t* InterfacesCache::ensureQdiscData(NetlinkSocket& sock, const std::string& name) {
-//     unsigned int idx = if_nametoindex(name.c_str());
-//     if (idx == 0) return nullptr;  // OS doesn't know this name
-//     return ensureQdiscData(sock, static_cast<int>(idx));
-// }
 
 /**
  * @brief Ensure QDisc Data is fresh for ALL interfaces.
@@ -174,8 +166,14 @@ void InterfacesCache::ensureFullQdiscData(NetlinkSocket& sock) {
     // 2. Parse Response (No filter)
     QdiscManager::getInterfacesInResponse(sock, m_interfaces, m_currentRequestId);
 
-    // Note: We do NOT prune here.
-    // Absence of QDisc data just means "Default/FIFO", not "Interface Deleted".
+    // Unlike in ensureFullLinkData(), no entries from the list are deleted, only the GPTs for which no schedules are
+    // set are invalidated.
+    for (auto& [index, currentInterface] : m_interfaces) {
+        if (currentInterface.lastQdiscUpdateId != m_currentRequestId) {
+            currentInterface.bridgePort.gateParameterTable.operDataSet = false;
+            currentInterface.bridgePort.gateParameterTable.adminDataSet = false;
+        }
+    }
 
     m_fullQdiscDumpDone = true;
 }

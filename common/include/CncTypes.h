@@ -5,6 +5,7 @@
 #include <optional>
 #include <string>
 #include <vector>
+
 /**
  * @brief Enum that represents the operational status of an interface, as given by the IFLA_OPERSTATE netlink attribute
  * and required by the oper-status leaf of the ietf-interfaces yang model.
@@ -20,8 +21,10 @@ enum class OperStatus : uint8_t {
 };
 
 /**
- * Maps internal OperStatus to YANG enumeration labels.
- * Returns a reference to a static optional string to avoid allocations.
+ * @brief Helper method that maps internal OperStatus to YANG enumeration labels.
+ *
+ * @param status An @ref OperStatus
+ * @return An optional string as it can be used to set the value of a field in a @ref libyang::DataNode.
  */
 inline const std::optional<std::string>& operStatusToYangString(OperStatus status) {
     static const std::optional<std::string> s_up = "up";
@@ -64,6 +67,13 @@ enum class IfType : uint8_t {
     LOOPBACK   // iana-if-type:softwareLoopback
 };
 
+/**
+ * @brief Helper method to convert an @ref IfType to a string accepted by a field of type `iana-interface-type` in a
+ * YANG model.
+ *
+ * @param type An @ref IfType
+ * @return An optional string we can use for setting the value of a field in a @ref libyang::DataNode.
+ */
 inline const std::optional<std::string>& ifTypeToIanaString(IfType type) {
     // These are initialized once the first time the function is called
     static const std::optional<std::string> s_ethernet = "iana-if-type:ethernetCsmacd";
@@ -144,9 +154,11 @@ struct queueMaxSduEntry_t {
  * actually populated and usable.
  */
 struct GclConfig_t {
-    // Metadata variables to be set by netlink parser
-    // Used determine which variables make sense to read
+    // Metadata variable to be set by netlink parser, determines if it makes sense to read data relating to the
+    // operational dataset.
     bool operDataSet = false;
+    // Metadata variable to be set by netlink parser, determines if it makes sense to read data relating to the
+    // administrative dataset.
     bool adminDataSet = false;
 
     std::vector<queueMaxSduEntry_t> queueMaxSduTable;
@@ -192,6 +204,10 @@ struct GclConfig_t {
     uint32_t supportedCycleMaxDenominator = 1e9;
 };
 
+/**
+ * @brief Struct that represents the basic information about a system connected to an LLDP-port on a host. Corresponds
+ * to one instance of `/lldp/port/remote-systems-data`.
+ */
 struct LldpNeighbor_t {
     bool hasNeighbor = false;
     std::string chassisId;
@@ -200,11 +216,10 @@ struct LldpNeighbor_t {
     uint32_t ttl;
     std::string managementIp;
 };
+
 /**
  * @brief Struct to hold information about and interfaces bridge-port, as defined by the ieee802-dot1q-bridge yang
  * model.
- *
- *
  */
 struct BridgePort_t {
     std::string bridgeName;
@@ -212,6 +227,7 @@ struct BridgePort_t {
     TrafficClassData_t trafficClassData;
     GclConfig_t gateParameterTable;
 };
+
 /**
  * @brief Struct to hold information about an interface, inspired by the ietf-interfaces yang model.
  *
@@ -244,6 +260,9 @@ struct ietfInterface_t {
     BridgePort_t bridgePort;
 };
 
+/**
+ * @brief Enum that represents the type of a PTP instance, for gPTP either Ordinary Clock or Boundary Clock
+ */
 enum class PtpInstanceType_t : uint8_t {
     PTP_INSTANCE_OC = 0,
     PTP_INSTANCE_BC,
@@ -252,6 +271,12 @@ enum class PtpInstanceType_t : uint8_t {
     PTP_INSTANCE_INVALID,
 };
 
+/**
+ * @brief Helper method to convert an @ref PtpInstanceType_t to a string that is valid in the YANG model.
+ *
+ * @param type A @ref PtpInstanceType_t
+ * @return An optional string as it can be used to set the value of a field in a @ref libyang::DataNode.
+ */
 inline const std::optional<std::string>& ptpInstanceTypeToEnum(PtpInstanceType_t type) {
     // These are initialized once the first time the function is called
     static const std::optional<std::string> s_oc = "oc";
@@ -274,6 +299,9 @@ inline const std::optional<std::string>& ptpInstanceTypeToEnum(PtpInstanceType_t
     }
 }
 
+/**
+ * @brief Enum that defines which state a port is in. For gPTP only some of them are used.
+ */
 enum class PtpPortState_t : uint8_t {
     INITIALIZING = 1,
     FAULTY,
@@ -286,6 +314,11 @@ enum class PtpPortState_t : uint8_t {
     TIME_RECEIVER
 };
 
+/**
+ * @brief Helper method to convert an @ref PtpPortState_t to a string that is valid in the YANG model.
+ * @param state
+ * @return An optional string as it can be used to set the value of a field in a @ref libyang::DataNode.
+ */
 inline const std::optional<std::string>& portStateToString(PtpPortState_t state) {
     // Initialized once on first call
     static const std::optional<std::string> s_initializing = "initializing";
@@ -323,6 +356,9 @@ inline const std::optional<std::string>& portStateToString(PtpPortState_t state)
     }
 }
 
+/**
+ * @brief Struct that represents the 4 values for a statistic: Mean, Max, Min, and StdDev
+ */
 struct PtpPerformanceParameters_t {
     int64_t avg;
     int64_t min;
@@ -330,6 +366,12 @@ struct PtpPerformanceParameters_t {
     int64_t stddev;
 };
 
+/**
+ * @brief Struct that represents the statistics of the PTP performance metrics (specifically the offset from the
+ * time-transmitter and the mean path delay) over a certain period.
+ *
+ * It also tracks when this period started, and whether it is complete and contains valid data.
+ */
 struct PtpPerformanceRecord_t {
     bool periodComplete;
     uint32_t pmTime;
@@ -337,28 +379,48 @@ struct PtpPerformanceRecord_t {
     PtpPerformanceParameters_t offsetFromTimeTransmitter;
     PtpPerformanceParameters_t meanPathDelay;
 };
+
+/**
+ * @brief Struct that represents the statistics of the PTP performance metrics of a single port, specifically the mean
+ * link delay, over a certain period.
+ */
 struct PtpPortPerformanceRecord_t {
     uint32_t pmTime;
     PtpPerformanceParameters_t meanLinkDelay;
 };
 
+/**
+ * @brief Struct that represents the fields we use from the "Default data set" of the ieee1588-ptp-tt YANG model.
+ */
 struct DefaultDs_t {
     uint16_t numPorts;
     uint8_t priority1;
     std::string clockIdentity;
     PtpTime_t currentTime;
-    PtpInstanceType_t instanceType;
+    PtpInstanceType_t instanceType = PtpInstanceType_t::PTP_INSTANCE_INVALID;
 };
+
+/**
+ * @brief Struct that represents the fields we use from the "Current data set" of the ieee1588-ptp-tt YANG model.
+ */
 struct CurrentDs_t {
     uint16_t stepsRemoved;
     int64_t offsetFromTimeTransmitter;
     int64_t meanDelay;
 };
+
+/**
+ * @brief Struct that represents the fields we use from the "Parent data set" of the ieee1588-ptp-tt YANG model.
+ */
 struct ParentDs_t {
     std::string parentClockIdentity;
     uint16_t parentPortNumber;
     std::string grandParentClockIdentity;
 };
+
+/**
+ * @brief Struct that represents the fields we use from the "Port data set" of the ieee1588-ptp-tt YANG model.
+ */
 struct PortDs_t {
     std::string portClockIdentity;
     uint16_t portPortNumber;
@@ -366,6 +428,9 @@ struct PortDs_t {
     int64_t meanLinkDelay;
 };
 
+/**
+ * @brief Struct that represents the fields we use from the `port` element of the ieee1588-ptp-tt YANG model.
+ */
 struct PtpPort_t {
     uint16_t portIndex;
     std::string underlyingInterface;
@@ -374,6 +439,10 @@ struct PtpPort_t {
     std::vector<PtpPortPerformanceRecord_t> portPerformanceRecords24h;
 };
 
+/**
+ * @brief Struct that represents all the PTP information on one host we use, corresponds to one
+ * `/ptp/instances/instance` of the ieee1588-ptp-tt YANG model.
+ */
 struct PtpNode_t {
     DefaultDs_t defaultDs;
     CurrentDs_t currentDs;
@@ -383,6 +452,9 @@ struct PtpNode_t {
     std::vector<PtpPort_t> ports;
 };
 
+/**
+ * @brief Struct that represents the information about the local system, as available to the LLDP agent.
+ */
 struct LldpLocalSystemData_t {
     std::string chassisIdSubtype;
     std::string chassisId;
@@ -392,6 +464,10 @@ struct LldpLocalSystemData_t {
     std::string systemCapabilitiesEnabled;
 };
 
+/**
+ * @brief Struct that represents one "LLDP-port", aka one interface participating in LLDP. Contains a list of @ref
+ * LldpNeighbor_t structs which correspond to basic information about an entry of `remote-systems-data`.
+ */
 struct LldpPort_t {
     std::string name;
     std::string destMacAddress;
@@ -399,6 +475,10 @@ struct LldpPort_t {
     std::vector<LldpNeighbor_t> neighbors;  // TODO: Needs to be implemented
 };
 
+/**
+ * @brief Represents all LLDP information of a host. Includes the local configuration and system-data and a list of @ref
+ * LldpPort_t structs, one for each interface participating in LLDP.
+ */
 struct LldpNode_t {
     uint32_t messageTxInterval;
     uint32_t messageTxHoldMultiplier;
@@ -407,6 +487,10 @@ struct LldpNode_t {
     std::vector<LldpPort_t> ports;
 };
 
+/**
+ * @brief This struct is used on the CNC side to represent one host with all its interfaces as well as its PTP and LLDP
+ * information.
+ */
 struct CncNode_t {
     uint32_t id;
     std::string hostName;
