@@ -124,6 +124,7 @@ bool LldpParser::parseLldpData(const std::string& xmlData, CncNode_t& node) {
         pugi::xml_node remoteData = findNodeDeep(port, "remote-systems-data");
 
         // 5. Write data into struct
+        /*
         if (remoteData != nullptr) {
             targetInterface->lldpNeighbor.hasNeighbor = true;
 
@@ -141,6 +142,7 @@ bool LldpParser::parseLldpData(const std::string& xmlData, CncNode_t& node) {
         } else {
             targetInterface->lldpNeighbor.hasNeighbor = false;
         }
+        */
     }
     return true;
 }
