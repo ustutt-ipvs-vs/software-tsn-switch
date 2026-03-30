@@ -2,6 +2,7 @@
 
 #include <array>
 #include <cstdint>
+#include <limits>
 #include <optional>
 #include <string>
 #include <vector>
@@ -95,6 +96,16 @@ inline const std::optional<std::string>& ifTypeToIanaString(IfType type) {
             return s_none;
     }
 }
+
+/**
+ * @brief Constant that represents an unknown interface speed, used as a sentinel value.
+ */
+inline constexpr uint64_t kInterfaceSpeedUnknown = std::numeric_limits<uint64_t>::max();
+
+/**
+ * @brief Conversion factor from megabits per second to bits per second.
+ */
+inline constexpr uint64_t kMbpsToBps = 1000000ULL;
 
 /**
  * @brief Struct to represent the traffic-class/traffic-class-table container of the ieee802-dot1q-bridge model.
@@ -255,7 +266,7 @@ struct ietfInterface_t {
     // --- Capabilities / Logic ---
     uint32_t numTxQueues = 1;        // Derived from IFLA_NUM_TX_QUEUES, contains the maximum supported number of queues
     uint32_t numActiveTxQueues = 1;  // Derived via ethtools, contains the number of active queues
-    uint64_t speed = 0;              // Derived via ethtools
+    uint64_t speed = kInterfaceSpeedUnknown;  // ietf-interfaces speed in bits/second, unknown => leaf omitted
 
     BridgePort_t bridgePort;
 };

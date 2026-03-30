@@ -1192,7 +1192,7 @@ sysrepo::ErrorCode tsnctrld::operInterfaceCallback(const sysrepo::Session &sess,
             return sysrepo::ErrorCode::OperationFailed;
         }
 
-        if (current.speed != (uint32_t)-1) {
+        if (current.speed != kInterfaceSpeedUnknown) {
             SPDLOG_DEBUG("[CB_OPER] [IF] Interface {} has valid speed {}", current.name, current.speed);
             if_node->newPath2("speed", fmt::format("{}", current.speed));
         }

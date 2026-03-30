@@ -78,7 +78,7 @@ class PtpManager {
 
     int32_t sendManagementGet(uint16_t managementId);
     bool receiveManagementResponse(uint16_t expectedId, uint16_t expectedSeq,
-                                   ptp::ResponseWithSourceIdentity& out_data);
+                                   ptp::ResponseWithSourceIdentity& out_data) const;
 };
 
 #endif  // ENPRO_SWITCH_PTPMANAGER_H

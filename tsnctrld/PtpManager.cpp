@@ -99,8 +99,8 @@ uint32_t getTimestamp10ms() {
  * @brief Helper method to ensure the maximum number of performance-records allowed of a given type is not exceeded.
  */
 template <typename T>
-void pushSlidingWindow(std::deque<T>& dq, T&& item, size_t max_size) {
-    dq.push_front(std::forward<T>(item));
+void pushSlidingWindow(std::deque<T>& dq, const T& item, size_t max_size) {
+    dq.push_front(item);
     if (dq.size() > max_size) {
         dq.pop_back();
     }
@@ -136,15 +136,15 @@ void rolloverPeriod(ptp::PerformanceRecord& current, std::deque<PtpPerformanceRe
                                                             current.meanPathDelay.isValid(expectedEntries),
                                         .offsetFromTimeTransmitter = current.offsetFromMaster.toParameters(),
                                         .meanPathDelay = current.meanPathDelay.toParameters()};
-    pushSlidingWindow(global_records, std::move(globalRecord), max_size);
+    pushSlidingWindow(global_records, globalRecord, max_size);
 
     // 2. Snapshot the Port-level records
     for (const auto& [portId, stats] : current.portMeanLinkDelay) {
         SPDLOG_DEBUG("[PTP] [ROLLOVER] current: ports: id={} c={} avg={} min={} max={} stddev={}", portId, stats.count,
                      stats.mean, stats.min, stats.max, stats.getStdDev());
 
-        PtpPortPerformanceRecord_t portRecord{current.startTime10ms, stats.toParameters()};
-        pushSlidingWindow(port_records[portId], std::move(portRecord), max_size);
+        PtpPortPerformanceRecord_t portRecord{.pmTime = current.startTime10ms, .meanLinkDelay = stats.toParameters()};
+        pushSlidingWindow(port_records[portId], portRecord, max_size);
     }
 
     // 3. Reset the accumulator for the next period
@@ -406,13 +406,27 @@ bool PtpManager::getPortPropertiesNp(std::vector<ptp::PortProperties>& port_prop
         if (!receiveManagementResponse(MID_CUSTOM_PORT_PROPERTIES, seq, rx_data)) {
             break;
         }
+
+        constexpr size_t kPrefixLen = sizeof(ptp::PortIdentity) + 3;
+        if (rx_data.bytes.size() < kPrefixLen) {
+            spdlog::warn("[PTP] [PORT_PROPERTIES_NP] Response too short: {} bytes", rx_data.bytes.size());
+            continue;
+        }
+
         auto& port = port_propertieses.emplace_back();
-        std::memcpy(&port, rx_data.bytes.data(), sizeof(ptp::PortIdentity));
+        std::memcpy(&port.source, rx_data.bytes.data(), sizeof(ptp::PortIdentity));
         port.source.portNumber = be16toh(port.source.portNumber);
 
-        uint8_t namelength = rx_data.bytes[sizeof(ptp::PortIdentity) + 2];
-        port.ifName = std::string(rx_data.bytes.data() + sizeof(ptp::PortIdentity) + 3,
-                                  rx_data.bytes.data() + sizeof(ptp::PortIdentity) + 3 + namelength);
+        const uint8_t nameLength = rx_data.bytes[sizeof(ptp::PortIdentity) + 2];
+        const size_t nameOffset = sizeof(ptp::PortIdentity) + 3;
+        if (nameOffset + static_cast<size_t>(nameLength) > rx_data.bytes.size()) {
+            spdlog::warn("[PTP] [PORT_PROPERTIES_NP] Invalid ifName length {} for payload {}", nameLength,
+                         rx_data.bytes.size());
+            continue;
+        }
+
+        const auto* begin = reinterpret_cast<const char*>(rx_data.bytes.data() + nameOffset);
+        port.ifName.assign(begin, begin + nameLength);
     }
     return true;
 }
@@ -638,7 +652,7 @@ int32_t PtpManager::sendManagementGet(uint16_t managementId) {
  * @return True if the data was received successfully, False otherwise.
  */
 bool PtpManager::receiveManagementResponse(uint16_t expectedId, uint16_t expectedSeq,
-                                           ptp::ResponseWithSourceIdentity& out_data) {
+                                           ptp::ResponseWithSourceIdentity& out_data) const {
     SPDLOG_TRACE("[PTP] [RECV_RESP] Receiving response with expected MID {}", expectedId);
     std::vector<uint8_t> rx_buffer(1024);
     struct pollfd pfd{};
@@ -653,8 +667,10 @@ bool PtpManager::receiveManagementResponse(uint16_t expectedId, uint16_t expecte
         return false;
     }
 
-    int rx_bytes = recv(m_fd, rx_buffer.data(), rx_buffer.size(), 0);
-    if (rx_bytes < static_cast<int>(sizeof(ptp::PtpManagementMsg) + sizeof(ptp::PtpManagementTlv))) {
+    // NOLINTNEXTLINE(clang-analyzer-unix.BlockInCriticalSection): socket transaction must stay serialized.
+    const ssize_t rx_bytes = recv(m_fd, rx_buffer.data(), rx_buffer.size(), 0);
+    const auto min_msg_len = static_cast<ssize_t>(sizeof(ptp::PtpManagementMsg) + sizeof(ptp::PtpManagementTlv));
+    if (rx_bytes < min_msg_len) {
         spdlog::warn("[PTP] [RECV_RESP] Number of received bytes {} smaller than minimum valid length {}", rx_bytes,
                      sizeof(ptp::PtpManagementMsg) + sizeof(ptp::PtpManagementTlv));
         return false;
@@ -714,20 +730,27 @@ bool PtpManager::receiveManagementResponse(uint16_t expectedId, uint16_t expecte
     std::memcpy(&out_data.source, &msg.header.sourcePortIdentity, sizeof(ptp::PortIdentity));
     out_data.source.portNumber = be16toh(out_data.source.portNumber);
 
-    int payload_len = ntohs(tlv.lengthField) - 2;
+    const uint16_t tlv_len = ntohs(tlv.lengthField);
+    if (tlv_len < 2) {
+        spdlog::warn("[PTP] [RECV_RESP] Invalid TLV length {}", tlv_len);
+        return false;
+    }
+
+    const auto payload_len = static_cast<size_t>(tlv_len - 2);
     if (payload_len == 0) {
         SPDLOG_TRACE("[PTP] [RECV_RESP] Empty response", expectedId);
         out_data.bytes.clear();
-    } else if (payload_len > 0 &&
-               rx_bytes >= sizeof(ptp::PtpManagementMsg) + sizeof(ptp::PtpManagementTlv) + payload_len) {
-        SPDLOG_TRACE("[PTP] [RECV_RESP] Valid Response", expectedId);
-
-        uint8_t* tlv_payload = rx_buffer.data() + sizeof(ptp::PtpManagementMsg) + sizeof(ptp::PtpManagementTlv);
-        out_data.bytes.assign(tlv_payload, tlv_payload + payload_len);
     } else {
-        spdlog::warn("[PTP] [RECV_RESP] Invalid payload length", expectedId);
+        const size_t required_bytes = sizeof(ptp::PtpManagementMsg) + sizeof(ptp::PtpManagementTlv) + payload_len;
+        if (static_cast<size_t>(rx_bytes) >= required_bytes) {
+            SPDLOG_TRACE("[PTP] [RECV_RESP] Valid Response", expectedId);
 
-        return false;
+            uint8_t* tlv_payload = rx_buffer.data() + sizeof(ptp::PtpManagementMsg) + sizeof(ptp::PtpManagementTlv);
+            out_data.bytes.assign(tlv_payload, tlv_payload + payload_len);
+        } else {
+            spdlog::warn("[PTP] [RECV_RESP] Invalid payload length", expectedId);
+            return false;
+        }
     }
     return true;
 }
