@@ -264,8 +264,8 @@ void LinkManager::getLinkSpeed(int sock, ietfInterface_t& iface) {
 
     // 1. Try the modern API (ETHTOOL_GLINKSETTINGS)
     // std::vector safely allocates the memory for the struct + flexible array
-    const size_t req_sz = sizeof(struct ethtool_link_settings) +
-                          (static_cast<size_t>(3) * static_cast<size_t>(128) * sizeof(__u32));
+    const size_t req_sz =
+        sizeof(struct ethtool_link_settings) + (static_cast<size_t>(3) * static_cast<size_t>(128) * sizeof(__u32));
     std::vector<char> buffer(req_sz, 0);
     auto* req = reinterpret_cast<struct ethtool_link_settings*>(buffer.data());
 
