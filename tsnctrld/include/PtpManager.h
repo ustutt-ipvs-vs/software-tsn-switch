@@ -72,6 +72,8 @@ class PtpManager {
     bool getParentDataSet(ptp::ParentDS& parent_ds);
     bool getPortDataSets(std::vector<ptp::PortDs>& port_dses);
     bool getClockDescriptions(std::vector<ptp::ClockDescription>& clock_descriptions);
+    bool getPortPropertiesNp(std::vector<ptp::PortProperties>& port_propertieses);
+
     void finalizePeriod(int type);
 
     int32_t sendManagementGet(uint16_t managementId);

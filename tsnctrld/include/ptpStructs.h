@@ -205,6 +205,14 @@ struct ClockDescription {
 };
 
 /**
+ * @brief A struct representing the relevant data from the custom PORT_PROPERTIES_NP field of linuxptp
+ */
+struct PortProperties {
+    PortIdentity source;
+    std::string ifName;
+};
+
+/**
  * @brief Helper struct to associate the data of a response with the port it came from, even if this @ref PortIdentity
  * is not present in the data itself.
  */

@@ -998,15 +998,17 @@ void tsnctrld::populatePtpConfig(libyang::Context &ctx, std::optional<libyang::D
         return;
     }
 
-    for (uint16_t i = 0; i < ptpNode.defaultDs.numPorts; ++i) {
-        auto port_path = fmt::format("port[port-index='{}']", i);
+    for (auto &port : ptpNode.ports) {
+        auto port_path = fmt::format("port[port-index='{}']", port.portIndex);
         auto port_res = ports_node->newPath2(port_path, std::nullopt);
         auto port_node = port_res.createdNode;
         if (!port_node.has_value()) {
             spdlog::warn(
-                "[SYNC] [LLDP] port_node Nr {} of type std::optional has no value, makes no sense, returning...", i);
+                "[SYNC] [LLDP] port_node Nr {} of type std::optional has no value, makes no sense, returning...",
+                port.portIndex);
             return;
         }
+        port_node->newPath2("underlying-interface", port.underlyingInterface);
     }
 
     SPDLOG_DEBUG("[SYNC] [PTP] Finished populating /ptp");

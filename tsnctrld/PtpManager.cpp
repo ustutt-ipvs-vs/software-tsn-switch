@@ -30,6 +30,7 @@ enum : uint16_t {
     MID_PARENT_DATA_SET = 0x2002,
     MID_TIME_PROPERTIES_DATA_SET = 0x2003,
     MID_PORT_DATA_SET = 0x2004,
+    MID_CUSTOM_PORT_PROPERTIES = 0xC004,
 };
 
 /**
@@ -387,6 +388,36 @@ bool PtpManager::getClockDescriptions(std::vector<ptp::ClockDescription>& clock_
 }
 
 /**
+ * @brief Queries the PTP management socket for the custom PORT_PROPERTIES_NP(s).
+ *
+ * @param port_dses A list that should be filled with the @ref ptp::PortProperties structs parsed from the response.
+ * @return True if the list was filled successfully, False otherwise.
+ */
+bool PtpManager::getPortPropertiesNp(std::vector<ptp::PortProperties>& port_propertieses) {
+    std::lock_guard<std::mutex> lock(m_socketMutex);
+    int32_t seq = sendManagementGet(MID_CUSTOM_PORT_PROPERTIES);
+    if (seq < 0) {
+        return false;
+    }
+
+    ptp::ResponseWithSourceIdentity rx_data;
+
+    for (uint16_t i = 0; i < m_assumedPortCount || m_assumedPortCount == 0; i++) {
+        if (!receiveManagementResponse(MID_CUSTOM_PORT_PROPERTIES, seq, rx_data)) {
+            break;
+        }
+        auto& port = port_propertieses.emplace_back();
+        std::memcpy(&port, rx_data.bytes.data(), sizeof(ptp::PortIdentity));
+        port.source.portNumber = be16toh(port.source.portNumber);
+
+        uint8_t namelength = rx_data.bytes[sizeof(ptp::PortIdentity) + 2];
+        port.ifName = std::string(rx_data.bytes.data() + sizeof(ptp::PortIdentity) + 3,
+                                  rx_data.bytes.data() + sizeof(ptp::PortIdentity) + 3 + namelength);
+    }
+    return true;
+}
+
+/**
  * @brief Creates a list of @ref PtpPerformanceRecord_t structs that contains the record for the currently active
  * 15-minute period at the first index, followed by the records of the completed 15-minute periods.
  *
@@ -510,10 +541,14 @@ void PtpManager::fillStateData(PtpNode_t& node_to_fill) {
 void PtpManager::fillConfigData(PtpNode_t& node_to_fill) {
     ptp::DefaultDs default_ds = {};
     std::vector<ptp::ClockDescription> clock_descriptions = {};
+    std::vector<ptp::PortProperties> port_propertieses = {};
     if (!getDefaultDataSet(default_ds)) {
         return;
     }
     if (!getClockDescriptions(clock_descriptions)) {
+        return;
+    }
+    if (!getPortPropertiesNp(port_propertieses)) {
         return;
     }
 
@@ -532,6 +567,12 @@ void PtpManager::fillConfigData(PtpNode_t& node_to_fill) {
     node_to_fill.defaultDs.numPorts = default_ds.numberPorts;
     node_to_fill.defaultDs.priority1 = default_ds.priority1;
     node_to_fill.defaultDs.clockIdentity = clockIdentityBytesToString(default_ds.clockIdentity);
+
+    for (auto& port_properties : port_propertieses) {
+        auto& port = node_to_fill.ports.emplace_back();
+        port.portIndex = port_properties.source.portNumber;
+        port.underlyingInterface = port_properties.ifName;
+    }
 }
 
 /**
