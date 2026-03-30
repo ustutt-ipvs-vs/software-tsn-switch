@@ -109,11 +109,13 @@ int main() {
     bool anyNeighborFound = false;
     for (const auto& node : topology.nodes) {
         for (const auto& iface : node.interfaces) {
+            /*
             if (iface.lldpNeighbor.hasNeighbor) {
                 anyNeighborFound = true;
                 spdlog::info("  [MATCH] Node: {} | Iface: {} <--> Remote: {} (PortID: {})", node.hostName, iface.name,
                              iface.lldpNeighbor.systemName, iface.lldpNeighbor.portId);
             }
+            */
         }
     }
     if (!anyNeighborFound) {
