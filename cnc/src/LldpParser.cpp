@@ -121,7 +121,9 @@ bool LldpParser::parseLldpData(const std::string& xmlData, CncNode_t& node) {
         }
 
         // 4. Parse LLDP neighbor information
+        /*
         pugi::xml_node remoteData = findNodeDeep(port, "remote-systems-data");
+        */
 
         // 5. Write data into struct
         /*

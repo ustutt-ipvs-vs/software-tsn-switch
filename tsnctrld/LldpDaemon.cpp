@@ -389,7 +389,7 @@ void LldpDaemon::getConfigData(LldpNode_t& lldp_node) {
     lldp_node.messageTxHoldMultiplier = lldpctl_atom_get_int(lldp_config, lldpctl_k_config_tx_hold);
     lldp_node.messageFastTx = lldpctl_atom_get_int(lldp_config, lldpctl_k_config_fast_start_interval);
 
-    int receive_only = lldpctl_atom_get_int(lldp_config, lldpctl_k_config_receiveonly);
+    const int receive_only = static_cast<int>(lldpctl_atom_get_int(lldp_config, lldpctl_k_config_receiveonly));
 
     lldpctl_atom_t* iface = nullptr;
     lldpctl_atom_t* ifaces = nullptr;
@@ -412,12 +412,11 @@ void LldpDaemon::getConfigData(LldpNode_t& lldp_node) {
         auto& currentPort = lldp_node.ports.emplace_back();
         currentPort.name = ifName;
         currentPort.destMacAddress = "01-80-c2-00-00-0e";
-        if (receive_only == 0) {
+        if (receive_only != 0) {
             currentPort.adminStatus = "rx-only";
         } else {
             lldpctl_atom_t* port = lldpctl_get_port(iface);
-            int status = lldpctl_atom_get_int(port, lldpctl_k_port_status);
-
+            const int status = static_cast<int>(lldpctl_atom_get_int(port, lldpctl_k_port_status));
             switch (status) {
                 case 1:  // LLDPD_RXTX_TXONLY
                     currentPort.adminStatus = "tx-only";
@@ -425,10 +424,10 @@ void LldpDaemon::getConfigData(LldpNode_t& lldp_node) {
                 case 2:  // LLDPD_RXTX_RXONLY
                     currentPort.adminStatus = "rx-only";
                     break;
-                case 3:  // LLDPD_RXTX_BOTH
-                    currentPort.adminStatus = "tx-rx";
+                case 4:  // LLDPD_RXTX_BOTH
+                    currentPort.adminStatus = "tx-and-rx";
                     break;
-                case 4:  // LLDPD_RXTX_DISABLED
+                case 3:  // LLDPD_RXTX_DISABLED
                 default:
                     currentPort.adminStatus = "disabled";
                     break;
