@@ -56,10 +56,11 @@ class tsnctrld {
                                               const std::string& moduleName, const std::optional<std::string>& subXPath,
                                               const std::optional<std::string>& requestXPath, uint32_t requestId,
                                               std::optional<libyang::DataNode>& parent);
-    sysrepo::ErrorCode operLldpCallback(const sysrepo::Session& sess, uint32_t subId, const std::string& moduleName,
-                                        const std::optional<std::string>& subXPath,
-                                        const std::optional<std::string>& requestXPath, uint32_t requestId,
-                                        std::optional<libyang::DataNode>& parent);
+    sysrepo::ErrorCode operLldpLocalSystemCallback(const sysrepo::Session& sess, uint32_t subId,
+                                                   const std::string& moduleName,
+                                                   const std::optional<std::string>& subXPath,
+                                                   const std::optional<std::string>& requestXPath, uint32_t requestId,
+                                                   std::optional<libyang::DataNode>& parent);
     sysrepo::ErrorCode operPtpCallback(const sysrepo::Session& sess, uint32_t subId, const std::string& moduleName,
                                        const std::optional<std::string>& subXPath,
                                        const std::optional<std::string>& requestXPath, uint32_t requestId,

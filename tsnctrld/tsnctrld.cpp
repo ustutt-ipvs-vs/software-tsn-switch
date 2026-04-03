@@ -1123,12 +1123,13 @@ sysrepo::ErrorCode tsnctrld::defaultOperCallback(const sysrepo::Session &sess, u
                                                  std::optional<libyang::DataNode> &parent) {
     m_ifcache.setCurrentRequestId(requestId);
 
-    SPDLOG_DEBUG("[CB_OPER] [IF] Received oper callback for module \"{}\"...", moduleName);
-    SPDLOG_DEBUG("[CB_OPER] [IF] subXPath \"{}\"...", subXPath.value_or("MISSING"));
-    SPDLOG_DEBUG("[CB_OPER] [IF] requestXPath \"{}\"...", requestXPath.value_or("MISSING"));
-    SPDLOG_DEBUG("[CB_OPER] [IF] requestId \"{}\"...", requestId);
-    SPDLOG_DEBUG("[CB_OPER] [IF] module of parent node \"{}\"...", parent ? parent->schema().module().name() : "ROOT");
-    SPDLOG_DEBUG("[CB_OPER] [IF] name of parent node \"{}\"...", parent ? parent->schema().name() : "ROOT");
+    SPDLOG_DEBUG("[CB_OPER] [DEFAULT] Received oper callback for module \"{}\"...", moduleName);
+    SPDLOG_DEBUG("[CB_OPER] [DEFAULT] subXPath \"{}\"...", subXPath.value_or("MISSING"));
+    SPDLOG_DEBUG("[CB_OPER] [DEFAULT] requestXPath \"{}\"...", requestXPath.value_or("MISSING"));
+    SPDLOG_DEBUG("[CB_OPER] [DEFAULT] requestId \"{}\"...", requestId);
+    SPDLOG_DEBUG("[CB_OPER] [DEFAULT] module of parent node \"{}\"...",
+                 parent ? parent->schema().module().name() : "ROOT");
+    SPDLOG_DEBUG("[CB_OPER] [DEFAULT] name of parent node \"{}\"...", parent ? parent->schema().name() : "ROOT");
 
     auto ctx = sess.getContext();
     if (!parent) {
@@ -1243,12 +1244,12 @@ sysrepo::ErrorCode tsnctrld::operBridgeCallback(const sysrepo::Session &sess, ui
                                                 std::optional<libyang::DataNode> &parent) {
     m_ifcache.setCurrentRequestId(requestId);
 
-    SPDLOG_DEBUG("[CB_OPER] [IF] Received oper callback for module \"{}\"...", moduleName);
-    SPDLOG_DEBUG("[CB_OPER] [IF] subXPath \"{}\"...", subXPath.value_or("MISSING"));
-    SPDLOG_DEBUG("[CB_OPER] [IF] requestXPath \"{}\"...", requestXPath.value_or("MISSING"));
-    SPDLOG_DEBUG("[CB_OPER] [IF] requestId \"{}\"...", requestId);
-    SPDLOG_DEBUG("[CB_OPER] [IF] module of parent node \"{}\"...", parent ? parent->schema().module().name() : "ROOT");
-    SPDLOG_DEBUG("[CB_OPER] [IF] name of parent node \"{}\"...", parent ? parent->schema().name() : "ROOT");
+    SPDLOG_DEBUG("[CB_OPER] [BR] Received oper callback for module \"{}\"...", moduleName);
+    SPDLOG_DEBUG("[CB_OPER] [BR] subXPath \"{}\"...", subXPath.value_or("MISSING"));
+    SPDLOG_DEBUG("[CB_OPER] [BR] requestXPath \"{}\"...", requestXPath.value_or("MISSING"));
+    SPDLOG_DEBUG("[CB_OPER] [BR] requestId \"{}\"...", requestId);
+    SPDLOG_DEBUG("[CB_OPER] [BR] module of parent node \"{}\"...", parent ? parent->schema().module().name() : "ROOT");
+    SPDLOG_DEBUG("[CB_OPER] [BR] name of parent node \"{}\"...", parent ? parent->schema().name() : "ROOT");
 
     SPDLOG_DEBUG("[CB_OPER] [BR] Scanning interfaces for bridge members...");
 
@@ -1316,12 +1317,12 @@ sysrepo::ErrorCode tsnctrld::operBridgePortCallback(const sysrepo::Session &sess
                                                     std::optional<libyang::DataNode> &parent) {
     m_ifcache.setCurrentRequestId(requestId);
 
-    SPDLOG_DEBUG("[CB_OPER] [IF] Received oper callback for module \"{}\"...", moduleName);
-    SPDLOG_DEBUG("[CB_OPER] [IF] subXPath \"{}\"...", subXPath.value_or("MISSING"));
-    SPDLOG_DEBUG("[CB_OPER] [IF] requestXPath \"{}\"...", requestXPath.value_or("MISSING"));
-    SPDLOG_DEBUG("[CB_OPER] [IF] requestId \"{}\"...", requestId);
-    SPDLOG_DEBUG("[CB_OPER] [IF] module of parent node \"{}\"...", parent ? parent->schema().module().name() : "ROOT");
-    SPDLOG_DEBUG("[CB_OPER] [IF] name of parent node \"{}\"...", parent ? parent->schema().name() : "ROOT");
+    SPDLOG_DEBUG("[CB_OPER] [BP] Received oper callback for module \"{}\"...", moduleName);
+    SPDLOG_DEBUG("[CB_OPER] [BP] subXPath \"{}\"...", subXPath.value_or("MISSING"));
+    SPDLOG_DEBUG("[CB_OPER] [BP] requestXPath \"{}\"...", requestXPath.value_or("MISSING"));
+    SPDLOG_DEBUG("[CB_OPER] [BP] requestId \"{}\"...", requestId);
+    SPDLOG_DEBUG("[CB_OPER] [BP] module of parent node \"{}\"...", parent ? parent->schema().module().name() : "ROOT");
+    SPDLOG_DEBUG("[CB_OPER] [BP] name of parent node \"{}\"...", parent ? parent->schema().name() : "ROOT");
 
     auto ctx = sess.getContext();
     if (!parent) {
@@ -1333,7 +1334,7 @@ sysrepo::ErrorCode tsnctrld::operBridgePortCallback(const sysrepo::Session &sess
 }
 
 /**
- * @brief A callback for getting operational data related to lldp. May be unused and could possibly be removed.
+ * @brief A callback for getting the operational local system data as used by lldp.
  * @param sess
  * @param subId
  * @param moduleName
@@ -1343,37 +1344,33 @@ sysrepo::ErrorCode tsnctrld::operBridgePortCallback(const sysrepo::Session &sess
  * @param parent
  * @return
  */
-sysrepo::ErrorCode tsnctrld::operLldpCallback(const sysrepo::Session &sess, uint32_t subId,
-                                              const std::string &moduleName, const std::optional<std::string> &subXPath,
-                                              const std::optional<std::string> &requestXPath, uint32_t requestId,
-                                              std::optional<libyang::DataNode> &parent) {
+sysrepo::ErrorCode tsnctrld::operLldpLocalSystemCallback(const sysrepo::Session &sess, uint32_t subId,
+                                                         const std::string &moduleName,
+                                                         const std::optional<std::string> &subXPath,
+                                                         const std::optional<std::string> &requestXPath,
+                                                         uint32_t requestId, std::optional<libyang::DataNode> &parent) {
     m_ifcache.setCurrentRequestId(requestId);
 
-    SPDLOG_DEBUG("[CB_OPER] [IF] Received oper callback for module \"{}\"...", moduleName);
-    SPDLOG_DEBUG("[CB_OPER] [IF] subXPath \"{}\"...", subXPath.value_or("MISSING"));
-    SPDLOG_DEBUG("[CB_OPER] [IF] requestXPath \"{}\"...", requestXPath.value_or("MISSING"));
-    SPDLOG_DEBUG("[CB_OPER] [IF] requestId \"{}\"...", requestId);
-    SPDLOG_DEBUG("[CB_OPER] [IF] module of parent node \"{}\"...", parent ? parent->schema().module().name() : "ROOT");
-    SPDLOG_DEBUG("[CB_OPER] [IF] name of parent node \"{}\"...", parent ? parent->schema().name() : "ROOT");
+    SPDLOG_DEBUG("[CB_OPER] [LLDP] Received oper callback for module \"{}\"...", moduleName);
+    SPDLOG_DEBUG("[CB_OPER] [LLDP] subXPath \"{}\"...", subXPath.value_or("MISSING"));
+    SPDLOG_DEBUG("[CB_OPER] [LLDP] requestXPath \"{}\"...", requestXPath.value_or("MISSING"));
+    SPDLOG_DEBUG("[CB_OPER] [LLDP] requestId \"{}\"...", requestId);
+    SPDLOG_DEBUG("[CB_OPER] [LLDP] module of parent node \"{}\"...",
+                 parent ? parent->schema().module().name() : "ROOT");
+    SPDLOG_DEBUG("[CB_OPER] [LLDP] name of parent node \"{}\"...", parent ? parent->schema().name() : "ROOT");
 
     LldpNode_t lldpNode;
     m_lldpDaemon->getLocalInfo(lldpNode);
 
     auto ctx = sess.getContext();
 
-    std::string lldp_path = fmt::format("/ieee802-dot1ab-lldp:lldp");
-    auto lldp_res = parent ? parent->newPath2(lldp_path, std::nullopt) : ctx.newPath2(lldp_path, std::nullopt);
-    if (!parent && lldp_res.createdParent) {
-        parent = lldp_res.createdParent;
+    std::string lldp_local_system_path = fmt::format("/ieee802-dot1ab-lldp:lldp/local-system-data");
+    auto lldp_local_system_res = parent ? parent->newPath2(lldp_local_system_path, std::nullopt)
+                                        : ctx.newPath2(lldp_local_system_path, std::nullopt);
+    if (!parent && lldp_local_system_res.createdParent) {
+        parent = lldp_local_system_res.createdParent;
     }
-    auto lldp_node = lldp_res.createdNode;
-    if (!lldp_node.has_value()) {
-        spdlog::warn("[CB_OPER] [BR] lldp_node of type std::optional has no value, makes no sense, returning...");
-        return sysrepo::ErrorCode::OperationFailed;
-    }
-
-    auto local_system_res = lldp_node->newPath2("local-system-data", std::nullopt);
-    auto local_system_node = local_system_res.createdNode;
+    auto local_system_node = lldp_local_system_res.createdNode;
     if (!local_system_node.has_value()) {
         spdlog::warn(
             "[CB_OPER] [LLDP] local_system_node of type std::optional has no value, makes no sense, "
@@ -1424,7 +1421,7 @@ sysrepo::ErrorCode tsnctrld::operPtpCallback(const sysrepo::Session &sess, uint3
     }
     auto ptp_node = ptp_res.createdNode;
     if (!ptp_node.has_value()) {
-        spdlog::warn("[CB_OPER] [PTP_ROOT] ptp_node of type std::optional has no value, makes no sense, returning...");
+        spdlog::warn("[CB_OPER] [PTP] ptp_node of type std::optional has no value, makes no sense, returning...");
         return sysrepo::ErrorCode::OperationFailed;
     }
     PtpNode_t ptpNode;
@@ -1433,7 +1430,8 @@ sysrepo::ErrorCode tsnctrld::operPtpCallback(const sysrepo::Session &sess, uint3
     auto default_ds_res = ptp_node->newPath2("default-ds", std::nullopt);
     auto default_ds_node = default_ds_res.createdNode;
     if (!default_ds_node.has_value()) {
-        spdlog::warn("[CB_OPER] [IF] default_ds_node of type std::optional has no value, makes no sense, returning...");
+        spdlog::warn(
+            "[CB_OPER] [PTP] default_ds_node of type std::optional has no value, makes no sense, returning...");
         return sysrepo::ErrorCode::OperationFailed;
     }
     default_ds_node->newPath2("number-ports", std::to_string(ptpNode.defaultDs.numPorts));
@@ -1444,7 +1442,8 @@ sysrepo::ErrorCode tsnctrld::operPtpCallback(const sysrepo::Session &sess, uint3
     auto current_ds_res = ptp_node->newPath2("current-ds", std::nullopt);
     auto current_ds_node = current_ds_res.createdNode;
     if (!current_ds_node.has_value()) {
-        spdlog::warn("[CB_OPER] [IF] current_ds_node of type std::optional has no value, makes no sense, returning...");
+        spdlog::warn(
+            "[CB_OPER] [PTP] current_ds_node of type std::optional has no value, makes no sense, returning...");
         return sysrepo::ErrorCode::OperationFailed;
     }
     current_ds_node->newPath2("steps-removed", std::to_string(ptpNode.currentDs.stepsRemoved));
@@ -1454,7 +1453,7 @@ sysrepo::ErrorCode tsnctrld::operPtpCallback(const sysrepo::Session &sess, uint3
     auto parent_ds_res = ptp_node->newPath2("parent-ds", std::nullopt);
     auto parent_ds_node = parent_ds_res.createdNode;
     if (!parent_ds_node.has_value()) {
-        spdlog::warn("[CB_OPER] [IF] parent_ds_node of type std::optional has no value, makes no sense, returning...");
+        spdlog::warn("[CB_OPER] [PTP] parent_ds_node of type std::optional has no value, makes no sense, returning...");
         return sysrepo::ErrorCode::OperationFailed;
     }
     parent_ds_node->newPath2("parent-port-identity/clock-identity", ptpNode.parentDs.parentClockIdentity);
@@ -1464,7 +1463,7 @@ sysrepo::ErrorCode tsnctrld::operPtpCallback(const sysrepo::Session &sess, uint3
     auto ports_res = ptp_node->newPath2("ports", std::nullopt);
     auto ports_node = ports_res.createdNode;
     if (!ports_node.has_value()) {
-        spdlog::warn("[CB_OPER] [IF] ports_node of type std::optional has no value, makes no sense, returning...");
+        spdlog::warn("[CB_OPER] [PTP] ports_node of type std::optional has no value, makes no sense, returning...");
         return sysrepo::ErrorCode::OperationFailed;
     }
     for (auto port : ptpNode.ports) {
@@ -1473,7 +1472,7 @@ sysrepo::ErrorCode tsnctrld::operPtpCallback(const sysrepo::Session &sess, uint3
         auto port_node = port_res.createdNode;
         if (!port_node.has_value()) {
             spdlog::warn(
-                "[CB_OPER] [IF] port_node with index {} of type std::optional has no value, makes no sense, "
+                "[CB_OPER] [PTP] port_node with index {} of type std::optional has no value, makes no sense, "
                 "returning...",
                 port.portIndex);
             return sysrepo::ErrorCode::OperationFailed;
@@ -1572,7 +1571,8 @@ sysrepo::ErrorCode tsnctrld::operPtpPerformanceCallback(const sysrepo::Session &
         auto perf_rec_node = perf_rec_res.createdNode;
         if (!perf_rec_node.has_value()) {
             spdlog::warn(
-                "[CB_OPER] [IF] port_perf_rec_node with index {} of type std::optional has no value, makes no sense, "
+                "[CB_OPER] [PTP_PERF] port_perf_rec_node with index {} of type std::optional has no value, makes no "
+                "sense, "
                 "returning...",
                 i);
             return sysrepo::ErrorCode::OperationFailed;
@@ -1653,7 +1653,8 @@ sysrepo::ErrorCode tsnctrld::operPtpPortPerformanceCallback(const sysrepo::Sessi
     auto port_perf_ds_node = port_perf_ds_res.createdNode;
     if (!port_perf_ds_node.has_value()) {
         spdlog::warn(
-            "[CB_OPER] [PTP_ROOT] port_perf_ds_node of type std::optional has no value, makes no sense, returning...");
+            "[CB_OPER] [PTP_PORT_PERF] port_perf_ds_node of type std::optional has no value, makes no sense, "
+            "returning...");
         return sysrepo::ErrorCode::OperationFailed;
     }
 
@@ -1663,7 +1664,8 @@ sysrepo::ErrorCode tsnctrld::operPtpPortPerformanceCallback(const sysrepo::Sessi
         auto port_perf_rec_node = port_perf_rec_res.createdNode;
         if (!port_perf_rec_node.has_value()) {
             spdlog::warn(
-                "[CB_OPER] [IF] port_perf_rec_node with index {} of type std::optional has no value, makes no sense, "
+                "[CB_OPER] [PTP_PORT_PERF] port_perf_rec_node with index {} of type std::optional has no value, makes "
+                "no sense, "
                 "returning...",
                 i);
             return sysrepo::ErrorCode::OperationFailed;
@@ -1682,7 +1684,8 @@ sysrepo::ErrorCode tsnctrld::operPtpPortPerformanceCallback(const sysrepo::Sessi
         auto port_perf_rec_node = port_perf_rec_res.createdNode;
         if (!port_perf_rec_node.has_value()) {
             spdlog::warn(
-                "[CB_OPER] [IF] port_perf_rec_node with index {} of type std::optional has no value, makes no sense, "
+                "[CB_OPER] [PTP_PORT_PERF] port_perf_rec_node with index {} of type std::optional has no value, makes "
+                "no sense, "
                 "returning...",
                 i);
             return sysrepo::ErrorCode::OperationFailed;
@@ -2024,11 +2027,11 @@ sysrepo::ErrorCode tsnctrld::changeLldpCallback(sysrepo::Session sess, uint32_t 
     m_ifcache.setCurrentRequestId(requestId);
 
     static const std::string handledModuleName = "ieee802-dot1ab-lldp";
-    SPDLOG_DEBUG("[CB_CHANGE] [DEFAULT] Received change callback for module \"{}\"...", moduleName);
-    SPDLOG_DEBUG("[CB_CHANGE] [DEFAULT] subXPath \"{}\"...", subXPath.value_or("MISSING"));
-    SPDLOG_DEBUG("[CB_CHANGE] [DEFAULT] event \"{}\"...", event);
-    SPDLOG_DEBUG("[CB_CHANGE] [DEFAULT] requestId \"{}\"...", requestId);
-    SPDLOG_DEBUG("[CB_CHANGE] [IF] Actually trying to handle module \"{}\"...", handledModuleName);
+    SPDLOG_DEBUG("[CB_CHANGE] [LLDP] Received change callback for module \"{}\"...", moduleName);
+    SPDLOG_DEBUG("[CB_CHANGE] [LLDP] subXPath \"{}\"...", subXPath.value_or("MISSING"));
+    SPDLOG_DEBUG("[CB_CHANGE] [LLDP] event \"{}\"...", event);
+    SPDLOG_DEBUG("[CB_CHANGE] [LLDP] requestId \"{}\"...", requestId);
+    SPDLOG_DEBUG("[CB_CHANGE] [LLDP] Actually trying to handle module \"{}\"...", handledModuleName);
 
     if (event != sysrepo::Event::Change) {
         return sysrepo::ErrorCode::Ok;
@@ -2040,7 +2043,7 @@ sysrepo::ErrorCode tsnctrld::changeLldpCallback(sysrepo::Session sess, uint32_t 
         }
 
         spdlog::error(
-            "[CB_CHANGE] [LLDP-CONFIG] [REJECT] Edits to 'ieee802-dot1ab-lldp' (LLDP) are currently not implemented. "
+            "[CB_CHANGE] [LLDP] [REJECT] Edits to 'ieee802-dot1ab-lldp' (LLDP) are currently not implemented. "
             "Attempted change: {}",
             change.node.path());
         return sysrepo::ErrorCode::Unsupported;
@@ -2060,11 +2063,11 @@ sysrepo::ErrorCode tsnctrld::changePtpCallback(sysrepo::Session sess, uint32_t s
     m_ifcache.setCurrentRequestId(requestId);
 
     static const std::string handledModuleName = "ieee1588-ptp-tt";
-    SPDLOG_DEBUG("[CB_CHANGE] [DEFAULT] Received change callback for module \"{}\"...", moduleName);
-    SPDLOG_DEBUG("[CB_CHANGE] [DEFAULT] subXPath \"{}\"...", subXPath.value_or("MISSING"));
-    SPDLOG_DEBUG("[CB_CHANGE] [DEFAULT] event \"{}\"...", event);
-    SPDLOG_DEBUG("[CB_CHANGE] [DEFAULT] requestId \"{}\"...", requestId);
-    SPDLOG_DEBUG("[CB_CHANGE] [IF] Actually trying to handle module \"{}\"...", handledModuleName);
+    SPDLOG_DEBUG("[CB_CHANGE] [PTP] Received change callback for module \"{}\"...", moduleName);
+    SPDLOG_DEBUG("[CB_CHANGE] [PTP] subXPath \"{}\"...", subXPath.value_or("MISSING"));
+    SPDLOG_DEBUG("[CB_CHANGE] [PTP] event \"{}\"...", event);
+    SPDLOG_DEBUG("[CB_CHANGE] [PTP] requestId \"{}\"...", requestId);
+    SPDLOG_DEBUG("[CB_CHANGE] [PTP] Actually trying to handle module \"{}\"...", handledModuleName);
 
     if (event != sysrepo::Event::Change) {
         return sysrepo::ErrorCode::Ok;
@@ -2076,7 +2079,7 @@ sysrepo::ErrorCode tsnctrld::changePtpCallback(sysrepo::Session sess, uint32_t s
         }
 
         spdlog::error(
-            "[CB_CHANGE] [PTP-CONFIG] [REJECT] Edits to 'ieee1588-ptp-tt' (PTP) are currently not implemented. "
+            "[CB_CHANGE] [PTP] [REJECT] Edits to 'ieee1588-ptp-tt' (PTP) are currently not implemented. "
             "Attempted change: {}",
             change.node.path());
         return sysrepo::ErrorCode::Unsupported;
@@ -2135,9 +2138,9 @@ void tsnctrld::setupSubscriptions() {
                                       "/ietf-interfaces:interfaces/interface/ieee802-dot1q-bridge:bridge-port",
                                       sysrepo::SubscribeOptions::OperMerge));
 
-    auto operLldpCb = std::bind_front(&tsnctrld::operLldpCallback, this);
-    m_subs.push_back(m_sess.onOperGet("ieee802-dot1ab-lldp", operLldpCb, "/ieee802-dot1ab-lldp:lldp",
-                                      sysrepo::SubscribeOptions::OperMerge));
+    auto operLldpLocalSystemCb = std::bind_front(&tsnctrld::operLldpLocalSystemCallback, this);
+    m_subs.push_back(
+        m_sess.onOperGet("ieee802-dot1ab-lldp", operLldpLocalSystemCb, "/ieee802-dot1ab-lldp:lldp/local-system-data"));
 
     auto operPtpCb = std::bind_front(&tsnctrld::operPtpCallback, this);
     m_subs.push_back(m_sess.onOperGet("ieee1588-ptp-tt", operPtpCb, "/ieee1588-ptp-tt:ptp/instances/instance",

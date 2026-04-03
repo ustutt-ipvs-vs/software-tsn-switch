@@ -1,3 +1,4 @@
+#define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_TRACE
 #include "include/LldpDaemon.h"
 
 #include <arpa/inet.h>
@@ -586,18 +587,28 @@ void LldpDaemon::processEvent(lldpctl_change_t type, lldpctl_atom_t* iface, lldp
     const std::string basePort =
         "/ieee802-dot1ab-lldp:lldp/port[name='" + ifName + "'][dest-mac-address='01-80-c2-00-00-0e']";
 
-    if (type == lldpctl_c_deleted) {
-        SPDLOG_DEBUG("[LLDP] [EVENT] Neighbor lost on {}. Cleaning datastore.", ifName);
-        m_operSess.deleteItem(basePort + "/remote-systems-data");
-        m_operSess.applyChanges();
+    switch (type) {
+        case lldpctl_c_deleted:
+            SPDLOG_DEBUG("[LLDP] [EVENT] Neighbor lost on {}. Cleaning datastore.", ifName);
+            m_operSess.deleteItem(basePort + "/remote-systems-data");
+            m_operSess.applyChanges();
+            break;
+        case lldpctl_c_updated:
+        case lldpctl_c_added:
+            SPDLOG_DEBUG("[LLDP] [EVENT] Neighbor update on {}", ifName);
+            refreshPortNeighbors(ifName);
+            m_operSess.applyChanges();
+            break;
+    }
+
+    auto notif_node =
+        m_operSess.getContext().newPath2("/ieee802-dot1ab-lldp:remote-table-change", std::nullopt).createdNode;
+    if (!notif_node.has_value()) {
+        spdlog::warn("[LLDP] [EVENT] notif_node of type std::optional has no value, makes no sense, returning...");
         return;
     }
 
-    if (type == lldpctl_c_added || type == lldpctl_c_updated) {
-        SPDLOG_DEBUG("[LLDP] [EVENT] Neighbor update on {}", ifName);
-        refreshPortNeighbors(ifName);
-        m_operSess.applyChanges();
-    }
+    m_operSess.sendNotification(notif_node.value(), sysrepo::Wait::No);
 }
 
 /**
