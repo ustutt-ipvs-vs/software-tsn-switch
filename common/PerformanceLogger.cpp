@@ -58,6 +58,12 @@ std::shared_ptr<spdlog::logger> get_perf_logger() {
     return g_perf_logger;
 }
 
+void log_perf_internal(const char* context, const char* action) {
+    if (auto logger = get_perf_logger()) {
+        logger->info("{} | {}", context, action);
+    }
+}
+
 // Auto-cleanup hook
 // When the program shuts down, this object is destroyed, flushing remaining logs to disk.
 struct PerfLoggerCleanup {
