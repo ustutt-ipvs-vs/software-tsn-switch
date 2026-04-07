@@ -1,6 +1,6 @@
 #ifndef NETCONFNETLINKMAPPER_H
 #define NETCONFNETLINKMAPPER_H
-#include "../../common/include/CncTypes.h"
+#include "CncTypes.h"
 #include "TaprioModel.h"
 
 /**

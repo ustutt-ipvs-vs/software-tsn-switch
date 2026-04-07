@@ -4,7 +4,7 @@
 
 #include <cstdint>
 
-#include "../common/include/CncTypes.h"
+#include "CncTypes.h"
 #include "include/TaprioModel.h"
 
 /**

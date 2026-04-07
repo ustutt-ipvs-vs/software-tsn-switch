@@ -1,4 +1,3 @@
-#define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_TRACE
 #include "include/LldpDaemon.h"
 
 #include <arpa/inet.h>

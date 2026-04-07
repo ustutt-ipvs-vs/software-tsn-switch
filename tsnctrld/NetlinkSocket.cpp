@@ -16,6 +16,8 @@
 #include <iostream>
 #include <stdexcept>
 
+#include "PerformanceLogger.h"
+
 /**
  * @brief Creates and returns a Netlink socket file descriptor.
  *
@@ -96,6 +98,7 @@ rtattr *NetlinkSocket::addRtaAttribute(nlmsghdr *nlh, const int maxlen, const in
  * @param len Length of the message in bytes
  */
 void NetlinkSocket::sendMessage(nlmsghdr *nlh, const size_t len) {
+    PERFORMANCE_LOGGING("[NL] [SEND]", "Start");
     nlh->nlmsg_flags |= NLM_F_ACK;
     struct iovec iov = {.iov_base = nlh, .iov_len = len};
     struct sockaddr_nl kernel = {.nl_family = AF_NETLINK};
@@ -110,8 +113,10 @@ void NetlinkSocket::sendMessage(nlmsghdr *nlh, const size_t len) {
     if (sendmsg(socketFd, &msg, 0) < 0) {
         throw std::runtime_error("Failed to send message to kernel");
     }
+    PERFORMANCE_LOGGING("[NL] [SEND]", "Sent, receiving");
 
     this->saveResponse();
+    PERFORMANCE_LOGGING("[NL] [SEND]", "End");
 }
 
 /**

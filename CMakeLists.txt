@@ -53,8 +53,8 @@ pkg_check_modules(LIBSYSTEMD REQUIRED libsystemd IMPORTED_TARGET)
 # 2. INTERNAL LIBRARIES
 # ==============================================================================
 # Build the internal helper library first
+add_subdirectory(common)
 add_subdirectory(tsnctrld)
-add_subdirectory(common) # maybe not needed?
 add_subdirectory(cnc)
 
 

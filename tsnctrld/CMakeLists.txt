@@ -19,4 +19,6 @@ target_link_libraries(
         tsnctrld_lib
         PRIVATE
         PkgConfig::LLDPCTL
+		PUBLIC
+		common_lib
 )

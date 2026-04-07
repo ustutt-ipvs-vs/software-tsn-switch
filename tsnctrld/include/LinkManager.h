@@ -5,7 +5,7 @@
 
 #include <map>
 
-#include "../../common/include/CncTypes.h"
+#include "CncTypes.h"
 
 /**
  * @brief This class is used to get information about the interfaces currently present on the host.

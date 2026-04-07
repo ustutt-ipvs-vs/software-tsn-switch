@@ -4,7 +4,7 @@
 #include <map>
 #include <vector>
 
-#include "../../common/include/CncTypes.h"
+#include "CncTypes.h"
 #include "NetlinkSocket.h"
 
 /**

@@ -1,4 +1,3 @@
-#define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_TRACE
 #include "include/tsnctrld.hpp"
 
 #include <ifaddrs.h>
@@ -12,6 +11,7 @@
 #include <iostream>
 #include <thread>
 
+#include "PerformanceLogger.h"
 #include "PtpManager.h"
 
 static constexpr std::array IEEE8021Q_DEFAULT_TC_MAP = {
@@ -591,6 +591,8 @@ ietfInterface_t *tsnctrld::syncInterfaceFromSysrepo(sysrepo::Session &sess, cons
  * on the current host. Afterwards the datastore is repopulated and callbacks are initialized.
  */
 void tsnctrld::initialize() {
+    PERFORMANCE_LOGGING("[INIT]", "Start");
+
     spdlog::info("[INIT] Initializing tsnctrld...");
 
     static const std::vector<std::string> SERVICES_TO_START = {"netopeer2-server.service", "lldpd.service"};
@@ -621,6 +623,7 @@ void tsnctrld::initialize() {
     // Start relevant monitoring threads
     m_ptp.startMonitoring();
 
+    PERFORMANCE_LOGGING("[INIT]", "End");
     spdlog::info("[INIT] Setup done...");
 }
 
@@ -1160,6 +1163,7 @@ sysrepo::ErrorCode tsnctrld::operInterfaceCallback(const sysrepo::Session &sess,
                                                    const std::optional<std::string> &subXPath,
                                                    const std::optional<std::string> &requestXPath, uint32_t requestId,
                                                    std::optional<libyang::DataNode> &parent) {
+    PERFORMANCE_LOGGING("[CB_OPER] [IF]", "Start");
     m_ifcache.setCurrentRequestId(requestId);
 
     SPDLOG_DEBUG("[CB_OPER] [IF] Received oper callback for module \"{}\"...", moduleName);
@@ -1219,6 +1223,7 @@ sysrepo::ErrorCode tsnctrld::operInterfaceCallback(const sysrepo::Session &sess,
             fillGptNode(hw_cfg, gpt_node.value(), GclFillOptions::FillOper);
         }
     }
+    PERFORMANCE_LOGGING("[CB_OPER] [IF]", "End");
     return sysrepo::ErrorCode::Ok;
 }
 
@@ -1242,6 +1247,7 @@ sysrepo::ErrorCode tsnctrld::operBridgeCallback(const sysrepo::Session &sess, ui
                                                 const std::optional<std::string> &subXPath,
                                                 const std::optional<std::string> &requestXPath, uint32_t requestId,
                                                 std::optional<libyang::DataNode> &parent) {
+    PERFORMANCE_LOGGING("[CB_OPER] [BR]", "Start");
     m_ifcache.setCurrentRequestId(requestId);
 
     SPDLOG_DEBUG("[CB_OPER] [BR] Received oper callback for module \"{}\"...", moduleName);
@@ -1296,6 +1302,7 @@ sysrepo::ErrorCode tsnctrld::operBridgeCallback(const sysrepo::Session &sess, ui
             comp_node->newPath2("bridge-port", *slaveName);
         }
     }
+    PERFORMANCE_LOGGING("[CB_OPER] [BR]", "End");
     return sysrepo::ErrorCode::Ok;
 }
 
@@ -1315,6 +1322,7 @@ sysrepo::ErrorCode tsnctrld::operBridgePortCallback(const sysrepo::Session &sess
                                                     const std::optional<std::string> &subXPath,
                                                     const std::optional<std::string> &requestXPath, uint32_t requestId,
                                                     std::optional<libyang::DataNode> &parent) {
+    PERFORMANCE_LOGGING("[CB_OPER] [BP]", "Start");
     m_ifcache.setCurrentRequestId(requestId);
 
     SPDLOG_DEBUG("[CB_OPER] [BP] Received oper callback for module \"{}\"...", moduleName);
@@ -1330,6 +1338,7 @@ sysrepo::ErrorCode tsnctrld::operBridgePortCallback(const sysrepo::Session &sess
     } else {
         SPDLOG_DEBUG("[CB_OPER] [BP] parent is truthy...");
     }
+    PERFORMANCE_LOGGING("[CB_OPER] [BP]", "End");
     return sysrepo::ErrorCode::Ok;
 }
 
@@ -1919,6 +1928,7 @@ sysrepo::ErrorCode tsnctrld::changeBridgePortCallback(sysrepo::Session sess, uin
 sysrepo::ErrorCode tsnctrld::changeGptCallback(sysrepo::Session sess, uint32_t subId, const std::string &moduleName,
                                                const std::optional<std::string> &subXPath, sysrepo::Event event,
                                                uint32_t requestId) {
+    PERFORMANCE_LOGGING("[CB_CHANGE] [GPT]", "Start");
     m_ifcache.setCurrentRequestId(requestId);
 
     static const std::string handledModuleName = "ieee802-dot1q-sched-bridge";
@@ -1979,12 +1989,16 @@ sysrepo::ErrorCode tsnctrld::changeGptCallback(sysrepo::Session sess, uint32_t s
 
                             printTaprioConfig(taprioCfg);
                             SPDLOG_DEBUG("[CB_CHANGE] [GPT] Sending qdisc");
+                            PERFORMANCE_LOGGING("[CB_CHANGE] [GPT]", "qdisc set 1");
                             QdiscManager::setQdisc(m_sock, ifname, taprioCfg);
+                            PERFORMANCE_LOGGING("[CB_CHANGE] [GPT]", "qdisc set 2");
                             SPDLOG_DEBUG("[CB_CHANGE] [GPT] Qdisc \"sent\"");
                             m_pathsToReset.push_back(std::string(change.node.path()));
                         } else {
                             SPDLOG_DEBUG("[CB_CHANGE] [GPT] Gate is disabled, removing qdisc:");
+                            PERFORMANCE_LOGGING("[CB_CHANGE] [GPT]", "qdisc remove 1");
                             QdiscManager::removeQdisc(m_sock, ifname);
+                            PERFORMANCE_LOGGING("[CB_CHANGE] [GPT]", "qdisc remove 2");
                             SPDLOG_DEBUG("[CB_CHANGE] [GPT] Remove-request sent:");
                             m_pathsToReset.push_back(std::string(change.node.path()));
                         }
@@ -1993,6 +2007,7 @@ sysrepo::ErrorCode tsnctrld::changeGptCallback(sysrepo::Session sess, uint32_t s
                     spdlog::error("[CB_CHANGE] [GPT] [ERROR] Hardware rejected config: {}", e.what());
                     m_pathsToReset.clear();
                     sess.setErrorMessage(e.what());
+                    PERFORMANCE_LOGGING("[CB_CHANGE] [GPT]", "Exception");
                     return sysrepo::ErrorCode::OperationFailed;
                 }
             }
@@ -2012,6 +2027,7 @@ sysrepo::ErrorCode tsnctrld::changeGptCallback(sysrepo::Session sess, uint32_t s
         // TODO
     }
 
+    PERFORMANCE_LOGGING("[CB_CHANGE] [GPT]", "End");
     return sysrepo::ErrorCode::Ok;
 }
 

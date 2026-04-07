@@ -5,7 +5,7 @@
 #include <map>
 #include <string>
 
-#include "../../common/include/CncTypes.h"
+#include "CncTypes.h"
 #include "NetlinkSocket.h"
 #include "TaprioModel.h"
 

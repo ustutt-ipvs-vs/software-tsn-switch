@@ -8,7 +8,7 @@
 #include <sysrepo-cpp/Session.hpp>
 #include <thread>
 
-#include "../../common/include/CncTypes.h"
+#include "CncTypes.h"
 
 /**
  * @brief This class provides methods to collect and process information provided by the lldp protocol, based on the

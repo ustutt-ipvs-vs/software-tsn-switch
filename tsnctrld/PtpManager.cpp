@@ -1,5 +1,3 @@
-#define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_DEBUG
-
 #include "PtpManager.h"
 
 #include <poll.h>
@@ -7,7 +5,7 @@
 
 #include <utility>
 
-#include "../common/include/CncTypes.h"
+#include "CncTypes.h"
 #include "spdlog/fmt/bin_to_hex.h"
 
 // Time constants

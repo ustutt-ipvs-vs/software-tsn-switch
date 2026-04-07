@@ -1,5 +1,3 @@
-#define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_TRACE
-
 #include "./include/QdiscManager.h"
 
 #include <linux/netlink.h>
@@ -19,6 +17,7 @@
 #include "./include/NestedAttBuilder.h"
 #include "./include/NetconfNetlinkMapper.h"
 #include "./include/NetlinkSocket.h"
+#include "PerformanceLogger.h"
 
 /**
  * @brief Set or replace the admin TAPRIO qdisc on a network interface
@@ -28,6 +27,7 @@
  * @param taprioConfig Configuration object defining traffic classes, priorities, and schedule
  */
 void QdiscManager::setQdisc(NetlinkSocket& netlinkSocket, const std::string& ifname, TaprioConfig& taprioConfig) {
+    PERFORMANCE_LOGGING("[QDISC] [SET]", "Start");
     struct {
         nlmsghdr nh;
         tcmsg tcm;
@@ -107,8 +107,10 @@ void QdiscManager::setQdisc(NetlinkSocket& netlinkSocket, const std::string& ifn
         builder.addChildAttribute(sduId, TCA_TAPRIO_TC_ENTRY_MAX_SDU, &entry.queueMaxSdu, sizeof(entry.queueMaxSdu));
         builder.addChildAttribute(sduId, TCA_TAPRIO_TC_ENTRY_FP, &entry.preemtible, sizeof(entry.preemtible));
     }
+    PERFORMANCE_LOGGING("[QDISC] [SET]", "Sending");
 
     netlinkSocket.sendMessage(&req.nh, req.nh.nlmsg_len);
+    PERFORMANCE_LOGGING("[QDISC] [SET]", "End");
 }
 
 /**

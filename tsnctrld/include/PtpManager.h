@@ -17,7 +17,7 @@
 #include <thread>
 #include <vector>
 
-#include "../../common/include/CncTypes.h"
+#include "CncTypes.h"
 #include "ptpStructs.h"
 
 /**
