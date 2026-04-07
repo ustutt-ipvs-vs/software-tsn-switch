@@ -1135,6 +1135,8 @@ sysrepo::ErrorCode tsnctrld::defaultOperCallback(const sysrepo::Session &sess, u
     SPDLOG_DEBUG("[CB_OPER] [DEFAULT] name of parent node \"{}\"...", parent ? parent->schema().name() : "ROOT");
 
     auto ctx = sess.getContext();
+
+    // NOLINTNEXTLINE(bugprone-branch-clone)
     if (!parent) {
         SPDLOG_DEBUG("[CB_OPER] [DEFAULT] parent is falsy...");
     } else {
@@ -1333,6 +1335,8 @@ sysrepo::ErrorCode tsnctrld::operBridgePortCallback(const sysrepo::Session &sess
     SPDLOG_DEBUG("[CB_OPER] [BP] name of parent node \"{}\"...", parent ? parent->schema().name() : "ROOT");
 
     auto ctx = sess.getContext();
+
+    // NOLINTNEXTLINE(bugprone-branch-clone)
     if (!parent) {
         SPDLOG_DEBUG("[CB_OPER] [BP] parent is falsy...");
     } else {
