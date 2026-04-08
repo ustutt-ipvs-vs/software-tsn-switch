@@ -1,7 +1,11 @@
 #include "include/LldpDaemon.h"
 
 #include <arpa/inet.h>
+#include <poll.h>
 #include <spdlog/spdlog.h>
+#include <sys/socket.h>
+#include <sys/un.h>
+#include <unistd.h>
 
 #include <chrono>
 #include <iostream>
@@ -225,6 +229,9 @@ static std::string ipv6ToHex(const std::string& ip) {
  * @brief Construct LLDP daemon and starts two lldcptl connections. One for the query connection that handles the
  * initial snapshot reads on startup. One watch connection for event notification.
  *
+ * The watch connection must be created manually with custom callbacks because otherwise there is no way to stop the
+ * monitoring loop without an event happening.
+ *
  * @param operSession Reference to an operational sysrepo session used to write operational state.
  * @throws std::runtime_error if lldpd cannot be reached.
  */
@@ -236,7 +243,18 @@ LldpDaemon::LldpDaemon(sysrepo::Session& operSession) : m_operSess(operSession) 
             "Failed to connect to lldpd (query) (lldpctl_new returned nullptr). Is lldpd running?");
     }
 
-    m_watchConn = lldpctl_new(nullptr, nullptr, nullptr);
+    m_watchConn_Fd = socket(AF_UNIX, SOCK_STREAM, 0);
+    struct sockaddr_un addr{};
+    addr.sun_family = AF_UNIX;
+    strncpy(addr.sun_path, lldpctl_get_default_transport(), sizeof(addr.sun_path) - 1);
+    auto res = connect(m_watchConn_Fd, (struct sockaddr*)&addr, sizeof(addr));
+    if (res != 0) {
+        lldpctl_release(m_queryConn);
+        m_queryConn = nullptr;
+        throw std::runtime_error("Failed to connect to the lldp socket directly. Is lldpd running?");
+    }
+
+    m_watchConn = lldpctl_new(watch_send_cb, watch_recv_cb, this);
     if (m_watchConn == nullptr) {
         lldpctl_release(m_queryConn);
         m_queryConn = nullptr;
@@ -357,18 +375,18 @@ void LldpDaemon::writeNeighborData(const std::string& base, lldpctl_atom_t* neig
  */
 LldpDaemon::~LldpDaemon() {
     m_stop = true;
-
+    if (m_watchThread.joinable()) {
+        m_watchThread.join();
+    }
     if (m_watchConn != nullptr) {
         lldpctl_release(m_watchConn);
         m_watchConn = nullptr;
-    }
-    if (m_watchThread.joinable()) {
-        m_watchThread.join();
     }
     if (m_queryConn != nullptr) {
         lldpctl_release(m_queryConn);
         m_queryConn = nullptr;
     }
+    spdlog::info("Stopped LLDP monitoring thread...");
 }
 
 void LldpDaemon::getConfigData(LldpNode_t& lldp_node) {
@@ -551,6 +569,10 @@ void LldpDaemon::syncInitialNeighbors() {
 /**
  * @brief Start background watcher thread which listens for LLDP changes. Continuously calls lldctl_watch() and exits
  * once LldpDaemon is destructed.
+ *
+ * The function `lldpctl_watch` blocks the entire thread until an event happens, even if the program is supposed to
+ * terminate. We use custom send- and receive-callbacks to be able to add a timeout. This workaround is needed in
+ * version 1.0.18 and apparently fixed by the function `lldpctl_watch_sync_unblock` starting from version 1.0.19.
  */
 void LldpDaemon::startWatching() {
     if (m_watchThread.joinable()) {
@@ -561,6 +583,11 @@ void LldpDaemon::startWatching() {
         SPDLOG_DEBUG("[LLDP] Watcher thread started. Waiting for events...");
         while (!m_stop) {
             if (lldpctl_watch(m_watchConn) < 0) {
+                if (lldpctl_last_error(m_watchConn) == -501) {
+                    // The `LLDPCTL_ERR_WOULDBLOCK` error with description "A IO related operation would block if
+                    // performed". We (mis)use this to recognize a timeout of our custom @ref watch_recv_cb.
+                    continue;
+                }
                 spdlog::error("[LLDP] Watcher error: {}", lldpctl_last_strerror(m_watchConn));
                 break;
             }
@@ -683,4 +710,98 @@ void LldpDaemon::refreshPortNeighbors(const std::string& ifName) {
     }
 
     lldpctl_atom_dec_ref(ifaces);
+}
+
+/*
+ * The following two callback functions (watch_send_cb and watch_recv_cb) are adapted from liblldpctl.
+ *
+ * Copyright (c) 2012 Vincent Bernat <bernat@luffy.cx>
+ *
+ * Permission to use, copy, modify, and/or distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+ * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ */
+
+/**
+ * @brief Reimplementation of the internal `sync_send` callback in the lldpctl library. Copyright (c) 2012 Vincent
+ * Bernat <bernat@luffy.cx>.
+ *
+ * @param conn
+ * @param data
+ * @param length
+ * @param user_data
+ * @return
+ */
+ssize_t LldpDaemon::watch_send_cb(lldpctl_conn_t* conn, const uint8_t* data, size_t length, void* user_data) {
+    auto* self = static_cast<LldpDaemon*>(user_data);
+    int fd = self->m_watchConn_Fd;
+    ssize_t nb;
+
+    while ((nb = write(fd, data, length)) == -1) {
+        if (errno == EAGAIN || errno == EINTR) {
+            continue;
+        }
+        return -902;  // LLDPCTL_ERR_CALLBACK_FAILURE
+    }
+    return nb;
+}
+
+/**
+ * @brief Reimplementation of the internal `sync_recv` callback in the lldpctl library, with added timeout logic.
+ * Copyright (c) 2012 Vincent Bernat <bernat@luffy.cx>.
+ *
+ * @param conn The lldpctl connection. Unused because we pass the sockets file descriptor via @ref user_data.
+ * @param data
+ * @param length
+ * @param user_data A pointer to this instance of the @ref LldpDaemon. Used to access the sockets file descriptor.
+ * @return
+ */
+ssize_t LldpDaemon::watch_recv_cb(lldpctl_conn_t* conn, const uint8_t* data, size_t length, void* user_data) {
+    auto* self = static_cast<LldpDaemon*>(user_data);
+    int fd = self->m_watchConn_Fd;
+    ssize_t nb = 0;
+    size_t remain = length;
+    size_t offset = 0;
+
+    do {
+        // --- INJECTED TIMEOUT LOGIC ---
+        struct pollfd pfd = {.fd = fd, .events = POLLIN, .revents = 0};
+        int p_res = poll(&pfd, 1, 500);  // 500ms timeout
+
+        if (p_res == 0) {  // Timeout occurred
+            if (offset > 0) {
+                return static_cast<ssize_t>(offset);
+            }  // Return what we have so far
+            return -501;  // LLDPCTL_ERR_WOULDBLOCK
+        }
+        if (p_res < 0) {  // Error in poll
+            if (errno == EINTR) {
+                continue;
+            }
+            return -902;  // LLDPCTL_ERR_CALLBACK_FAILURE
+        }
+        // ------------------------------
+
+        // Original read logic
+        nb = read(fd, (unsigned char*)data + offset, remain);
+        if (nb == -1) {
+            if (errno == EAGAIN || errno == EINTR) {
+                continue;
+            }
+            return -902;  // LLDPCTL_ERR_CALLBACK_FAILURE
+        }
+
+        remain -= nb;
+        offset += nb;
+    } while (remain > 0 && nb != 0);
+
+    return static_cast<ssize_t>(offset);
 }

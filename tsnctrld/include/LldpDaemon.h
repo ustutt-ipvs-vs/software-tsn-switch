@@ -47,6 +47,11 @@ class LldpDaemon {
     std::mutex m_queryMutex;
     std::atomic<bool> m_stop{false};
 
+    int m_watchConn_Fd = -1;
+
+    static ssize_t watch_send_cb(lldpctl_conn_t* conn, const uint8_t* data, size_t length, void* user_data);
+    static ssize_t watch_recv_cb(lldpctl_conn_t* conn, const uint8_t* data, size_t length, void* user_data);
+
     static std::string getStr(lldpctl_atom_t* atom, lldpctl_key_t key);
     static uint32_t currentTimeMark();
 

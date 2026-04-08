@@ -7,6 +7,7 @@
 #include <sys/un.h>
 #include <systemd/sd-bus.h>
 
+#include <csignal>
 #include <ctime>
 #include <iostream>
 #include <thread>
@@ -2200,16 +2201,38 @@ tsnctrld::tsnctrld() : m_sess(m_conn.sessionStart()), m_operSess(m_conn.sessionS
  */
 tsnctrld::~tsnctrld() = default;
 
+static std::atomic<bool> keep_running{true};
+
+/**
+ * @brief Custom signal handler to try and stop the program gracefully.
+ * @param signal A POSIX signal, only SIGINT and SIGTERM are currently handled.
+ */
+void signal_handler(int signal) {
+    if (signal == SIGINT || signal == SIGTERM) {
+        spdlog::info("Termination signal received. Starting shutdown...");
+        keep_running = false;
+    }
+}
+
 int main() {
     spdlog::set_level(spdlog::level::trace);
+
+    std::signal(SIGINT, signal_handler);
+    std::signal(SIGTERM, signal_handler);
+
     try {
         tsnctrld daemon = tsnctrld();
         daemon.initialize();
-        while (true) {
+        while (keep_running) {
             std::this_thread::sleep_for(std::chrono::seconds(1));
         }
+        spdlog::info("Exiting gracefully...");
     } catch (const std::exception &e) {
-        spdlog::critical(e.what());
+        spdlog::critical("Unhandled exception: {}", e.what());
+        spdlog::shutdown();
         return EXIT_FAILURE;
     }
+    spdlog::info("Shutting down...");
+    spdlog::shutdown();
+    return EXIT_SUCCESS;
 }

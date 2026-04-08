@@ -81,6 +81,7 @@ PtpManager::~PtpManager() {
         close(m_fd);
     }
     unlink(m_local_path.c_str());
+    spdlog::info("Stopped PTP monitoring thread...");
 }
 
 /**

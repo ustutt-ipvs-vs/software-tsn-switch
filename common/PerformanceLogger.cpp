@@ -63,15 +63,4 @@ void log_perf_internal(const char* context, const char* action) {
         logger->info("{} | {}", context, action);
     }
 }
-
-// Auto-cleanup hook
-// When the program shuts down, this object is destroyed, flushing remaining logs to disk.
-struct PerfLoggerCleanup {
-    ~PerfLoggerCleanup() {
-        if (g_perf_logger) {
-            g_perf_logger->flush();
-        }
-    }
-} g_cleanup_hook;
-
 #endif  // ENABLE_PERF_LOGGING
