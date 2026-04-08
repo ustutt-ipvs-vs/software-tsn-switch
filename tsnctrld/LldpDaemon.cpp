@@ -242,27 +242,38 @@ LldpDaemon::LldpDaemon(sysrepo::Session& operSession) : m_operSess(operSession) 
         throw std::runtime_error(
             "Failed to connect to lldpd (query) (lldpctl_new returned nullptr). Is lldpd running?");
     }
+    try {
+        m_watchConn_Fd = socket(AF_UNIX, SOCK_STREAM, 0);
+        if (m_watchConn_Fd < 0) {
+            throw std::runtime_error("Failed to open the lldp socket. Is lldpd running?");
+        }
 
-    m_watchConn_Fd = socket(AF_UNIX, SOCK_STREAM, 0);
-    struct sockaddr_un addr{};
-    addr.sun_family = AF_UNIX;
-    strncpy(addr.sun_path, lldpctl_get_default_transport(), sizeof(addr.sun_path) - 1);
-    auto res = connect(m_watchConn_Fd, (struct sockaddr*)&addr, sizeof(addr));
-    if (res != 0) {
-        lldpctl_release(m_queryConn);
-        m_queryConn = nullptr;
-        throw std::runtime_error("Failed to connect to the lldp socket directly. Is lldpd running?");
+        struct sockaddr_un addr{};
+        addr.sun_family = AF_UNIX;
+        strncpy(addr.sun_path, lldpctl_get_default_transport(), sizeof(addr.sun_path) - 1);
+        auto res = connect(m_watchConn_Fd, (struct sockaddr*)&addr, sizeof(addr));
+        if (res != 0) {
+            throw std::runtime_error("Failed to connect to the lldp socket directly. Is lldpd running?");
+        }
+
+        m_watchConn = lldpctl_new(watch_send_cb, watch_recv_cb, this);
+        if (m_watchConn == nullptr) {
+            throw std::runtime_error(
+                "Failed to connect to lldpd (watch) (lldpctl_new returned nullptr). Is lldpd running?");
+        }
+
+        lldpctl_watch_callback2(m_watchConn, lldp_change_callback, this);
+    } catch (...) {
+        if (m_queryConn != nullptr) {
+            lldpctl_release(m_queryConn);
+            m_queryConn = nullptr;
+        }
+        if (m_watchConn_Fd >= 0) {
+            close(m_watchConn_Fd);
+            m_watchConn_Fd = -1;
+        }
+        throw;
     }
-
-    m_watchConn = lldpctl_new(watch_send_cb, watch_recv_cb, this);
-    if (m_watchConn == nullptr) {
-        lldpctl_release(m_queryConn);
-        m_queryConn = nullptr;
-        throw std::runtime_error(
-            "Failed to connect to lldpd (watch) (lldpctl_new returned nullptr). Is lldpd running?");
-    }
-
-    lldpctl_watch_callback2(m_watchConn, lldp_change_callback, this);
 }
 
 /**

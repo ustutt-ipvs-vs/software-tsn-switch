@@ -2190,10 +2190,6 @@ void tsnctrld::setupSubscriptions() {
  */
 tsnctrld::tsnctrld() : m_sess(m_conn.sessionStart()), m_operSess(m_conn.sessionStart()) {
     m_operSess.switchDatastore(sysrepo::Datastore::Operational);
-    m_ethtool_sock = socket(AF_INET, SOCK_DGRAM, 0);
-    if (m_ethtool_sock < 0) {
-        throw std::runtime_error("Could not open ethtool socket");
-    }
 }
 
 /**

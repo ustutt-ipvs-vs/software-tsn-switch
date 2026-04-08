@@ -24,7 +24,6 @@
  */
 class tsnctrld {
    private:
-    int m_ethtool_sock;
     NetlinkSocket m_sock;
     QdiscManager m_qm;
     LinkManager m_lm;
