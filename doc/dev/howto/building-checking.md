@@ -5,10 +5,16 @@
 > All commands on this page assume you're in the repo's root, **not** in a build folder or similar!
 
 ### Building the code
-To build the project, run CMake:
+To build the project, run CMake. For a debug build:
 
 ```bash
-cmake -S . -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON && make --directory=build
+cmake -S . -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=Debug && make --directory=build
+```
+
+For a release build:
+
+```bash
+cmake -S . -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=Release && make --directory=build
 ```
 
 ### Running tests

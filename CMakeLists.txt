@@ -1,6 +1,12 @@
 cmake_minimum_required(VERSION 3.20)
 project(enpro-switch)
 
+# Set spdlog compile-time logging level based on build type
+add_compile_definitions(
+    $<$<CONFIG:Debug>:SPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_TRACE>
+    $<$<CONFIG:Release>:SPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_INFO>
+)
+
 # Sysrepo-cpp requires C++17 or higher
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -23,6 +29,15 @@ else()
     message(STATUS "Found libnetconf2 headers: ${LIBNETCONF2_INCLUDE_DIR}")
     message(STATUS "Found libnetconf2 library: ${LIBNETCONF2_LIBRARY}")
 endif()
+
+# Import argparse library
+include(FetchContent)
+FetchContent_Declare(
+    argparse
+    GIT_REPOSITORY https://github.com/p-ranav/argparse.git
+    GIT_TAG d924b84eba1f0f0adf38b20b7b4829f6f65b6570 # branch master at 2025-01-27
+)
+FetchContent_MakeAvailable(argparse)
 
 # ==============================================================================
 # 1. FIX REMOTE ENVIRONMENT
@@ -67,7 +82,6 @@ set(CMAKE_INSTALL_RPATH "/usr/local/lib")
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 
-
 # ==============================================================================
 # 4. EXECUTABLES
 # ==============================================================================
@@ -81,6 +95,7 @@ target_link_libraries(
     PkgConfig::LIBYANG_CPP
     PkgConfig::SPDLOG
     PkgConfig::LIBSYSTEMD
+    argparse
 )
 target_link_libraries(tsnctrld_app PRIVATE tsnctrld_lib)
 
@@ -93,11 +108,10 @@ target_link_libraries(tsnctrld_app PRIVATE tsnctrld_lib)
 # ==============================================================================
 # 5. TESTS
 # ==============================================================================
-include(FetchContent)
 FetchContent_Declare(
     googletest
-    URL https://github.com/google/googletest/archive/refs/tags/v1.17.0.zip
-    DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+    GIT_REPOSITORY https://github.com/google/googletest.git
+    GIT_TAG 52eb8108c5bdec04579160ae17225d66034bd723 # v1.17.0
 )
 # For Windows: prevent overriding parent project's compiler/linker settings
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)

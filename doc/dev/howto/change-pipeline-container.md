@@ -31,5 +31,5 @@
    image: gitlab-vs.informatik.uni-stuttgart.de:5050/software-tsn-switch/enpro-switch/test-pipeline:<version>
    ```
 8. Commit and push the changes to both `Dockerfile` and `.gitlab-ci.yml`!
-   If you like conventional commit messages, use `ci: <message>`
+   If you like conventional commit messages, use `ci: <message>` or `build: <message>`
 9. The pipeline that runs after you push should already use the new image!

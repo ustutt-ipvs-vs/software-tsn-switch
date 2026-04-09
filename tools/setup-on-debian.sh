@@ -7,9 +7,9 @@ SCRIPT_DIR=$(cd -- "$(dirname -- "$0")" && pwd)
 # APT dependencies
 apt-get update && \
 apt install -y build-essential libpcre2-dev libssl-dev libssh-dev \
-libcurl4-openssl-dev systemd-dev libsystemd-dev git curl liblldpctl-dev \
-libspdlog-dev cmake clang-format clang-tidy python3 python3-pip doxygen \
-graphviz
+    libcurl4-openssl-dev systemd-dev libsystemd-dev liblldpctl-dev \
+    libspdlog-dev chrony git curl cmake clang-format clang-tidy python3 \
+    python3-pip doxygen graphviz
 
 # Install from repositories
 cd $SCRIPT_DIR/..
@@ -59,6 +59,12 @@ tar xz --strip-components=1 && \
 mkdir build && cd build && cmake -DBUILD_TESTING=off .. && \
 make && make install && ldconfig && \
 cd ../.. && \
+# Linuxptp
+mkdir linuxptp && cd linuxptp && \
+curl -L https://github.com/richardcochran/linuxptp/archive/ddeec0f0adb3732756f98895a39bfee06a3a9827.tar.gz | \
+tar xz --strip-components=1 && \
+make && make install && \
+cd .. && \
 # Delete leftover directories
 rm -rf libyang libnetconf2 netopeer2 libyang-cpp libnetconf2-cpp sysrepo-cpp
 

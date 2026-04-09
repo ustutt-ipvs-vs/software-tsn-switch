@@ -1,6 +1,8 @@
-set(SOURCE_FILES
-        NestedAttrBuilder.cpp
-        NetlinkSocket.cpp
+set(SOURCE_FILES 
+        SubprocessManager.cpp
+        Timesync.cpp
+	NestedAttrBuilder.cpp
+	NetlinkSocket.cpp
         QdiscManager.cpp
         NetconfNetlinkMapper.cpp
         LinkManager.cpp

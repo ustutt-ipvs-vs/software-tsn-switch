@@ -3,17 +3,25 @@
 #include <ifaddrs.h>
 #include <spdlog/fmt/ostr.h>
 #include <spdlog/spdlog.h>
+#include <sys/file.h>
 #include <sys/socket.h>
+#include <sys/stat.h>
 #include <sys/un.h>
 #include <systemd/sd-bus.h>
 
+#include <argparse/argparse.hpp>
 #include <csignal>
 #include <ctime>
 #include <iostream>
 #include <thread>
+#include <vector>
 
 #include "PerformanceLogger.h"
 #include "PtpManager.h"
+#include "Timesync.h"
+
+/// @brief Location of the lock file for ensuring only one instance can run at a time
+static const char *LOCK_FILE_PATH = "/tmp/tsnctrld.lock";
 
 static constexpr std::array IEEE8021Q_DEFAULT_TC_MAP = {
     // TC count:                    1  2  3  4  5  6  7  8
@@ -1267,7 +1275,7 @@ sysrepo::ErrorCode tsnctrld::operBridgeCallback(const sysrepo::Session &sess, ui
 
     auto ctx = sess.getContext();
 
-    std::unordered_map<int, std::vector<const std::string *> > masterToSlaves;
+    std::unordered_map<int, std::vector<const std::string *>> masterToSlaves;
     for (const auto &[idx, iface] : allIfaces) {
         if (iface.bridgePort.masterIndex > 0) {
             // No string copy here, just pushing an 8-byte pointer
@@ -2197,6 +2205,123 @@ tsnctrld::tsnctrld() : m_sess(m_conn.sessionStart()), m_operSess(m_conn.sessionS
  */
 tsnctrld::~tsnctrld() = default;
 
+/**
+ * @brief Exit if another instance of tsnctrld is already running on the system.
+ *
+ * For this functionality to work, you must run the function exactly once at the start
+ * of every tsnctrld process. It will exit the program if there's another instance of
+ * tsnctrld running on the system.
+ */
+void ensureSingleInstanceOnly() {
+    /* Create an exclusive advisory lock on a temporary file that will block the
+     * creation of other locks as long as the process is running. */
+    int lockFile = -1;
+    bool lockFileAlreadyExists = (access(LOCK_FILE_PATH, F_OK) == 0);
+    if (lockFileAlreadyExists) {
+        lockFile = open(LOCK_FILE_PATH, O_RDONLY);
+        if (lockFile == -1) {
+            spdlog::critical("Unable to access {}", LOCK_FILE_PATH);
+            exit(1);
+        }
+    } else {
+        lockFile = open(LOCK_FILE_PATH, O_CREAT | O_RDONLY, 00666);
+        if (lockFile == -1) {
+            spdlog::critical("Unable to create {}", LOCK_FILE_PATH);
+            exit(1);
+        }
+        /* The temporary file should be read- & writable by everyone (permission code
+         * 00666) specifying this during file creation is not enough since the umask
+         * might turn it into 00664 or 00644 */
+        fchmod(lockFile, 00666);
+    }
+    if (flock(lockFile, LOCK_EX | LOCK_NB) == -1) {
+        spdlog::critical("Another instance of tsnctrld is already running. Exiting now.");
+        exit(1);
+    }
+}
+
+/**
+ * @brief Parse tsnctrld command line arguments
+ *
+ * @param argc Number of arguments, same as `argc` passed to `main()`
+ * @param argv Actual command line arguments, same as `argv` passed to `main()`
+ * @return ArgumentParser object containing the parsed command line arguments
+ */
+std::unique_ptr<argparse::ArgumentParser> parseArguments(int argc, char *argv[]) {  // NOLINT(modernize-avoid-c-arrays)
+    auto argParser = std::make_unique<argparse::ArgumentParser>("tsnctrld_app", /* program version: */ "0.1");
+    argParser->add_description("Use this device as a virtual TSN bridge");
+    argParser->add_argument("-d", "--disable-clock-sync")
+        .help("do not set up clock synchronization, so that you can use your own sync method")
+        .flag();
+    argParser->add_argument("-i", "--nic")
+        .help("use gPTP over these network interface card(s)")
+        .nargs(argparse::nargs_pattern::at_least_one);
+    argParser->add_argument("-g", "--grandmaster").help("host the gPTP grandmaster clock on this device").flag();
+    argParser->add_argument("-n", "--ntp").help("continuously discipline the grandmaster clock via NTP").flag();
+    argParser->add_epilog(
+        "For more information, please refer to the user documentation: "
+        "http://enpro-switch-64df46.gitlab-pages-vs.informatik.uni-stuttgart.de/docs-user/tsnctrld/cli.html");
+
+    try {
+        argParser->parse_args(argc, argv);
+    } catch (const std::exception &err) {
+        std::cerr << err.what() << "\n";
+        std::cerr << argParser;
+        exit(1);
+    }
+
+    // Sanity check the provided options
+    if (argParser->is_used("--disable-clock-sync") && argParser->is_used("--nic")) {
+        std::cerr
+            << "Error, these options are mutually exclusive: '--disable-clock-sync' or '-d' VERSUS '--nic' or '-i'"
+            << "\n"
+            << "Reason: '--nic' is an option specifically for gPTP, it doesn't make sense to also disable gPTP "
+               "with '--disable-clock-sync'"
+            << "\n"
+            << "Hint: Read the user documentation for '--disable-clock-sync' and '--nic' and decide which one to "
+               "omit the "
+               "next time you run the command."
+            << "\n";
+        exit(1);
+    }
+    if (!argParser->is_used("--disable-clock-sync") && !argParser->is_used("--nic")) {
+        std::cerr << "Error, you must provide exactly one of these options: '--disable-clock-sync' OR '--nic'" << "\n"
+                  << "Reason: To use gPTP, you must provide NICs that gPTP can use via '--nic'. Alternatively, you can "
+                     "disable gPTP with '--disable-clock-sync'"
+                  << "\n"
+                  << "Hint: Read the user documentation for '--disable-clock-sync' and '--nic' and decide which one to "
+                     "use the "
+                     "next time you run the command."
+                  << "\n";
+        exit(1);
+    }
+    if (argParser->is_used("--disable-clock-sync") && argParser->is_used("--grandmaster")) {
+        std::cerr
+            << "Error, these options are mutually exclusive: '--disable-clock-sync' or '-d' VERSUS '--grandmaster' or "
+               "'-g'"
+            << "\n"
+            << "Reason: '--grandmaster' is an option specifically for gPTP, it doesn't make sense to also "
+               "disable gPTP with '--disable-clock-sync'"
+            << "\n"
+            << "Hint: Read the user documentation for '--disable-clock-sync' and '--grandmaster' and decide which one "
+               "to "
+               "omit the next time you run the command."
+            << "\n";
+        exit(1);
+    }
+    if (!argParser->is_used("--grandmaster") && argParser->is_used("--ntp")) {
+        std::cerr
+            << "Error, you provided the '--ntp' or '-n' flag without also providing the '--grandmaster' flag" << "\n"
+            << "Reason: The '--ntp' flag modifies the behaviour of the '--grandmaster' flag and is useless otherwise"
+            << "\n"
+            << "Hint: Read the user documentation for '--grandmaster' and '--ntp' and decide whether to include them "
+               "the next time you run the command."
+            << "\n";
+        exit(1);
+    }
+    return argParser;
+}
+
 static std::atomic<bool> keep_running{true};
 
 /**
@@ -2210,13 +2335,26 @@ void signal_handler(int signal) {
     }
 }
 
-int main() {
+int main(int argc, char *argv[]) {
     spdlog::set_level(spdlog::level::trace);
 
     std::signal(SIGINT, signal_handler);
     std::signal(SIGTERM, signal_handler);
 
     try {
+        std::unique_ptr<argparse::ArgumentParser> argParser = parseArguments(argc, argv);
+
+        auto clockSyncEnabled = !argParser->get<bool>("--disable-clock-sync");
+        auto nicVec = argParser->get<std::vector<std::string>>("--nic");
+        auto asGrandmaster = argParser->get<bool>("--grandmaster");
+        auto disciplineWithNtp = argParser->get<bool>("--ntp");
+
+        ensureSingleInstanceOnly();
+
+        if (clockSyncEnabled) {
+            Timesync::launch(nicVec, asGrandmaster, disciplineWithNtp);
+        }
+
         tsnctrld daemon = tsnctrld();
         daemon.initialize();
         while (keep_running) {
