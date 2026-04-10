@@ -109,6 +109,11 @@ void QdiscManager::setQdisc(NetlinkSocket& netlinkSocket, const std::string& ifn
     }
     PERFORMANCE_LOGGING("[QDISC] [SET]", "Sending");
 
+    tc_sizespec stab_spec{.overhead = 24, .linklayer = TC_LINKLAYER_ETHERNET, .mpu = 64};
+
+    int stabID = builder.addAttribute(&req.nh, TCA_STAB | NLA_F_NESTED, nullptr, 0);
+    builder.addChildAttribute(stabID, TCA_STAB_BASE, &stab_spec, sizeof(stab_spec));
+
     netlinkSocket.sendMessage(&req.nh, req.nh.nlmsg_len);
     PERFORMANCE_LOGGING("[QDISC] [SET]", "End");
 }

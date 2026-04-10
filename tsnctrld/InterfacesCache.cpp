@@ -110,7 +110,6 @@ std::map<int, ietfInterface_t>& InterfacesCache::getAllInterfaces() {
  * Must only be called after @ref setCurrentRequestId().
  *
  * @param sock An instance of a @ref NetlinkSocket which is used to send the message and retrieve the response.
- * @param ethtool_sock A simple socket used to query the kernel for the number of active TX-queues of an interface.
  */
 void InterfacesCache::ensureFullLinkData(NetlinkSocket& sock) {
     if (m_fullLinkDumpDone) {
