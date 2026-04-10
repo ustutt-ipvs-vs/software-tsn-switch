@@ -53,7 +53,7 @@ class PtpManager {
     void getPortPerformance24h(uint16_t portIndex, std::vector<PtpPortPerformanceRecord_t>& out);
     void startMonitoring();
     void stopMonitoring();
-    bool isEnabled() const;
+    [[nodiscard]] bool isEnabled() const;
 
    private:
     bool enabled;

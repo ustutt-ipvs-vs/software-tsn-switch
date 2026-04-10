@@ -106,7 +106,11 @@ void Timesync::syncWithNtp(const std::vector<std::string>& nicVec, bool discipli
             [](const std::string& commandName, const std::string& commandOutput) {
                 logCommandOutput(commandName, commandOutput, spdlog::level::level_enum::err);
             },
-            [chronyCmd](const std::string& commandName, int exitCode) { logCommandAndExit(commandName, chronyCmd); });
+            [chronyCmd](const std::string& commandName, int exitCode) {
+                if (exitCode != 0) {
+                    logCommandAndExit(commandName, chronyCmd);
+                }
+            });
     } else {
         // Synchronize once, then terminate chrony
         chronyCmd.emplace_back("-q");
