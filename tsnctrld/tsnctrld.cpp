@@ -2369,9 +2369,6 @@ void signal_handler(int signal) {
 int main(int argc, char *argv[]) {
     spdlog::set_level(spdlog::level::trace);
 
-    std::signal(SIGINT, signal_handler);
-    std::signal(SIGTERM, signal_handler);
-
     try {
         std::unique_ptr<argparse::ArgumentParser> argParser = parseArguments(argc, argv);
 
@@ -2386,6 +2383,9 @@ int main(int argc, char *argv[]) {
         if (clockSyncEnabled) {
             Timesync::launch(nicVec, asGrandmaster, disciplineWithNtp);
         }
+
+        std::signal(SIGINT, signal_handler);
+        std::signal(SIGTERM, signal_handler);
 
         tsnctrld daemon = tsnctrld(PtpManagerConfig{
             .assumedPortCount = static_cast<uint16_t>(nicVec.size()),

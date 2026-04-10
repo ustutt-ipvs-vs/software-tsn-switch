@@ -44,10 +44,6 @@ void SubprocessManager::run(const std::string& processName, const std::vector<st
     if (subprocessPid == 0) {
         // Only the subprocess runs this code
 
-        /* Terminate when your parent dies (doesn't work with some processes, the
-         * watchdog will terminate every process that slipped through) */
-        prctl(PR_SET_PDEATHSIG, SIGTERM);
-
         // Pipe terminal outputs back to parent process
         dup2(outputPipe[1], STDOUT_FILENO);
         dup2(outputPipe[1], STDERR_FILENO);

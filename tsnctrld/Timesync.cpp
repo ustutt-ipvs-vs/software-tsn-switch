@@ -194,7 +194,11 @@ void Timesync::runPtp4l(const std::vector<std::string>& nicVec, bool asGrandmast
         [](const std::string& commandName, const std::string& commandOutput) {
             logCommandOutput(commandName, commandOutput, spdlog::level::level_enum::err);
         },
-        [ptpCmd](const std::string& commandName, int exitCode) { logCommandAndExit(commandName, ptpCmd); });
+        [ptpCmd](const std::string& commandName, int exitCode) {
+            if (exitCode != 0) {
+                logCommandAndExit(commandName, ptpCmd);
+            }
+        });
 }
 
 /**
@@ -259,7 +263,11 @@ void Timesync::runPhc2sys(const std::vector<std::string>& nicVec, bool disciplin
         [](const std::string& commandName, const std::string& commandOutput) {
             logCommandOutput(commandName, commandOutput, spdlog::level::level_enum::err);
         },
-        [phcCmd](const std::string& commandName, int exitCode) { logCommandAndExit(commandName, phcCmd); });
+        [phcCmd](const std::string& commandName, int exitCode) {
+            if (exitCode != 0) {
+                logCommandAndExit(commandName, phcCmd);
+            }
+        });
 }
 
 /**
