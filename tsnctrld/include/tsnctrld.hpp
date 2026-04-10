@@ -123,7 +123,7 @@ class tsnctrld {
     T getLeaf(const std::optional<libyang::DataNode>& node, const std::string& path);
 
    public:
-    tsnctrld();
+    tsnctrld(const PtpManagerConfig& config);
     ~tsnctrld();
     void initialize();
 };

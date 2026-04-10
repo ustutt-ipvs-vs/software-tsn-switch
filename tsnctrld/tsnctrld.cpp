@@ -630,8 +630,9 @@ void tsnctrld::initialize() {
     setupSubscriptions();
 
     // Start relevant monitoring threads
-    m_ptp.startMonitoring();
-
+    if (m_ptp.isEnabled()) {
+        m_ptp.startMonitoring();
+    }
     PERFORMANCE_LOGGING("[INIT]", "End");
     spdlog::info("[INIT] Setup done...");
 }
@@ -1101,20 +1102,26 @@ void tsnctrld::syncHardwareToRunning() {
     m_lldpDaemon->syncInitialNeighbors();
     m_lldpDaemon->startWatching();
 
-    populatePtpConfig(ctx, forest_ptp);
+    if (m_ptp.isEnabled()) {
+        spdlog::info("[SYNC] PTP enabled, populating initial data...");
+        populatePtpConfig(ctx, forest_ptp);
 
-    if (forest_ptp) {
-        SPDLOG_DEBUG("[SYNC] Changes present in tree for PTP...");
-        SPDLOG_TRACE("[SYNC] Switching to first sibling...");
-        forest_ptp = forest_ptp->firstSibling();
-        SPDLOG_TRACE("  -> [SYNC DEBUG] Data forest:\n {}",
-                     forest_ptp->printStr(libyang::DataFormat::XML, libyang::PrintFlags::Siblings).value_or("MISSING"));
-        SPDLOG_TRACE("[SYNC] Editing batch...");
-        m_sess.editBatch(*forest_ptp, sysrepo::DefaultOperation::Merge);
-        SPDLOG_DEBUG("[SYNC] Applying changes...");
-        m_sess.applyChanges();
+        if (forest_ptp) {
+            SPDLOG_DEBUG("[SYNC] Changes present in tree for PTP...");
+            SPDLOG_TRACE("[SYNC] Switching to first sibling...");
+            forest_ptp = forest_ptp->firstSibling();
+            SPDLOG_TRACE(
+                "  -> [SYNC DEBUG] Data forest:\n {}",
+                forest_ptp->printStr(libyang::DataFormat::XML, libyang::PrintFlags::Siblings).value_or("MISSING"));
+            SPDLOG_TRACE("[SYNC] Editing batch...");
+            m_sess.editBatch(*forest_ptp, sysrepo::DefaultOperation::Merge);
+            SPDLOG_DEBUG("[SYNC] Applying changes...");
+            m_sess.applyChanges();
+        }
+        SPDLOG_DEBUG("[SYNC] Datastore synchronized.");
+    } else {
+        spdlog::info("[SYNC] PTP not enabled, skipping...");
     }
-    SPDLOG_DEBUG("[SYNC] Datastore synchronized.");
 }
 
 /**
@@ -2147,9 +2154,12 @@ void tsnctrld::setupSubscriptions() {
     auto changeLldpCb = std::bind_front(&tsnctrld::changeLldpCallback, this);
     m_subs.push_back(m_sess.onModuleChange("ieee802-dot1ab-lldp", changeLldpCb, std::nullopt, 70));
 
-    auto changePtpCb = std::bind_front(&tsnctrld::changePtpCallback, this);
-    m_subs.push_back(m_sess.onModuleChange("ieee1588-ptp-tt", changePtpCb, std::nullopt, 60));
-
+    if (m_ptp.isEnabled()) {
+        auto changePtpCb = std::bind_front(&tsnctrld::changePtpCallback, this);
+        m_subs.push_back(m_sess.onModuleChange("ieee1588-ptp-tt", changePtpCb, std::nullopt, 60));
+    } else {
+        SPDLOG_DEBUG("[INIT] [SUBS] Skipped registering PTP change callbacks because integration is disabled...");
+    }
     SPDLOG_DEBUG("[INIT] [SUBS] Registered change callbacks...");
 
     // auto defaultOperCb = std::bind_front(&tsnctrld::defaultOperCallback, this);
@@ -2171,21 +2181,24 @@ void tsnctrld::setupSubscriptions() {
     m_subs.push_back(
         m_sess.onOperGet("ieee802-dot1ab-lldp", operLldpLocalSystemCb, "/ieee802-dot1ab-lldp:lldp/local-system-data"));
 
-    auto operPtpCb = std::bind_front(&tsnctrld::operPtpCallback, this);
-    m_subs.push_back(m_sess.onOperGet("ieee1588-ptp-tt", operPtpCb, "/ieee1588-ptp-tt:ptp/instances/instance",
-                                      sysrepo::SubscribeOptions::OperMerge));
+    if (m_ptp.isEnabled()) {
+        auto operPtpCb = std::bind_front(&tsnctrld::operPtpCallback, this);
+        m_subs.push_back(m_sess.onOperGet("ieee1588-ptp-tt", operPtpCb, "/ieee1588-ptp-tt:ptp/instances/instance",
+                                          sysrepo::SubscribeOptions::OperMerge));
 
-    auto operPtpPerfCb = std::bind_front(&tsnctrld::operPtpPerformanceCallback, this);
-    m_subs.push_back(m_sess.onOperGet("ieee1588-ptp-tt", operPtpPerfCb,
-                                      "/ieee1588-ptp-tt:ptp/instances/instance/performance-monitoring-ds",
-                                      sysrepo::SubscribeOptions::OperMerge));
+        auto operPtpPerfCb = std::bind_front(&tsnctrld::operPtpPerformanceCallback, this);
+        m_subs.push_back(m_sess.onOperGet("ieee1588-ptp-tt", operPtpPerfCb,
+                                          "/ieee1588-ptp-tt:ptp/instances/instance/performance-monitoring-ds",
+                                          sysrepo::SubscribeOptions::OperMerge));
 
-    auto operPtpPortPerfCb = std::bind_front(&tsnctrld::operPtpPortPerformanceCallback, this);
-    m_subs.push_back(
-        m_sess.onOperGet("ieee1588-ptp-tt", operPtpPortPerfCb,
-                         "/ieee1588-ptp-tt:ptp/instances/instance/ports/port/performance-monitoring-port-ds",
-                         sysrepo::SubscribeOptions::OperMerge));
-
+        auto operPtpPortPerfCb = std::bind_front(&tsnctrld::operPtpPortPerformanceCallback, this);
+        m_subs.push_back(
+            m_sess.onOperGet("ieee1588-ptp-tt", operPtpPortPerfCb,
+                             "/ieee1588-ptp-tt:ptp/instances/instance/ports/port/performance-monitoring-port-ds",
+                             sysrepo::SubscribeOptions::OperMerge));
+    } else {
+        SPDLOG_DEBUG("[INIT] [SUBS] Skipped registering PTP operational callbacks because integration is disabled...");
+    }
     SPDLOG_DEBUG("[INIT] [SUBS] Registered oper callbacks...");
 }
 
@@ -2195,8 +2208,11 @@ void tsnctrld::setupSubscriptions() {
  * Instances of @ref sysrepo::Session cannot be created "empty", so we instantiate them directly from a new session of
  * the connection. Additionally, we need the @ref m_ethtool_sock for calls to @ref LinkManager::getActiveQueues, so we
  * open this socket directly in the beginning.
+ *
+ * @param config A struct to configure this daemons instance of the @ref PtpManager.
  */
-tsnctrld::tsnctrld() : m_sess(m_conn.sessionStart()), m_operSess(m_conn.sessionStart()) {
+tsnctrld::tsnctrld(const PtpManagerConfig &config)
+    : m_sess(m_conn.sessionStart()), m_operSess(m_conn.sessionStart()), m_ptp(config) {
     m_operSess.switchDatastore(sysrepo::Datastore::Operational);
 }
 
@@ -2252,6 +2268,9 @@ std::unique_ptr<argparse::ArgumentParser> parseArguments(int argc, char *argv[])
     argParser->add_description("Use this device as a virtual TSN bridge");
     argParser->add_argument("-d", "--disable-clock-sync")
         .help("do not set up clock synchronization, so that you can use your own sync method")
+        .flag();
+    argParser->add_argument("-r", "--reenable-ptp")
+        .help("provide PTP information to the datastore even if PTP is externally managed")
         .flag();
     argParser->add_argument("-i", "--nic")
         .help("use gPTP over these network interface card(s)")
@@ -2319,6 +2338,18 @@ std::unique_ptr<argparse::ArgumentParser> parseArguments(int argc, char *argv[])
             << "\n";
         exit(1);
     }
+    if (!argParser->is_used("--disable-clock-sync") && argParser->is_used("--reenable-ptp")) {
+        std::cerr << "Error, you provided the '--reenable-ptp' or '-r' flag without also providing the "
+                     "'--disable-clock-sync' flag"
+                  << "\n"
+                  << "Reason: The behavior enabled by the '--reenable-ptp' flag is already enabled and cannot be "
+                     "disabled if this daemon is responsible for gPTP"
+                  << "\n"
+                  << "Hint: Read the user documentation for '--reenable-ptp' and '--disable-clock-sync' and decide "
+                     "whether to include them the next time you run the command."
+                  << "\n";
+        exit(1);
+    }
     return argParser;
 }
 
@@ -2348,6 +2379,7 @@ int main(int argc, char *argv[]) {
         auto nicVec = argParser->get<std::vector<std::string>>("--nic");
         auto asGrandmaster = argParser->get<bool>("--grandmaster");
         auto disciplineWithNtp = argParser->get<bool>("--ntp");
+        auto enablePtpMonitoring = clockSyncEnabled || argParser->get<bool>("--reenable-ptp");
 
         ensureSingleInstanceOnly();
 
@@ -2355,7 +2387,10 @@ int main(int argc, char *argv[]) {
             Timesync::launch(nicVec, asGrandmaster, disciplineWithNtp);
         }
 
-        tsnctrld daemon = tsnctrld();
+        tsnctrld daemon = tsnctrld(PtpManagerConfig{
+            .assumedPortCount = static_cast<uint16_t>(nicVec.size()),
+            .enabled = enablePtpMonitoring,
+        });
         daemon.initialize();
         while (keep_running) {
             std::this_thread::sleep_for(std::chrono::seconds(1));

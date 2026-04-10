@@ -21,6 +21,16 @@
 #include "ptpStructs.h"
 
 /**
+ * @brief A struct to easier pass the configuration necessary for an instance of @ref PtpManager.
+ */
+struct PtpManagerConfig {
+    std::string ptp4l_socket = "/var/run/ptp4l";
+    uint8_t transport_specific = 1;
+    uint16_t assumedPortCount = 0;
+    bool enabled = true;
+};
+
+/**
  * @brief This class provides methods to collect and process information provided by the PTP daemon, based on the
  * IEEE 1588 PTP YANG model.
  *
@@ -31,8 +41,7 @@
  */
 class PtpManager {
    public:
-    PtpManager(std::string ptp4l_socket = "/var/run/ptp4l", uint8_t transport_specific = 1,
-               uint16_t m_assumedPortCount = 0);
+    PtpManager(const PtpManagerConfig& config);
 
     ~PtpManager();
 
@@ -44,8 +53,10 @@ class PtpManager {
     void getPortPerformance24h(uint16_t portIndex, std::vector<PtpPortPerformanceRecord_t>& out);
     void startMonitoring();
     void stopMonitoring();
+    bool isEnabled() const;
 
    private:
+    bool enabled;
     int m_fd;
     uint16_t m_assumedPortCount;
     std::thread m_pollThread;

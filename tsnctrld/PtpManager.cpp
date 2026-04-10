@@ -44,14 +44,13 @@ std::string clockIdentityBytesToString(std::array<uint8_t, 8> clockIdentity) {
 
 /**
  * @brief Constructor for the PtpManager. Creates and binds the used socket.
- * @param ptp4l_socket
- * @param transport_specific
- * @param m_assumedPortCount
+ * @param config A @ref PtpManagerConfig struct with the values used for the configuration of this instance.
  */
-PtpManager::PtpManager(std::string ptp4l_socket, uint8_t transport_specific, uint16_t m_assumedPortCount)
-    : m_target_path(std::move(ptp4l_socket)),
-      m_transport_specific(transport_specific),
-      m_assumedPortCount(m_assumedPortCount) {
+PtpManager::PtpManager(const PtpManagerConfig& config)
+    : m_target_path(config.ptp4l_socket),
+      m_transport_specific(config.transport_specific),
+      m_assumedPortCount(config.assumedPortCount),
+      enabled(config.enabled) {
     m_fd = socket(AF_LOCAL, SOCK_DGRAM, 0);
     if (m_fd < 0) {
         throw std::runtime_error("Failed to create UDS socket");
@@ -81,7 +80,17 @@ PtpManager::~PtpManager() {
         close(m_fd);
     }
     unlink(m_local_path.c_str());
-    spdlog::info("Stopped PTP monitoring thread...");
+    spdlog::info("Stopped PTP {}monitoring thread...", enabled ? "" : "disabled ");
+}
+
+/**
+ * @brief Determines if PTP-related data may be stored in the datastore.
+ *
+ * @return Whether the subtree in the datastore for PTP is enabled. If this is false, the monitoring thread won't be
+ * started and no data will be collected.
+ */
+bool PtpManager::isEnabled() const {
+    return enabled;
 }
 
 /**
@@ -184,7 +193,7 @@ void PtpManager::stopMonitoring() {
  * continues until the thread is stopped.
  */
 void PtpManager::startMonitoring() {
-    if (m_pollThread.joinable()) {
+    if (m_pollThread.joinable() || !enabled) {
         return;
     }
     m_running = true;
@@ -595,6 +604,12 @@ void PtpManager::fillConfigData(PtpNode_t& node_to_fill) {
  * @return The sequence ID of this message. Used to correlate a request with a response.
  */
 int32_t PtpManager::sendManagementGet(uint16_t managementId) {
+    if (!enabled) {
+        spdlog::warn(
+            "[PTP] [SEND_GET] Attempted to send management message with MID {} while PTP-integration is disabled",
+            managementId);
+        return -1;
+    }
     SPDLOG_TRACE("[PTP] [SEND_GET] Sending request with MID {}", managementId);
     // Lean payload size (exactly 54 bytes, mimicking Intel's get_req)
     size_t total_size = sizeof(ptp::PtpManagementMsg) + sizeof(ptp::PtpManagementTlv);
@@ -652,6 +667,10 @@ int32_t PtpManager::sendManagementGet(uint16_t managementId) {
  */
 bool PtpManager::receiveManagementResponse(uint16_t expectedId, uint16_t expectedSeq,
                                            ptp::ResponseWithSourceIdentity& out_data) const {
+    if (!enabled) {
+        spdlog::warn("[PTP] [SEND_GET] Attempted to receive management message while PTP-integration is disabled");
+        return false;
+    }
     SPDLOG_TRACE("[PTP] [RECV_RESP] Receiving response with expected MID {}", expectedId);
     std::vector<uint8_t> rx_buffer(1024);
     struct pollfd pfd{};
