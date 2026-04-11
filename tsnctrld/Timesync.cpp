@@ -3,6 +3,7 @@
 #include <dirent.h>
 #include <fmt/ranges.h>
 #include <sys/stat.h>
+#include <sys/timex.h>
 
 #include <algorithm>
 #include <fstream>
@@ -55,6 +56,7 @@ void Timesync::launch(const std::vector<std::string>& nicVec, bool asGrandmaster
     sleep(1);  // Wait for ptp4l to start before proceeding
     configurePtp4l();
     runPhc2sys(nicVec, disciplineWithNtp);
+    setTaiUtcOffset(CURRENT_UTC_OFFSET);
     spdlog::info("[TIMESYNC] All clock synchronization daemons have been launched on this device!");
 }
 
@@ -272,6 +274,24 @@ void Timesync::runPhc2sys(const std::vector<std::string>& nicVec, bool disciplin
                 logCommandAndExit(commandName, phcCmd);
             }
         });
+}
+
+/**
+ * @brief Set the device's TAI - UTC offset
+ *
+ * @param offset How many seconds TAI should be ahead of UTC (can also be negative)
+ */
+void Timesync::setTaiUtcOffset(int offset) {
+    struct timex timexStruct;
+    timexStruct.modes = ADJ_TAI;
+    timexStruct.constant = offset;
+
+    int result = adjtimex(&timexStruct);
+    if (result < 0) {
+        spdlog::critical("Failed to adjust UTC-TAI offset");
+        exit(1);
+    }
+    SPDLOG_DEBUG("[TIMESYNC] TAI - UTC = {} seconds", timexStruct.tai);
 }
 
 /**

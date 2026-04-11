@@ -20,6 +20,7 @@ class Timesync {
     static void runPtp4l(const std::vector<std::string>& nicVec, bool asGrandmaster);
     static void configurePtp4l();
     static void runPhc2sys(const std::vector<std::string>& nicVec, bool disciplineWithNtp);
+    static void setTaiUtcOffset(int offset);
     static void warnAboutActiveNtp();
     static void warnAboutInterferingProcesses(const std::unordered_set<std::string>& badProcessNames);
     static void executableExistsOrErr(const std::string& exec);
