@@ -68,24 +68,24 @@ RUN mkdir gitrepos && cd gitrepos && \
     rm -rf libyang libnetconf2 netopeer2 libyang-cpp libnetconf2-cpp sysrepo-cpp
 
     # Yang models
-RUN useradd enpro -p '12345' && \
+RUN useradd --system --shell /usr/sbin/nologin netconf-api -p 'private' && \
     cd yang-models && \
-    sysrepoctl -i example-demo.yang -o enpro -g enpro -p 660 && \
-    sysrepoctl -c ietf-interfaces -o enpro -g enpro -p 660 && \
-    sysrepoctl -i iana-if-type@2023-01-26.yang -o enpro -g enpro -p 660 && \
-    sysrepoctl -i ieee802-types.yang -o enpro -g enpro -p 660 && \
-    sysrepoctl -i ieee802-dot1q-types.yang -o enpro -g enpro -p 660 && \
-    sysrepoctl -i ieee802-dot1q-bridge.yang -o enpro -g enpro -p 660 && \
-    sysrepoctl -i ieee802-dot1q-sched.yang -o enpro -g enpro -p 660 && \
-    sysrepoctl -i ieee802-dot1q-sched-bridge.yang -o enpro -g enpro -p 660 && \
-    sysrepoctl -i ietf-routing@2018-03-13.yang -o enpro -g enpro -p 660 && \
-    sysrepoctl -i ieee802-dot1ab-types.yang -o enpro -g enpro -p 660 && \
-    sysrepoctl -i ieee802-dot1ab-lldp.yang -o enpro -g enpro -p 660 && \
-    sysrepoctl -i ieee1588-ptp-tt.yang  -o enpro -g enpro -p 660 -e performance-monitoring && \
-    sysrepoctl -i ieee802-dot1as-gptp.yang  -o enpro -g enpro -p 660 && \
+    sysrepoctl -i example-demo.yang -o root -g netconf-api -p 660 && \
+    sysrepoctl -c ietf-interfaces -o root -g netconf-api -p 660 && \
+    sysrepoctl -i iana-if-type@2023-01-26.yang -o root -g netconf-api -p 660 && \
+    sysrepoctl -i ieee802-types.yang -o root -g netconf-api -p 660 && \
+    sysrepoctl -i ieee802-dot1q-types.yang -o root -g netconf-api -p 660 && \
+    sysrepoctl -i ieee802-dot1q-bridge.yang -o root -g netconf-api -p 660 && \
+    sysrepoctl -i ieee802-dot1q-sched.yang -o root -g netconf-api -p 660 && \
+    sysrepoctl -i ieee802-dot1q-sched-bridge.yang -o root -g netconf-api -p 660 && \
+    sysrepoctl -i ietf-routing@2018-03-13.yang -o root -g netconf-api -p 660 && \
+    sysrepoctl -i ieee802-dot1ab-types.yang -o root -g netconf-api -p 660 && \
+    sysrepoctl -i ieee802-dot1ab-lldp.yang -o root -g netconf-api -p 660 && \
+    sysrepoctl -i ieee1588-ptp-tt.yang  -o root -g netconf-api -p 660 -e performance-monitoring && \
+    sysrepoctl -i ieee802-dot1as-gptp.yang  -o root -g netconf-api -p 660 && \
     # Netconf configuration
     cd .. && \
-    echo '<nacm xmlns="urn:ietf:params:xml:ns:yang:ietf-netconf-acm"><enable-nacm>true</enable-nacm><read-default>permit</read-default><write-default>deny</write-default><groups><group><name>admin</name><user-name>root</user-name><user-name>enpro</user-name></group></groups><rule-list><name>admin-full-access</name><group>admin</group><rule><name>permit-all</name><module-name>*</module-name><access-operations>*</access-operations><action>permit</action></rule></rule-list></nacm>' > nacm_init.xml && \
+    echo '<nacm xmlns="urn:ietf:params:xml:ns:yang:ietf-netconf-acm"><enable-nacm>true</enable-nacm><read-default>permit</read-default><write-default>deny</write-default><groups><group><name>admin</name><user-name>root</user-name><user-name>netconf-api</user-name></group></groups><rule-list><name>admin-full-access</name><group>admin</group><rule><name>permit-all</name><module-name>*</module-name><access-operations>*</access-operations><action>permit</action></rule></rule-list></nacm>' > nacm_init.xml && \
     sysrepocfg --import=nacm_init.xml --module ietf-netconf-acm --datastore running && \
     sysrepocfg --copy-from running --datastore startup
 
