@@ -99,6 +99,16 @@ target_link_libraries(
 )
 target_link_libraries(tsnctrld_app PRIVATE tsnctrld_lib)
 
+add_executable(performance_testing tools/performance_testing.cpp)
+target_link_libraries(
+        performance_testing
+        PUBLIC
+        PkgConfig::LIBNETCONF2
+        PkgConfig::LIBYANG
+        PkgConfig::SPDLOG
+)
+target_link_libraries(performance_testing PRIVATE common_lib)
+
 # --- Netlink ---
 #add_executable(enpro-switch tsnctrld/QdiscManager.cpp)
 #target_link_libraries(enpro-switch PRIVATE tsnctrld_lib)

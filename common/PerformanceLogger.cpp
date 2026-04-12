@@ -58,9 +58,9 @@ std::shared_ptr<spdlog::logger> get_perf_logger() {
     return g_perf_logger;
 }
 
-void log_perf_internal(const char* context, const char* action) {
+void log_perf_internal(const char* context, const std::string& message) {
     if (auto logger = get_perf_logger()) {
-        logger->info("{} | {}", context, action);
+        logger->info("{} | {}", context, message);
     }
 }
 #endif  // ENABLE_PERF_LOGGING

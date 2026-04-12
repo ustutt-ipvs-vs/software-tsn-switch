@@ -117,7 +117,7 @@ class tsnctrld {
 
     ietfInterface_t* syncInterfaceFromSysrepo(sysrepo::Session& sess, const std::string& ifname, uint32_t requestId);
 
-    void resetTriggerLeaf(const std::string& xpath);
+    void resetTriggerLeaf(const std::string& xpath, uint32_t requestId);
 
     template <typename T>
     T getLeaf(const std::optional<libyang::DataNode>& node, const std::string& path);

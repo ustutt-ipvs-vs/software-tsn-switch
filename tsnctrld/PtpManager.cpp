@@ -391,7 +391,9 @@ bool PtpManager::getClockDescriptions(std::vector<ptp::ClockDescription>& clock_
         std::memcpy(&clock_description.clockType, rx_data.bytes.data(), sizeof(uint16_t));
         clock_description.clockType = be16toh(clock_description.clockType);
     }
+#if SPDLOG_ACTIVE_LEVEL <= SPDLOG_LEVEL_DEBUG
     spdlog::warn("[PTP] [CLOCK_DESC] Only clockType and custom field \"source\" is implemented, rest is undef");
+#endif
     return true;
 }
 

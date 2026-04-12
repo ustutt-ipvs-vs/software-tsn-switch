@@ -302,8 +302,10 @@ void LinkManager::getLinkSpeed(int sock, ietfInterface_t& iface) {
             SPDLOG_DEBUG("[LM] [SPEED] found wrong value for link_mode_masks_nwords");
         }
     } else {
+#if SPDLOG_ACTIVE_LEVEL <= SPDLOG_LEVEL_DEBUG
         spdlog::warn("[LM] [SPEED] Invalid/no response to ETHTOOL_GLINKSETTINGS, trying ETHTOOL_GSET for interface {}",
                      iface.name);
+#endif
         // 2. FALLBACK: Try the older API (ETHTOOL_GSET)
         // If we reach here, the driver didn't support GLINKSETTINGS.
         struct ethtool_cmd ecmd;
