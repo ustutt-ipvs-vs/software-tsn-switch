@@ -1154,12 +1154,13 @@ void tsnctrld::syncHardwareToRunning() {
  * @param parent
  * @return
  */
+// NOLINTNEXTLINE(readability-convert-member-functions-to-static)
 sysrepo::ErrorCode tsnctrld::defaultOperCallback(const sysrepo::Session &sess, uint32_t subId,
                                                  const std::string &moduleName,
                                                  const std::optional<std::string> &subXPath,
                                                  const std::optional<std::string> &requestXPath, uint32_t requestId,
                                                  std::optional<libyang::DataNode> &parent) {
-    m_ifcache.setCurrentRequestId(requestId);
+    // m_ifcache.setCurrentRequestId(requestId);
 
     SPDLOG_DEBUG("[CB_OPER] [DEFAULT] Received oper callback for module \"{}\"...", moduleName);
     SPDLOG_DEBUG("[CB_OPER] [DEFAULT] subXPath \"{}\"...", subXPath.value_or("MISSING"));
@@ -1362,13 +1363,14 @@ sysrepo::ErrorCode tsnctrld::operBridgeCallback(const sysrepo::Session &sess, ui
  * @param parent
  * @return
  */
+// NOLINTNEXTLINE(readability-convert-member-functions-to-static)
 sysrepo::ErrorCode tsnctrld::operBridgePortCallback(const sysrepo::Session &sess, uint32_t subId,
                                                     const std::string &moduleName,
                                                     const std::optional<std::string> &subXPath,
                                                     const std::optional<std::string> &requestXPath, uint32_t requestId,
                                                     std::optional<libyang::DataNode> &parent) {
     PERFORMANCE_LOGGING("[CB_OPER] [BP]", "req={} Start", requestId);
-    m_ifcache.setCurrentRequestId(requestId);
+    // m_ifcache.setCurrentRequestId(requestId);
 
     SPDLOG_DEBUG("[CB_OPER] [BP] Received oper callback for module \"{}\"...", moduleName);
     SPDLOG_DEBUG("[CB_OPER] [BP] subXPath \"{}\"...", subXPath.value_or("MISSING"));
@@ -1406,7 +1408,7 @@ sysrepo::ErrorCode tsnctrld::operLldpLocalSystemCallback(const sysrepo::Session 
                                                          const std::optional<std::string> &requestXPath,
                                                          uint32_t requestId, std::optional<libyang::DataNode> &parent) {
     PERFORMANCE_LOGGING("[CB_OPER] [LLDP]", "req={} Start", requestId);
-    m_ifcache.setCurrentRequestId(requestId);
+    // m_ifcache.setCurrentRequestId(requestId);
 
     SPDLOG_DEBUG("[CB_OPER] [LLDP] Received oper callback for module \"{}\"...", moduleName);
     SPDLOG_DEBUG("[CB_OPER] [LLDP] subXPath \"{}\"...", subXPath.value_or("MISSING"));
@@ -1462,7 +1464,7 @@ sysrepo::ErrorCode tsnctrld::operPtpCallback(const sysrepo::Session &sess, uint3
                                              const std::optional<std::string> &requestXPath, uint32_t requestId,
                                              std::optional<libyang::DataNode> &parent) {
     PERFORMANCE_LOGGING("[CB_OPER] [PTP]", "req={} Start", requestId);
-    m_ifcache.setCurrentRequestId(requestId);
+    // m_ifcache.setCurrentRequestId(requestId);
 
     SPDLOG_DEBUG("[CB_OPER] [PTP] Received oper callback for module \"{}\"...", moduleName);
     SPDLOG_DEBUG("[CB_OPER] [PTP] subXPath \"{}\"...", subXPath.value_or("MISSING"));
@@ -1563,7 +1565,7 @@ sysrepo::ErrorCode tsnctrld::operPtpPerformanceCallback(const sysrepo::Session &
                                                         const std::optional<std::string> &requestXPath,
                                                         uint32_t requestId, std::optional<libyang::DataNode> &parent) {
     PERFORMANCE_LOGGING("[CB_OPER] [PTP_PERF]", "req={} Start", requestId);
-    m_ifcache.setCurrentRequestId(requestId);
+    // m_ifcache.setCurrentRequestId(requestId);
 
     SPDLOG_DEBUG("[CB_OPER] [PTP_PERF] Received oper callback for module \"{}\"...", moduleName);
     SPDLOG_DEBUG("[CB_OPER] [PTP_PERF] subXPath \"{}\"...", subXPath.value_or("MISSING"));
@@ -1681,7 +1683,7 @@ sysrepo::ErrorCode tsnctrld::operPtpPortPerformanceCallback(const sysrepo::Sessi
                                                             uint32_t requestId,
                                                             std::optional<libyang::DataNode> &parent) {
     PERFORMANCE_LOGGING("[CB_OPER] [PTP_PORT_PERF]", "req={} Start", requestId);
-    m_ifcache.setCurrentRequestId(requestId);
+    // m_ifcache.setCurrentRequestId(requestId);
 
     SPDLOG_DEBUG("[CB_OPER] [PTP_PORT_PERF] Received oper callback for module \"{}\"...", moduleName);
     SPDLOG_DEBUG("[CB_OPER] [PTP_PORT_PERF] subXPath \"{}\"...", subXPath.value_or("MISSING"));
@@ -1782,10 +1784,11 @@ sysrepo::ErrorCode tsnctrld::operPtpPortPerformanceCallback(const sysrepo::Sessi
  * @param requestId
  * @return
  */
+// NOLINTNEXTLINE(readability-convert-member-functions-to-static)
 sysrepo::ErrorCode tsnctrld::defaultChangeCallback(sysrepo::Session sess, uint32_t subId, const std::string &moduleName,
                                                    const std::optional<std::string> &subXPath, sysrepo::Event event,
                                                    uint32_t requestId) {
-    m_ifcache.setCurrentRequestId(requestId);
+    // m_ifcache.setCurrentRequestId(requestId);
 
     SPDLOG_DEBUG("[CB_CHANGE] [DEFAULT] Received change callback for module \"{}\"...", moduleName);
     SPDLOG_DEBUG("[CB_CHANGE] [DEFAULT] subXPath \"{}\"...", subXPath.value_or("MISSING"));
@@ -1816,12 +1819,13 @@ sysrepo::ErrorCode tsnctrld::defaultChangeCallback(sysrepo::Session sess, uint32
  * @param requestId
  * @return
  */
+// NOLINTNEXTLINE(readability-convert-member-functions-to-static)
 sysrepo::ErrorCode tsnctrld::changeInterfaceCallback(sysrepo::Session sess, uint32_t subId,
                                                      const std::string &moduleName,
                                                      const std::optional<std::string> &subXPath, sysrepo::Event event,
                                                      uint32_t requestId) {
     PERFORMANCE_LOGGING("[CB_CHANGE] [IF]", "req={} Start", requestId);
-    m_ifcache.setCurrentRequestId(requestId);
+    // m_ifcache.setCurrentRequestId(requestId);
 
     static const std::string handledModuleName = "ietf-interfaces";
     SPDLOG_DEBUG("[CB_CHANGE] [IF] Received change callback for module \"{}\"...", moduleName);
@@ -1829,6 +1833,13 @@ sysrepo::ErrorCode tsnctrld::changeInterfaceCallback(sysrepo::Session sess, uint
     SPDLOG_DEBUG("[CB_CHANGE] [IF] event \"{}\"...", event);
     SPDLOG_DEBUG("[CB_CHANGE] [IF] requestId \"{}\"...", requestId);
     SPDLOG_DEBUG("[CB_CHANGE] [IF] Actually trying to handle module \"{}\"...", handledModuleName);
+
+    if (sess.getOriginatorName() == "tsnctrld-internal") {
+        SPDLOG_DEBUG("[CB_CHANGE] [IF] Whatever just happened, we did it, so we can trust it...");
+        PERFORMANCE_LOGGING("[CB_CHANGE] [IF]", "req={} End Internal", requestId);
+        return sysrepo::ErrorCode::Ok;
+    }
+
     if (event != sysrepo::Event::Change) {
         PERFORMANCE_LOGGING("[CB_CHANGE] [IF]", "req={} End No change", requestId);
         return sysrepo::ErrorCode::Ok;
@@ -1875,11 +1886,12 @@ sysrepo::ErrorCode tsnctrld::changeInterfaceCallback(sysrepo::Session sess, uint
  * @param requestId
  * @return
  */
+// NOLINTNEXTLINE(readability-convert-member-functions-to-static)
 sysrepo::ErrorCode tsnctrld::changeBridgeCallback(sysrepo::Session sess, uint32_t subId, const std::string &moduleName,
                                                   const std::optional<std::string> &subXPath, sysrepo::Event event,
                                                   uint32_t requestId) {
     PERFORMANCE_LOGGING("[CB_CHANGE] [BR]", "req={} Start", requestId);
-    m_ifcache.setCurrentRequestId(requestId);
+    // m_ifcache.setCurrentRequestId(requestId);
 
     static const std::string handledModuleName = "ieee802-dot1q-bridge";
     SPDLOG_DEBUG("[CB_CHANGE] [BR] Received change callback for module \"{}\"...", moduleName);
@@ -1887,6 +1899,13 @@ sysrepo::ErrorCode tsnctrld::changeBridgeCallback(sysrepo::Session sess, uint32_
     SPDLOG_DEBUG("[CB_CHANGE] [BR] event \"{}\"...", event);
     SPDLOG_DEBUG("[CB_CHANGE] [BR] requestId \"{}\"...", requestId);
     SPDLOG_DEBUG("[CB_CHANGE] [BR] Actually trying to handle module \"{}\"...", handledModuleName);
+
+    if (sess.getOriginatorName() == "tsnctrld-internal") {
+        SPDLOG_DEBUG("[CB_CHANGE] [BR] Whatever just happened, we did it, so we can trust it...");
+        PERFORMANCE_LOGGING("[CB_CHANGE] [BR]", "req={} End Internal", requestId);
+        return sysrepo::ErrorCode::Ok;
+    }
+
     if (event != sysrepo::Event::Change) {
         PERFORMANCE_LOGGING("[CB_CHANGE] [BR]", "req={} End No Change", requestId);
         return sysrepo::ErrorCode::Ok;
@@ -1934,12 +1953,13 @@ sysrepo::ErrorCode tsnctrld::changeBridgeCallback(sysrepo::Session sess, uint32_
  * @param requestId
  * @return
  */
+// NOLINTNEXTLINE(readability-convert-member-functions-to-static)
 sysrepo::ErrorCode tsnctrld::changeBridgePortCallback(sysrepo::Session sess, uint32_t subId,
                                                       const std::string &moduleName,
                                                       const std::optional<std::string> &subXPath, sysrepo::Event event,
                                                       uint32_t requestId) {
     PERFORMANCE_LOGGING("[CB_CHANGE] [BP]", "req={} Start", requestId);
-    m_ifcache.setCurrentRequestId(requestId);
+    // m_ifcache.setCurrentRequestId(requestId);
 
     static const std::string handledModuleName = "ieee802-dot1q-bridge";
     SPDLOG_DEBUG("[CB_CHANGE] [BP] Received change callback for module \"{}\"...", moduleName);
@@ -1947,6 +1967,13 @@ sysrepo::ErrorCode tsnctrld::changeBridgePortCallback(sysrepo::Session sess, uin
     SPDLOG_DEBUG("[CB_CHANGE] [BP] event \"{}\"...", event);
     SPDLOG_DEBUG("[CB_CHANGE] [BP] requestId \"{}\"...", requestId);
     SPDLOG_DEBUG("[CB_CHANGE] [BP] Actually trying to handle module \"{}\"...", handledModuleName);
+
+    if (sess.getOriginatorName() == "tsnctrld-internal") {
+        SPDLOG_DEBUG("[CB_CHANGE] [BP] Whatever just happened, we did it, so we can trust it...");
+        PERFORMANCE_LOGGING("[CB_CHANGE] [BP]", "req={} End Internal", requestId);
+        return sysrepo::ErrorCode::Ok;
+    }
+
     if (event != sysrepo::Event::Change) {
         PERFORMANCE_LOGGING("[CB_CHANGE] [BP]", "req={} End No Change", requestId);
         return sysrepo::ErrorCode::Ok;
@@ -2001,7 +2028,7 @@ sysrepo::ErrorCode tsnctrld::changeGptCallback(sysrepo::Session sess, uint32_t s
                                                const std::optional<std::string> &subXPath, sysrepo::Event event,
                                                uint32_t requestId) {
     PERFORMANCE_LOGGING("[CB_CHANGE] [GPT]", "req={} Start", requestId);
-    m_ifcache.setCurrentRequestId(requestId);
+    // m_ifcache.setCurrentRequestId(requestId);
 
     static const std::string handledModuleName = "ieee802-dot1q-sched-bridge";
     SPDLOG_DEBUG("[CB_CHANGE] [GPT] Received change callback for module \"{}\"...", moduleName);
@@ -2123,11 +2150,12 @@ sysrepo::ErrorCode tsnctrld::changeGptCallback(sysrepo::Session sess, uint32_t s
  * This function checks if the nodes where changes are attempted even belongs to this module, if not, skip because we
  * are not responsible for validating that.
  */
+// NOLINTNEXTLINE(readability-convert-member-functions-to-static)
 sysrepo::ErrorCode tsnctrld::changeLldpCallback(sysrepo::Session sess, uint32_t subId, const std::string &moduleName,
                                                 const std::optional<std::string> &subXPath, sysrepo::Event event,
                                                 uint32_t requestId) {
     PERFORMANCE_LOGGING("[CB_CHANGE] [LLDP]", "req={} Start", requestId);
-    m_ifcache.setCurrentRequestId(requestId);
+    // m_ifcache.setCurrentRequestId(requestId);
 
     static const std::string handledModuleName = "ieee802-dot1ab-lldp";
     SPDLOG_DEBUG("[CB_CHANGE] [LLDP] Received change callback for module \"{}\"...", moduleName);
@@ -2135,6 +2163,12 @@ sysrepo::ErrorCode tsnctrld::changeLldpCallback(sysrepo::Session sess, uint32_t 
     SPDLOG_DEBUG("[CB_CHANGE] [LLDP] event \"{}\"...", event);
     SPDLOG_DEBUG("[CB_CHANGE] [LLDP] requestId \"{}\"...", requestId);
     SPDLOG_DEBUG("[CB_CHANGE] [LLDP] Actually trying to handle module \"{}\"...", handledModuleName);
+
+    if (sess.getOriginatorName() == "tsnctrld-internal") {
+        SPDLOG_DEBUG("[CB_CHANGE] [LLDP] Whatever just happened, we did it, so we can trust it...");
+        PERFORMANCE_LOGGING("[CB_CHANGE] [LLDP]", "req={} End Internal", requestId);
+        return sysrepo::ErrorCode::Ok;
+    }
 
     if (event != sysrepo::Event::Change) {
         PERFORMANCE_LOGGING("[CB_CHANGE] [LLDP]", "req={} End No change", requestId);
@@ -2163,11 +2197,12 @@ sysrepo::ErrorCode tsnctrld::changeLldpCallback(sysrepo::Session sess, uint32_t 
  * This function checks if the nodes where changes are attempted even belongs to this module, if not, skip because we
  * are not responsible for validating that.
  */
+// NOLINTNEXTLINE(readability-convert-member-functions-to-static)
 sysrepo::ErrorCode tsnctrld::changePtpCallback(sysrepo::Session sess, uint32_t subId, const std::string &moduleName,
                                                const std::optional<std::string> &subXPath, sysrepo::Event event,
                                                uint32_t requestId) {
     PERFORMANCE_LOGGING("[CB_CHANGE] [PTP]", "req={} Start", requestId);
-    m_ifcache.setCurrentRequestId(requestId);
+    // m_ifcache.setCurrentRequestId(requestId);
 
     static const std::string handledModuleName = "ieee1588-ptp-tt";
     SPDLOG_DEBUG("[CB_CHANGE] [PTP] Received change callback for module \"{}\"...", moduleName);
@@ -2175,6 +2210,12 @@ sysrepo::ErrorCode tsnctrld::changePtpCallback(sysrepo::Session sess, uint32_t s
     SPDLOG_DEBUG("[CB_CHANGE] [PTP] event \"{}\"...", event);
     SPDLOG_DEBUG("[CB_CHANGE] [PTP] requestId \"{}\"...", requestId);
     SPDLOG_DEBUG("[CB_CHANGE] [PTP] Actually trying to handle module \"{}\"...", handledModuleName);
+
+    if (sess.getOriginatorName() == "tsnctrld-internal") {
+        SPDLOG_DEBUG("[CB_CHANGE] [PTP] Whatever just happened, we did it, so we can trust it...");
+        PERFORMANCE_LOGGING("[CB_CHANGE] [PTP]", "req={} End Internal", requestId);
+        return sysrepo::ErrorCode::Ok;
+    }
 
     if (event != sysrepo::Event::Change) {
         PERFORMANCE_LOGGING("[CB_CHANGE] [PTP]", "req={} End No change", requestId);

@@ -612,8 +612,8 @@ int32_t PtpManager::sendManagementGet(uint16_t managementId) {
             managementId);
         return -1;
     }
-    SPDLOG_TRACE("[PTP] [SEND_GET] Sending request with MID {}", managementId);
-    // Lean payload size (exactly 54 bytes, mimicking Intel's get_req)
+    // SPDLOG_TRACE("[PTP] [SEND_GET] Sending request with MID {}", managementId);
+    //  Lean payload size (exactly 54 bytes, mimicking Intel's get_req)
     size_t total_size = sizeof(ptp::PtpManagementMsg) + sizeof(ptp::PtpManagementTlv);
 
     ptp::PtpManagementMsg msg = {};
@@ -673,7 +673,7 @@ bool PtpManager::receiveManagementResponse(uint16_t expectedId, uint16_t expecte
         spdlog::warn("[PTP] [SEND_GET] Attempted to receive management message while PTP-integration is disabled");
         return false;
     }
-    SPDLOG_TRACE("[PTP] [RECV_RESP] Receiving response with expected MID {}", expectedId);
+    // SPDLOG_TRACE("[PTP] [RECV_RESP] Receiving response with expected MID {}", expectedId);
     std::vector<uint8_t> rx_buffer(1024);
     struct pollfd pfd{};
     pfd.fd = m_fd;
@@ -763,7 +763,7 @@ bool PtpManager::receiveManagementResponse(uint16_t expectedId, uint16_t expecte
     } else {
         const size_t required_bytes = sizeof(ptp::PtpManagementMsg) + sizeof(ptp::PtpManagementTlv) + payload_len;
         if (static_cast<size_t>(rx_bytes) >= required_bytes) {
-            SPDLOG_TRACE("[PTP] [RECV_RESP] Valid Response", expectedId);
+            // SPDLOG_TRACE("[PTP] [RECV_RESP] Valid Response", expectedId);
 
             uint8_t* tlv_payload = rx_buffer.data() + sizeof(ptp::PtpManagementMsg) + sizeof(ptp::PtpManagementTlv);
             out_data.bytes.assign(tlv_payload, tlv_payload + payload_len);

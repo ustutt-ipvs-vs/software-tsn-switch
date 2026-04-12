@@ -72,6 +72,7 @@ ietfInterface_t* InterfacesCache::getInterface(const std::string& name) {
  * @return A reference to the entire cached map of interface-index to @ref ietfInterface_t struct
  */
 std::map<int, ietfInterface_t>& InterfacesCache::getAllInterfaces() {
+    SPDLOG_DEBUG("[IFCACHE] [GET_IF] cached_req={}", m_currentRequestId);
     return m_interfaces;
 }
 

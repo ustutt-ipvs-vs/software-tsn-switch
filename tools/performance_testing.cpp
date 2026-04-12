@@ -13,6 +13,12 @@
 const std::vector<std::string> xml_configs = {
     R"XML(<interfaces xmlns="urn:ietf:params:xml:ns:yang:ietf-interfaces" xmlns:sched="urn:ieee:std:802.1Q:yang:ieee802-dot1q-sched-bridge"><interface><name>enp2s0f2</name><bridge-port xmlns="urn:ieee:std:802.1Q:yang:ieee802-dot1q-bridge"><gate-parameter-table xmlns="urn:ieee:std:802.1Q:yang:ieee802-dot1q-sched-bridge"><admin-gate-states>255</admin-gate-states><admin-base-time><seconds>0</seconds><nanoseconds>0</nanoseconds></admin-base-time><admin-cycle-time><numerator>1500000</numerator><denominator>1000000000</denominator></admin-cycle-time><admin-control-list xmlns:nc="urn:ietf:params:xml:ns:netconf:base:1.0" nc:operation="replace"><gate-control-entry><index>0</index><operation-name xmlns:sched="urn:ieee:std:802.1Q:yang:ieee802-dot1q-sched">sched:set-gate-states</operation-name><gate-states-value>255</gate-states-value><time-interval-value>800000</time-interval-value></gate-control-entry><gate-control-entry><index>1</index><operation-name xmlns:sched="urn:ieee:std:802.1Q:yang:ieee802-dot1q-sched">sched:set-gate-states</operation-name><gate-states-value>0</gate-states-value><time-interval-value>200000</time-interval-value></gate-control-entry><gate-control-entry><index>2</index><operation-name xmlns:sched="urn:ieee:std:802.1Q:yang:ieee802-dot1q-sched">sched:set-gate-states</operation-name><gate-states-value>129</gate-states-value><time-interval-value>250000</time-interval-value></gate-control-entry><gate-control-entry><index>3</index><operation-name xmlns:sched="urn:ieee:std:802.1Q:yang:ieee802-dot1q-sched">sched:set-gate-states</operation-name><gate-states-value>52</gate-states-value><time-interval-value>250000</time-interval-value></gate-control-entry></admin-control-list><config-change>true</config-change><gate-enabled>true</gate-enabled></gate-parameter-table></bridge-port></interface></interfaces>)XML", R"XML(<interfaces xmlns="urn:ietf:params:xml:ns:yang:ietf-interfaces" xmlns:sched="urn:ieee:std:802.1Q:yang:ieee802-dot1q-sched-bridge"><interface><name>enp2s0f2</name><bridge-port xmlns="urn:ieee:std:802.1Q:yang:ieee802-dot1q-bridge"><gate-parameter-table xmlns="urn:ieee:std:802.1Q:yang:ieee802-dot1q-sched-bridge"><admin-gate-states>255</admin-gate-states><admin-base-time><seconds>0</seconds><nanoseconds>0</nanoseconds></admin-base-time><admin-cycle-time><numerator>1500000</numerator><denominator>1000000000</denominator></admin-cycle-time><admin-control-list xmlns:nc="urn:ietf:params:xml:ns:netconf:base:1.0" nc:operation="replace"><gate-control-entry><index>0</index><operation-name xmlns:sched="urn:ieee:std:802.1Q:yang:ieee802-dot1q-sched">sched:set-gate-states</operation-name><gate-states-value>200</gate-states-value><time-interval-value>100000</time-interval-value></gate-control-entry><gate-control-entry><index>1</index><operation-name xmlns:sched="urn:ieee:std:802.1Q:yang:ieee802-dot1q-sched">sched:set-gate-states</operation-name><gate-states-value>3</gate-states-value><time-interval-value>200000</time-interval-value></gate-control-entry><gate-control-entry><index>2</index><operation-name xmlns:sched="urn:ieee:std:802.1Q:yang:ieee802-dot1q-sched">sched:set-gate-states</operation-name><gate-states-value>171</gate-states-value><time-interval-value>300000</time-interval-value></gate-control-entry><gate-control-entry><index>3</index><operation-name xmlns:sched="urn:ieee:std:802.1Q:yang:ieee802-dot1q-sched">sched:set-gate-states</operation-name><gate-states-value>42</gate-states-value><time-interval-value>400000</time-interval-value></gate-control-entry><gate-control-entry><index>4</index><operation-name xmlns:sched="urn:ieee:std:802.1Q:yang:ieee802-dot1q-sched">sched:set-gate-states</operation-name><gate-states-value>231</gate-states-value><time-interval-value>500000</time-interval-value></gate-control-entry></admin-control-list><config-change>true</config-change><gate-enabled>true</gate-enabled></gate-parameter-table></bridge-port></interface></interfaces>)XML", R"XML(<interfaces xmlns="urn:ietf:params:xml:ns:yang:ietf-interfaces" xmlns:sched="urn:ieee:std:802.1Q:yang:ieee802-dot1q-sched-bridge"><interface><name>enp2s0f2</name><bridge-port xmlns="urn:ieee:std:802.1Q:yang:ieee802-dot1q-bridge"><gate-parameter-table xmlns="urn:ieee:std:802.1Q:yang:ieee802-dot1q-sched-bridge"><config-change>true</config-change><gate-enabled>false</gate-enabled></gate-parameter-table></bridge-port></interface></interfaces>)XML"};
 
+const char* combined_get_filter =
+    "/ietf-interfaces:interfaces | "
+    "/ieee802-dot1q-bridge:bridges | "
+    "/ieee1588-ptp-tt:ptp | "
+    "/ieee802-dot1ab-lldp:lldp";
+
 bool keep_running = true;
 void signal_handler(int) {
     keep_running = false;
@@ -20,7 +26,7 @@ void signal_handler(int) {
 
 void send_rpc_safe(struct nc_session* session, struct nc_rpc* rpc, const char* label, uint64_t* msgid) {
     // 1. Send RPC
-    NC_MSG_TYPE msgtype = nc_send_rpc(session, rpc, 1000, msgid);
+    NC_MSG_TYPE msgtype = nc_send_rpc(session, rpc, 5000, msgid);
     if (msgtype != NC_MSG_RPC) {
         std::cerr << "Error: Failed to send RPC (" << label << ")" << std::endl;
         nc_rpc_free(rpc);
@@ -33,7 +39,7 @@ void send_rpc_safe(struct nc_session* session, struct nc_rpc* rpc, const char* l
 
     // 3. Receive Reply
     // Signature: session, rpc, msgid, timeout, envp_out, op_out
-    msgtype = nc_recv_reply(session, rpc, *msgid, 2000, &envp, &op);
+    msgtype = nc_recv_reply(session, rpc, *msgid, 5000, &envp, &op);
 
     // 4. Check results
     if (msgtype == NC_MSG_REPLY) {
@@ -42,7 +48,7 @@ void send_rpc_safe(struct nc_session* session, struct nc_rpc* rpc, const char* l
     } else if (msgtype == NC_MSG_ERROR) {
         std::cerr << "Error: Critical failure receiving reply for " << label << std::endl;
     } else {
-        std::cerr << "Error: Received unexpected message type for " << label << std::endl;
+        std::cerr << "Error: Received unexpected message type for " << label << ": " << msgtype << std::endl;
     }
 
     // 5. Cleanup
@@ -93,6 +99,12 @@ int main(int argc, char** argv) {
             struct nc_rpc* rpc_commit = nc_rpc_commit(0, 0, nullptr, nullptr, NC_PARAMTYPE_CONST);
             send_rpc_safe(session, rpc_commit, "commit", &msgid);
             PERFORMANCE_LOGGING(label.c_str(), "COMMIT_DONE req={}", msgid);
+
+            // --- GET ---
+            PERFORMANCE_LOGGING(label.c_str(), "GET_START");
+            struct nc_rpc* rpc_get = nc_rpc_get(combined_get_filter, NC_WD_EXPLICIT, NC_PARAMTYPE_CONST);
+            send_rpc_safe(session, rpc_get, "get", &msgid);
+            PERFORMANCE_LOGGING(label.c_str(), "GET_DONE req={}", msgid);
         }
     }
 
