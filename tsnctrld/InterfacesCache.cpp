@@ -6,6 +6,7 @@
 #include <stdexcept>
 
 #include "LinkManager.h"
+#include "PerformanceLogger.h"
 #include "QdiscManager.h"
 
 /**
@@ -112,7 +113,9 @@ std::map<int, ietfInterface_t>& InterfacesCache::getAllInterfaces() {
  * @param sock An instance of a @ref NetlinkSocket which is used to send the message and retrieve the response.
  */
 void InterfacesCache::ensureFullLinkData(NetlinkSocket& sock) {
+    PERFORMANCE_LOGGING("[IFCACHE] [LINK]", "req={} Start", m_currentRequestId);
     if (m_fullLinkDumpDone) {
+        PERFORMANCE_LOGGING("[IFCACHE] [LINK]", "req={} Already fresh", m_currentRequestId);
         return;
     }
 
@@ -124,10 +127,13 @@ void InterfacesCache::ensureFullLinkData(NetlinkSocket& sock) {
     }
 
     // 2. Full Dump
+    PERFORMANCE_LOGGING("[IFCACHE] [LINK]", "req={} Sending query", m_currentRequestId);
     LinkManager::getAllInterfaces(sock);  // Sends RTM_GETLINK with NLM_F_DUMP
+    PERFORMANCE_LOGGING("[IFCACHE] [LINK]", "req={} Receiving response", m_currentRequestId);
 
     // 3. Parse Response
     LinkManager::getInterfacesInResponse(sock, m_interfaces, m_currentRequestId);
+    PERFORMANCE_LOGGING("[IFCACHE] [LINK]", "req={} Received, cleaning", m_currentRequestId);
 
     // 4. Prune Dead Interfaces
     // If lastLinkUpdateId wasn't updated to currentReqId, the kernel didn't report it.
@@ -140,11 +146,17 @@ void InterfacesCache::ensureFullLinkData(NetlinkSocket& sock) {
     }
 
     for (auto& [id, iface] : m_interfaces) {
+        PERFORMANCE_LOGGING("[IFCACHE] [LINK]", "req={} Interface={} Getting TX-Queue count", m_currentRequestId,
+                            iface.name);
+
         LinkManager::getActiveQueues(m_ethtool_sock, iface);
+        PERFORMANCE_LOGGING("[IFCACHE] [LINK]", "req={} Interface={} Getting nominal speed", m_currentRequestId,
+                            iface.name);
         LinkManager::getLinkSpeed(m_ethtool_sock, iface);
     }
 
     m_fullLinkDumpDone = true;
+    PERFORMANCE_LOGGING("[IFCACHE] [LINK]", "req={} End", m_currentRequestId);
 }
 
 /**
@@ -155,15 +167,19 @@ void InterfacesCache::ensureFullLinkData(NetlinkSocket& sock) {
  * @param sock An instance of a @ref NetlinkSocket which is used to send the message and retrieve the response.
  */
 void InterfacesCache::ensureFullQdiscData(NetlinkSocket& sock) {
+    PERFORMANCE_LOGGING("[IFCACHE] [QDISC]", "req={} Start", m_currentRequestId);
     if (m_fullQdiscDumpDone) {
         return;
     }
 
     // 1. Full Dump
+    PERFORMANCE_LOGGING("[IFCACHE] [QDISC]", "req={} Sending query", m_currentRequestId);
     QdiscManager::getAllQdiscInfo(sock);
+    PERFORMANCE_LOGGING("[IFCACHE] [QDISC]", "req={} Receiving response", m_currentRequestId);
 
     // 2. Parse Response (No filter)
     QdiscManager::getInterfacesInResponse(sock, m_interfaces, m_currentRequestId);
+    PERFORMANCE_LOGGING("[IFCACHE] [QDISC]", "req={} Received, cleaning", m_currentRequestId);
 
     // Unlike in ensureFullLinkData(), no entries from the list are deleted, only the GPTs for which no schedules are
     // set are invalidated.
@@ -175,4 +191,5 @@ void InterfacesCache::ensureFullQdiscData(NetlinkSocket& sock) {
     }
 
     m_fullQdiscDumpDone = true;
+    PERFORMANCE_LOGGING("[IFCACHE] [QDISC]", "req={} End", m_currentRequestId);
 }

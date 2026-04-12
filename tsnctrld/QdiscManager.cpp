@@ -124,6 +124,7 @@ void QdiscManager::setQdisc(NetlinkSocket& netlinkSocket, const std::string& ifn
  * @param ifname Name of the interface from which to remove the TAPRIO qdisc
  */
 void QdiscManager::removeQdisc(NetlinkSocket& netlinkSocket, const std::string& ifname) {
+    PERFORMANCE_LOGGING("[QDISC] [DEL]", "Start");
     struct {
         struct nlmsghdr nh;
         struct tcmsg tcm;
@@ -144,7 +145,9 @@ void QdiscManager::removeQdisc(NetlinkSocket& netlinkSocket, const std::string& 
     req.tcm.tcm_handle = 0;
     req.tcm.tcm_parent = TC_H_ROOT;
 
+    PERFORMANCE_LOGGING("[QDISC] [DEL]", "Sending");
     netlinkSocket.sendMessage(&req.nh, req.nh.nlmsg_len);
+    PERFORMANCE_LOGGING("[QDISC] [DEL]", "End");
 }
 
 /**
@@ -193,6 +196,7 @@ void QdiscManager::getQdiscInfo(NetlinkSocket& netlinkSocket, const std::string&
  * @param netlinkSocket The NetlinkSocket used to communicate with the kernel
  */
 void QdiscManager::getAllQdiscInfo(NetlinkSocket& netlinkSocket) {
+    PERFORMANCE_LOGGING("[QDISC] [GET_ALL]", "Start");
     struct {
         struct nlmsghdr nlh;
         struct tcmsg tcm;
@@ -210,7 +214,9 @@ void QdiscManager::getAllQdiscInfo(NetlinkSocket& netlinkSocket) {
     req.tcm.tcm_handle = 0;
     req.tcm.tcm_parent = TC_H_ROOT;
 
+    PERFORMANCE_LOGGING("[QDISC] [GET_ALL]", "Send");
     netlinkSocket.sendMessage(&req.nlh, req.nlh.nlmsg_len);
+    PERFORMANCE_LOGGING("[QDISC] [GET_ALL]", "End");
 }
 
 /**
@@ -234,6 +240,7 @@ void QdiscManager::getInterfacesInResponse(const NetlinkSocket& sock, std::map<i
 
         auto* tcm = (tcmsg*)NLMSG_DATA(nlh);
         int ifindex = tcm->tcm_ifindex;
+        PERFORMANCE_LOGGING("[QDISC] [RESP]", "ifindex={} Start", ifindex);
         SPDLOG_TRACE("[QM] [Parse Full Response] Current interface: index={}, handle={}, parent={}", ifindex,
                      tcm->tcm_handle, tcm->tcm_parent);
 
@@ -262,6 +269,7 @@ void QdiscManager::getInterfacesInResponse(const NetlinkSocket& sock, std::map<i
                     break;
             }
         }
+        PERFORMANCE_LOGGING("[QDISC] [RESP]", "ifindex={} End", ifindex);
     }
 };
 

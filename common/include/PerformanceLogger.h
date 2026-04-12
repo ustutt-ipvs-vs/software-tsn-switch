@@ -17,5 +17,5 @@ inline void log_perf_external(const char* context, const char* message) {
 }
 #define PERFORMANCE_LOGGING(context, fmt_or_msg, ...) log_perf_external(context, fmt_or_msg, ##__VA_ARGS__)
 #else
-#define PERFORMANCE_LOGGING(context, action) ((void)0)
+#define PERFORMANCE_LOGGING(context, fmt_or_msg, ...) ((void)0)
 #endif

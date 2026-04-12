@@ -16,6 +16,8 @@
 #include <limits>
 #include <string>
 
+#include "PerformanceLogger.h"
+
 /* RFC 2863 operational status
  * Taken from linux/if.h
  * Set basetype for default uint32_t to uint8_t to satify linter
@@ -70,6 +72,7 @@ static const char* getLinkKindRaw(struct rtattr* rta, int len) {
  * @param netlinkSocket The NetlinkSocket used to communicate with the kernel
  */
 void LinkManager::getAllInterfaces(NetlinkSocket& netlinkSocket) {
+    PERFORMANCE_LOGGING("[LINK] [GET_ALL]", "Start");
     struct {
         struct nlmsghdr nlh;
         struct ifinfomsg ifm;
@@ -92,7 +95,9 @@ void LinkManager::getAllInterfaces(NetlinkSocket& netlinkSocket) {
     // For a dump request, other fields (ifi_index, flags) are usually left as 0
 
     // 3. Send and Handle Response
+    PERFORMANCE_LOGGING("[LINK] [GET_ALL]", "Send");
     netlinkSocket.sendMessage(&req.nlh, req.nlh.nlmsg_len);
+    PERFORMANCE_LOGGING("[LINK] [GET_ALL]", "End");
 }
 
 /**
@@ -102,6 +107,7 @@ void LinkManager::getAllInterfaces(NetlinkSocket& netlinkSocket) {
  * @param ifindex The index of the desired interface.
  */
 void LinkManager::getInterface(NetlinkSocket& netlinkSocket, int ifindex) {
+    PERFORMANCE_LOGGING("[LINK] [GET]", "Start");
     struct {
         struct nlmsghdr nlh;
         struct ifinfomsg ifm;
@@ -122,7 +128,9 @@ void LinkManager::getInterface(NetlinkSocket& netlinkSocket, int ifindex) {
     req.ifm.ifi_index = ifindex;
 
     // 3. Send and Handle Response
+    PERFORMANCE_LOGGING("[LINK] [GET]", "Send");
     netlinkSocket.sendMessage(&req.nlh, req.nlh.nlmsg_len);
+    PERFORMANCE_LOGGING("[LINK] [GET]", "End");
 }
 
 /**
@@ -147,6 +155,7 @@ void LinkManager::getInterfacesInResponse(const NetlinkSocket& sock, std::map<in
 
         auto* ifm = (struct ifinfomsg*)NLMSG_DATA(nlh);
         int ifindex = ifm->ifi_index;
+        PERFORMANCE_LOGGING("[LINK] [RESP]", "ifindex={} Start", ifindex);
 
         ietfInterface_t& current = interfacesMap[ifindex];
 
@@ -221,6 +230,7 @@ void LinkManager::getInterfacesInResponse(const NetlinkSocket& sock, std::map<in
                 current.type = IfType::LAG;
             }
         }
+        PERFORMANCE_LOGGING("[LINK] [RESP]", "ifindex={} End", ifindex);
     }
 }
 
