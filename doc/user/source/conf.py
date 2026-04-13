@@ -7,7 +7,6 @@
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = 'Software TSN Switch'
-copyright = '2026, Axel, Jannik, Rico, Roman'
 author = 'Axel, Jannik, Rico, Roman'
 release = '0.1'
 
@@ -25,4 +24,5 @@ exclude_patterns = []
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
 html_theme = 'sphinx_rtd_theme'
+html_show_copyright = False
 html_static_path = ['_static']
