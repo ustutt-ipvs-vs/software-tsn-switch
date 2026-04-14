@@ -282,36 +282,61 @@ void printTaprioConfig(const TaprioConfig &cfg) {
     SPDLOG_DEBUG("--------------------------------------------");
 }
 
-/**
- * @brief Called to set the leaf given by @param xpath in the RUNNING datastore to false
- *
- * @param requestId
- * @param xpath
- */
-void tsnctrld::resetTriggerLeaf(const std::string &xpath, const uint32_t requestId) {
-    std::thread([this, xpath, requestId]() {
-        try {
-            PERFORMANCE_LOGGING("[RESET_GPT_TRIGGER]", "req={} Start", requestId);
-            PERFORMANCE_LOGGING("[RESET_GPT_TRIGGER]", "req={} Resetting {}", requestId, xpath);
+void tsnctrld::resetWorkerLoop() {
+    try {
+        // 1. Start a persistent session ONCE
+        auto sess = m_sess.getConnection().sessionStart();
 
-            // 1. Start a new session
-            auto sess = m_sess.getConnection().sessionStart();
+        // 2. Set Originator Name ONCE
+        sess.setOriginatorName("tsnctrld-internal");
 
-            // 2. SET THE ORIGINATOR NAME
-            // This is how the callback will know 'we' did this
-            sess.setOriginatorName("tsnctrld-internal");
+        while (true) {
+            std::vector<ResetTask> tasks_to_process;
 
-            // 3. Perform the reset
-            sess.setItem(xpath, "false");
-            sess.applyChanges();
-            PERFORMANCE_LOGGING("[RESET_GPT_TRIGGER]", "req={} Reset done", requestId, xpath);
+            // --- LOCK SCOPE ---
+            {
+                std::unique_lock<std::mutex> lock(m_resetMutex);
 
-            SPDLOG_DEBUG("[RESET] Successfully reset {} to false.", xpath);
-        } catch (const std::exception &e) {
-            PERFORMANCE_LOGGING("[RESET_GPT_TRIGGER]", "req={} Reset failed {}", requestId, e.what());
-            spdlog::error("[RESET] [ERROR] {}.", e.what());
+                // Go to sleep until there is a task OR we are told to stop
+                m_resetCv.wait(lock, [this]() { return !m_resetQueue.empty() || m_stopResetThread; });
+
+                // If told to stop and the queue is empty, exit the loop
+                if (m_stopResetThread && m_resetQueue.empty()) {
+                    break;
+                }
+
+                // Super-fast transfer: Swap the queued tasks into our local vector.
+                // This instantly empties m_resetQueue so the main thread isn't blocked.
+                tasks_to_process.swap(m_resetQueue);
+            }
+            // --- UNLOCK SCOPE ---
+
+            // Process all grabbed tasks outside the lock!
+            if (!tasks_to_process.empty()) {
+                try {
+                    // Set all items in memory
+                    for (const auto &task : tasks_to_process) {
+                        PERFORMANCE_LOGGING("[RESET_GPT_TRIGGER]", "Start req={} path={}", task.requestId, task.xpath);
+                        sess.setItem(task.xpath, "false");
+                    }
+
+                    // Apply all changes in ONE network/DB transaction!
+                    sess.applyChanges();
+
+                    // Log success for all items
+                    for (const auto &task : tasks_to_process) {
+                        PERFORMANCE_LOGGING("[RESET_GPT_TRIGGER]", "End req={} path={}", task.requestId, task.xpath);
+                        SPDLOG_DEBUG("[RESET] Successfully reset {} to false.", task.xpath);
+                    }
+                } catch (const std::exception &e) {
+                    spdlog::error("[RESET] [ERROR] Batch reset failed: {}", e.what());
+                    // Note: If sysrepo fails here, it usually means bad xpaths.
+                }
+            }
         }
-    }).detach();  // Fire and forget
+    } catch (const std::exception &e) {
+        spdlog::error("[RESET WORKER] Fatal error: {}", e.what());
+    }
 }
 
 /**
@@ -454,12 +479,13 @@ void fillGptNode(const GclConfig_t &hw_cfg, libyang::DataNode &toFill,
  */
 ietfInterface_t *tsnctrld::syncInterfaceFromSysrepo(sysrepo::Session &sess, const std::string &ifname,
                                                     uint32_t requestId) {
+    PERFORMANCE_LOGGING("[SYNC_SYS_TO_IF]", "Start req={} ifname={}", requestId, ifname);
     m_ifcache.setCurrentRequestId(requestId);
-    m_ifcache.ensureFullLinkData(m_sock);
 
-    ietfInterface_t *iface_ptr = m_ifcache.getInterface(ifname);
+    ietfInterface_t *iface_ptr = m_ifcache.getEmptyInterface(ifname);
     if (iface_ptr == nullptr) {
         spdlog::warn("[SYSREPO->STRUCT] [DEBUG] no interface found with name {}", ifname);
+        PERFORMANCE_LOGGING("[SYNC_SYS_TO_IF]", "End req={} ifname={} Interface not in kernel", requestId, ifname);
         return nullptr;
     }
 
@@ -478,6 +504,7 @@ ietfInterface_t *tsnctrld::syncInterfaceFromSysrepo(sysrepo::Session &sess, cons
     auto bpRoot = sess.getData(basePath);
     if (!bpRoot) {
         spdlog::error("[SYSREPO->STRUCT] bpData is null, failed...");
+        PERFORMANCE_LOGGING("[SYNC_SYS_TO_IF]", "End req={} ifname={} Error BP null", requestId, ifname);
         return nullptr;
     }
     auto bpData = bpRoot->findPath(basePath);
@@ -487,6 +514,7 @@ ietfInterface_t *tsnctrld::syncInterfaceFromSysrepo(sysrepo::Session &sess, cons
         spdlog::warn(
             "[SYSREPO->STRUCT] [DEBUG] Parameter bpData of type std::optional has no value, makes no sense, "
             "returning...");
+        PERFORMANCE_LOGGING("[SYNC_SYS_TO_IF]", "End req={} ifname={} Error BP empty", requestId, ifname);
         return nullptr;
     }
 
@@ -498,16 +526,19 @@ ietfInterface_t *tsnctrld::syncInterfaceFromSysrepo(sysrepo::Session &sess, cons
         spdlog::warn(
             "[SYSREPO->STRUCT] [DEBUG] Parameter gclData of type std::optional has no value, makes no sense, "
             "returning...");
+        PERFORMANCE_LOGGING("[SYNC_SYS_TO_IF]", "End req={} ifname={} Error GCL empty", requestId, ifname);
         return nullptr;
     }
     gcl.gateEnabled = getLeaf<bool>(gclData, "gate-enabled");
     if (!gcl.gateEnabled) {
         SPDLOG_DEBUG(
             "[SYSREPO->STRUCT] [DEBUG] gate-enabled is false, skipping fetch of remaining (irrelevant) data...");
+        PERFORMANCE_LOGGING("[SYNC_SYS_TO_IF]", "End req={} ifname={} Success Gate disabled", requestId, ifname);
         return &iface;
     }
 
     auto tcData = bpData->findPath("traffic-class/traffic-class-table");
+#if SPDLOG_ACTIVE_LEVEL <= SPDLOG_LEVEL_DEBUG
     if (tcData.has_value()) {
         // TODO: Use old code for flags once linter stops complaining
         // SPDLOG_TRACE(
@@ -528,40 +559,18 @@ ietfInterface_t *tsnctrld::syncInterfaceFromSysrepo(sysrepo::Session &sess, cons
         SPDLOG_TRACE("  -> [SYSREPO->STRUCT] [DEBUG] tcData:\n {}",
                      tcData->printStr(libyang::DataFormat::XML, flags).value_or("Missing"));
     }
+#endif
+    PERFORMANCE_LOGGING("[SYNC_SYS_TO_IF] [SET]", "Start req={} ifname={}", requestId, ifname);
     bp.trafficClassData.mapDataSet = true;
-    bool useDsConfig = false;
-    uint8_t numTCs = 1;
-    if (tcData.has_value() && tcData->child().has_value()) {
-        SPDLOG_DEBUG("[SYSREPO->STRUCT] [DEBUG] found traffic-class/traffic-class-table...");
-        numTCs = getLeaf<uint8_t>(tcData, "number-of-traffic-classes");
-        if (numTCs <= iface.numActiveTxQueues) {
-            useDsConfig = true;
-        } else {
-            spdlog::warn("Datastore has more traffic classes configured than interface has active: {}>{}", numTCs,
-                         iface.numActiveTxQueues);
-        }
-    }
-    if (useDsConfig) {
-        SPDLOG_DEBUG("[SYSREPO->STRUCT] [DEBUG] traffic-class/traffic-class-table is valid, using it...");
-        bp.trafficClassData.numTrafficClasses = numTCs;
-        bp.trafficClassData.priorityMap[0] = getLeaf<uint8_t>(tcData, "priority0");
-        bp.trafficClassData.priorityMap[1] = getLeaf<uint8_t>(tcData, "priority1");
-        bp.trafficClassData.priorityMap[2] = getLeaf<uint8_t>(tcData, "priority2");
-        bp.trafficClassData.priorityMap[3] = getLeaf<uint8_t>(tcData, "priority3");
-        bp.trafficClassData.priorityMap[4] = getLeaf<uint8_t>(tcData, "priority4");
-        bp.trafficClassData.priorityMap[5] = getLeaf<uint8_t>(tcData, "priority5");
-        bp.trafficClassData.priorityMap[6] = getLeaf<uint8_t>(tcData, "priority6");
-        bp.trafficClassData.priorityMap[7] = getLeaf<uint8_t>(tcData, "priority7");
-    } else {
-        SPDLOG_DEBUG(
-            "[SYSREPO->STRUCT] [DEBUG] traffic-class/traffic-class-table not found, empty or configured number of "
-            "tx-queues larger than number of active tx-queues, using defaults based on number of tx-queues...");
-        bp.trafficClassData.numTrafficClasses = iface.numActiveTxQueues < 8 ? iface.numActiveTxQueues : 8;
-        uint8_t colIndex = bp.trafficClassData.numTrafficClasses - 1;
-        for (int priority = 0; priority < 8; ++priority) {
-            bp.trafficClassData.priorityMap[priority] = IEEE8021Q_DEFAULT_TC_MAP[priority][colIndex];
-        }
-    }
+    bp.trafficClassData.numTrafficClasses = getLeaf<uint8_t>(tcData, "number-of-traffic-classes");
+    bp.trafficClassData.priorityMap[0] = getLeaf<uint8_t>(tcData, "priority0");
+    bp.trafficClassData.priorityMap[1] = getLeaf<uint8_t>(tcData, "priority1");
+    bp.trafficClassData.priorityMap[2] = getLeaf<uint8_t>(tcData, "priority2");
+    bp.trafficClassData.priorityMap[3] = getLeaf<uint8_t>(tcData, "priority3");
+    bp.trafficClassData.priorityMap[4] = getLeaf<uint8_t>(tcData, "priority4");
+    bp.trafficClassData.priorityMap[5] = getLeaf<uint8_t>(tcData, "priority5");
+    bp.trafficClassData.priorityMap[6] = getLeaf<uint8_t>(tcData, "priority6");
+    bp.trafficClassData.priorityMap[7] = getLeaf<uint8_t>(tcData, "priority7");
 
     gcl.adminCycleTime.numerator = getLeaf<uint32_t>(gclData, "admin-cycle-time/numerator");
     gcl.adminCycleTime.denominator = getLeaf<uint32_t>(gclData, "admin-cycle-time/denominator");
@@ -597,7 +606,9 @@ ietfInterface_t *tsnctrld::syncInterfaceFromSysrepo(sysrepo::Session &sess, cons
 
     gcl.adminBaseTime.seconds = getLeaf<uint64_t>(gclData, "admin-base-time/seconds");
     gcl.adminBaseTime.nanoseconds = getLeaf<uint32_t>(gclData, "admin-base-time/nanoseconds");
+    PERFORMANCE_LOGGING("[SYNC_SYS_TO_IF] [SET]", "End req={} ifname={}", requestId, ifname);
 
+    PERFORMANCE_LOGGING("[SYNC_SYS_TO_IF]", "End req={} ifname={} Success Gate enabled", requestId, ifname);
     return &iface;
 }
 
@@ -636,10 +647,9 @@ void tsnctrld::initialize() {
     m_sess.deleteItem("/ieee1588-ptp-tt:ptp");
     m_sess.applyChanges();
 
-    PERFORMANCE_LOGGING("[INIT]", "Syncing");
     syncHardwareToRunning();
-    PERFORMANCE_LOGGING("[INIT]", "Sync done");
 
+    m_resetThread = std::thread(&tsnctrld::resetWorkerLoop, this);
     setupSubscriptions();
 
     // Start relevant monitoring threads
@@ -1046,6 +1056,7 @@ void tsnctrld::populatePtpConfig(libyang::Context &ctx, std::optional<libyang::D
  *
  */
 void tsnctrld::syncHardwareToRunning() {
+    PERFORMANCE_LOGGING("[SYNC]", "Start");
     spdlog::info("[SYNC] Reading info from kernel and writing to RUNNING datastore");
     SPDLOG_DEBUG("[SYNC] Populating internal list m_interfaces from kernel");
     m_sess.switchDatastore(sysrepo::Datastore::Running);
@@ -1055,11 +1066,8 @@ void tsnctrld::syncHardwareToRunning() {
     std::optional<libyang::DataNode> forest_ptp;
 
     m_ifcache.setCurrentRequestId(0);
-    PERFORMANCE_LOGGING("[SYNC]", "Full link dump");
     m_ifcache.ensureFullLinkData(m_sock);
-    PERFORMANCE_LOGGING("[SYNC]", "Full qdisc dump");
     m_ifcache.ensureFullQdiscData(m_sock);
-    PERFORMANCE_LOGGING("[SYNC]", "Dumps done");
 
     SPDLOG_DEBUG("[SYNC] Iterating over interfaces...");
 
@@ -1201,7 +1209,7 @@ sysrepo::ErrorCode tsnctrld::operInterfaceCallback(const sysrepo::Session &sess,
                                                    const std::optional<std::string> &subXPath,
                                                    const std::optional<std::string> &requestXPath, uint32_t requestId,
                                                    std::optional<libyang::DataNode> &parent) {
-    PERFORMANCE_LOGGING("[CB_OPER] [IF]", "req={} Start", requestId);
+    PERFORMANCE_LOGGING("[CB_OPER] [IF]", "Start req={}", requestId);
     m_ifcache.setCurrentRequestId(requestId);
 
     SPDLOG_DEBUG("[CB_OPER] [IF] Received oper callback for module \"{}\"...", moduleName);
@@ -1213,10 +1221,10 @@ sysrepo::ErrorCode tsnctrld::operInterfaceCallback(const sysrepo::Session &sess,
 
     SPDLOG_DEBUG("[CB_OPER] [IF] Refreshing interface status...");
 
+    PERFORMANCE_LOGGING("[CB_OPER] [IF] [DUMP]", "Start req={}", requestId);
     m_ifcache.ensureFullLinkData(m_sock);
-    PERFORMANCE_LOGGING("[CB_OPER] [IF]", "req={} Link dump done ", requestId);
     m_ifcache.ensureFullQdiscData(m_sock);
-    PERFORMANCE_LOGGING("[CB_OPER] [IF]", "req={} Qdisc dump done", requestId);
+    PERFORMANCE_LOGGING("[CB_OPER] [IF] [DUMP]", "End req={}", requestId);
 
     auto ctx = sess.getContext();
     SPDLOG_DEBUG("[CB_OPER] [IF] Refreshing caches refreshed, start iterating...");
@@ -1225,6 +1233,7 @@ sysrepo::ErrorCode tsnctrld::operInterfaceCallback(const sysrepo::Session &sess,
         printSingleInterface(current);
 #endif
         std::string &name = current.name;
+        PERFORMANCE_LOGGING("[CB_OPER] [IF]", "Start req={} iface={} done ", requestId, name);
         SPDLOG_DEBUG("[CB_OPER] [IF] Current: {}", name);
 
         std::string if_path = fmt::format("/ietf-interfaces:interfaces/interface[name='{}']", name);
@@ -1262,13 +1271,13 @@ sysrepo::ErrorCode tsnctrld::operInterfaceCallback(const sysrepo::Session &sess,
             }
 
             GclConfig_t &hw_cfg = current.bridgePort.gateParameterTable;
-            PERFORMANCE_LOGGING("[CB_OPER] [IF]", "req={} Interface={} Fill GPT start", requestId, name);
+            PERFORMANCE_LOGGING("[CB_OPER] [IF] [FILL_GPT]", "Start req={} iface={}", requestId, name);
             fillGptNode(hw_cfg, gpt_node.value(), GclFillOptions::FillOper);
-            PERFORMANCE_LOGGING("[CB_OPER] [IF]", "req={} Interface={} Fill GPT done", requestId, name);
+            PERFORMANCE_LOGGING("[CB_OPER] [IF] [FILL_GPT]", "End req={} iface={}", requestId, name);
         }
-        PERFORMANCE_LOGGING("[CB_OPER] [IF]", "req={} Interface={} done ", requestId, name);
+        PERFORMANCE_LOGGING("[CB_OPER] [IF]", "End req={} iface={} done ", requestId, name);
     }
-    PERFORMANCE_LOGGING("[CB_OPER] [IF]", "req={} End", requestId);
+    PERFORMANCE_LOGGING("[CB_OPER] [IF]", "End req={}", requestId);
     return sysrepo::ErrorCode::Ok;
 }
 
@@ -1292,7 +1301,7 @@ sysrepo::ErrorCode tsnctrld::operBridgeCallback(const sysrepo::Session &sess, ui
                                                 const std::optional<std::string> &subXPath,
                                                 const std::optional<std::string> &requestXPath, uint32_t requestId,
                                                 std::optional<libyang::DataNode> &parent) {
-    PERFORMANCE_LOGGING("[CB_OPER] [BR]", "req={} Start", requestId);
+    PERFORMANCE_LOGGING("[CB_OPER] [BR]", "Start req={}", requestId);
     m_ifcache.setCurrentRequestId(requestId);
 
     SPDLOG_DEBUG("[CB_OPER] [BR] Received oper callback for module \"{}\"...", moduleName);
@@ -1304,8 +1313,9 @@ sysrepo::ErrorCode tsnctrld::operBridgeCallback(const sysrepo::Session &sess, ui
 
     SPDLOG_DEBUG("[CB_OPER] [BR] Scanning interfaces for bridge members...");
 
+    PERFORMANCE_LOGGING("[CB_OPER] [BR] [DUMP]", "Start req={}", requestId);
     m_ifcache.ensureFullLinkData(m_sock);
-    PERFORMANCE_LOGGING("[CB_OPER] [BR]", "req={} Link dump done", requestId);
+    PERFORMANCE_LOGGING("[CB_OPER] [BR] [DUMP]", "End req={}", requestId);
     const auto &allIfaces = m_ifcache.getAllInterfaces();
 
     auto ctx = sess.getContext();
@@ -1348,7 +1358,7 @@ sysrepo::ErrorCode tsnctrld::operBridgeCallback(const sysrepo::Session &sess, ui
             comp_node->newPath2("bridge-port", *slaveName);
         }
     }
-    PERFORMANCE_LOGGING("[CB_OPER] [BR]", "req={} End", requestId);
+    PERFORMANCE_LOGGING("[CB_OPER] [BR]", "End req={}", requestId);
     return sysrepo::ErrorCode::Ok;
 }
 
@@ -1369,7 +1379,7 @@ sysrepo::ErrorCode tsnctrld::operBridgePortCallback(const sysrepo::Session &sess
                                                     const std::optional<std::string> &subXPath,
                                                     const std::optional<std::string> &requestXPath, uint32_t requestId,
                                                     std::optional<libyang::DataNode> &parent) {
-    PERFORMANCE_LOGGING("[CB_OPER] [BP]", "req={} Start", requestId);
+    PERFORMANCE_LOGGING("[CB_OPER] [BP]", "Start req={}", requestId);
     // m_ifcache.setCurrentRequestId(requestId);
 
     SPDLOG_DEBUG("[CB_OPER] [BP] Received oper callback for module \"{}\"...", moduleName);
@@ -1387,7 +1397,7 @@ sysrepo::ErrorCode tsnctrld::operBridgePortCallback(const sysrepo::Session &sess
     } else {
         SPDLOG_DEBUG("[CB_OPER] [BP] parent is truthy...");
     }
-    PERFORMANCE_LOGGING("[CB_OPER] [BP]", "req={} End", requestId);
+    PERFORMANCE_LOGGING("[CB_OPER] [BP]", "End req={}", requestId);
     return sysrepo::ErrorCode::Ok;
 }
 
@@ -1407,7 +1417,7 @@ sysrepo::ErrorCode tsnctrld::operLldpLocalSystemCallback(const sysrepo::Session 
                                                          const std::optional<std::string> &subXPath,
                                                          const std::optional<std::string> &requestXPath,
                                                          uint32_t requestId, std::optional<libyang::DataNode> &parent) {
-    PERFORMANCE_LOGGING("[CB_OPER] [LLDP]", "req={} Start", requestId);
+    PERFORMANCE_LOGGING("[CB_OPER] [LLDP]", "Start req={}", requestId);
     // m_ifcache.setCurrentRequestId(requestId);
 
     SPDLOG_DEBUG("[CB_OPER] [LLDP] Received oper callback for module \"{}\"...", moduleName);
@@ -1444,7 +1454,7 @@ sysrepo::ErrorCode tsnctrld::operLldpLocalSystemCallback(const sysrepo::Session 
     local_system_node->newPath2("system-capabilities-supported", lldpNode.localSystemData.systemCapabilitiesSupported);
     local_system_node->newPath2("system-capabilities-enabled", lldpNode.localSystemData.systemCapabilitiesEnabled);
 
-    PERFORMANCE_LOGGING("[CB_OPER] [LLDP]", "req={} End", requestId);
+    PERFORMANCE_LOGGING("[CB_OPER] [LLDP]", "End req={}", requestId);
     return sysrepo::ErrorCode::Ok;
 }
 
@@ -1463,7 +1473,7 @@ sysrepo::ErrorCode tsnctrld::operPtpCallback(const sysrepo::Session &sess, uint3
                                              const std::string &moduleName, const std::optional<std::string> &subXPath,
                                              const std::optional<std::string> &requestXPath, uint32_t requestId,
                                              std::optional<libyang::DataNode> &parent) {
-    PERFORMANCE_LOGGING("[CB_OPER] [PTP]", "req={} Start", requestId);
+    PERFORMANCE_LOGGING("[CB_OPER] [PTP]", "Start req={}", requestId);
     // m_ifcache.setCurrentRequestId(requestId);
 
     SPDLOG_DEBUG("[CB_OPER] [PTP] Received oper callback for module \"{}\"...", moduleName);
@@ -1544,7 +1554,7 @@ sysrepo::ErrorCode tsnctrld::operPtpCallback(const sysrepo::Session &sess, uint3
         port_node->newPath2("port-ds/mean-link-delay", std::to_string(port.portDs.meanLinkDelay));
     }
 
-    PERFORMANCE_LOGGING("[CB_OPER] [PTP]", "req={} End", requestId);
+    PERFORMANCE_LOGGING("[CB_OPER] [PTP]", "End req={}", requestId);
     return sysrepo::ErrorCode::Ok;
 }
 
@@ -1564,7 +1574,7 @@ sysrepo::ErrorCode tsnctrld::operPtpPerformanceCallback(const sysrepo::Session &
                                                         const std::optional<std::string> &subXPath,
                                                         const std::optional<std::string> &requestXPath,
                                                         uint32_t requestId, std::optional<libyang::DataNode> &parent) {
-    PERFORMANCE_LOGGING("[CB_OPER] [PTP_PERF]", "req={} Start", requestId);
+    PERFORMANCE_LOGGING("[CB_OPER] [PTP_PERF]", "Start req={}", requestId);
     // m_ifcache.setCurrentRequestId(requestId);
 
     SPDLOG_DEBUG("[CB_OPER] [PTP_PERF] Received oper callback for module \"{}\"...", moduleName);
@@ -1597,6 +1607,7 @@ sysrepo::ErrorCode tsnctrld::operPtpPerformanceCallback(const sysrepo::Session &
         return sysrepo::ErrorCode::OperationFailed;
     }
 
+    PERFORMANCE_LOGGING("[CB_OPER] [PTP_PERF] [15M]", "Start req={}", requestId);
     for (std::size_t i = 0; i < Records15m.size(); i++) {
         auto perf_rec_path = fmt::format("record-list[index='{}']", i);
         auto perf_rec_res = perf_ds_node->newPath2(perf_rec_path, std::nullopt);
@@ -1627,8 +1638,9 @@ sysrepo::ErrorCode tsnctrld::operPtpPerformanceCallback(const sysrepo::Session &
         perf_rec_node->newPath2("stddev-offset-from-time-transmitter",
                                 std::to_string(portRecord.offsetFromTimeTransmitter.stddev));
     }
-    PERFORMANCE_LOGGING("[CB_OPER] [PTP_PERF]", "req={} 15m records done (count={})", requestId, Records15m.size());
+    PERFORMANCE_LOGGING("[CB_OPER] [PTP_PERF] [15M]", "End req={} count:{}", requestId, Records15m.size());
 
+    PERFORMANCE_LOGGING("[CB_OPER] [PTP_PERF] [24H]", "Start req={}", requestId);
     for (std::size_t i = 0; i < Records24h.size(); i++) {
         auto perf_rec_path = fmt::format("record-list[index='{}']", 97 + i);
         auto perf_rec_res = perf_ds_node->newPath2(perf_rec_path, std::nullopt);
@@ -1660,8 +1672,8 @@ sysrepo::ErrorCode tsnctrld::operPtpPerformanceCallback(const sysrepo::Session &
         perf_rec_node->newPath2("stddev-offset-from-time-transmitter",
                                 std::to_string(portRecord.offsetFromTimeTransmitter.stddev));
     }
-    PERFORMANCE_LOGGING("[CB_OPER] [PTP_PERF]", "req={} 24h records done (count={})", requestId, Records24h.size());
-    PERFORMANCE_LOGGING("[CB_OPER] [PTP_PERF]", "req={} End", requestId);
+    PERFORMANCE_LOGGING("[CB_OPER] [PTP_PERF] [24H]", "End req={} count:{}", requestId, Records24h.size());
+    PERFORMANCE_LOGGING("[CB_OPER] [PTP_PERF]", "End req={} ", requestId);
     return sysrepo::ErrorCode::Ok;
 }
 
@@ -1682,7 +1694,7 @@ sysrepo::ErrorCode tsnctrld::operPtpPortPerformanceCallback(const sysrepo::Sessi
                                                             const std::optional<std::string> &requestXPath,
                                                             uint32_t requestId,
                                                             std::optional<libyang::DataNode> &parent) {
-    PERFORMANCE_LOGGING("[CB_OPER] [PTP_PORT_PERF]", "req={} Start", requestId);
+    PERFORMANCE_LOGGING("[CB_OPER] [PTP_PORT_PERF]", "Start req={}", requestId);
     // m_ifcache.setCurrentRequestId(requestId);
 
     SPDLOG_DEBUG("[CB_OPER] [PTP_PORT_PERF] Received oper callback for module \"{}\"...", moduleName);
@@ -1724,6 +1736,7 @@ sysrepo::ErrorCode tsnctrld::operPtpPortPerformanceCallback(const sysrepo::Sessi
         return sysrepo::ErrorCode::OperationFailed;
     }
 
+    PERFORMANCE_LOGGING("[CB_OPER] [PTP_PORT_PERF] [15M]", "Start req={}", requestId);
     for (std::size_t i = 0; i < portRecords15m.size(); i++) {
         auto port_path = fmt::format("record-list-peer-delay[index='{}']", i);
         auto port_perf_rec_res = port_perf_ds_node->newPath2(port_path, std::nullopt);
@@ -1743,9 +1756,9 @@ sysrepo::ErrorCode tsnctrld::operPtpPortPerformanceCallback(const sysrepo::Sessi
         port_perf_rec_node->newPath2("max-mean-link-delay", std::to_string(portRecord.meanLinkDelay.max));
         port_perf_rec_node->newPath2("stddev-mean-link-delay", std::to_string(portRecord.meanLinkDelay.stddev));
     }
-    PERFORMANCE_LOGGING("[CB_OPER] [PTP_PORT_PERF]", "req={} 15m records done (count={})", requestId,
-                        portRecords15m.size());
+    PERFORMANCE_LOGGING("[CB_OPER] [PTP_PORT_PERF] [15M]", "End req={} count:{}", requestId, portRecords15m.size());
 
+    PERFORMANCE_LOGGING("[CB_OPER] [PTP_PORT_PERF] [24H]", "Start req={}", requestId);
     for (std::size_t i = 0; i < portRecords24h.size(); i++) {
         auto port_path = fmt::format("record-list-peer-delay[index='{}']", 97 + i);
         auto port_perf_rec_res = port_perf_ds_node->newPath2(port_path, std::nullopt);
@@ -1766,9 +1779,8 @@ sysrepo::ErrorCode tsnctrld::operPtpPortPerformanceCallback(const sysrepo::Sessi
         port_perf_rec_node->newPath2("stddev-mean-link-delay", std::to_string(portRecord.meanLinkDelay.stddev));
     }
 
-    PERFORMANCE_LOGGING("[CB_OPER] [PTP_PORT_PERF]", "req={} 24h records done (count={})", requestId,
-                        portRecords24h.size());
-    PERFORMANCE_LOGGING("[CB_OPER] [PTP_PORT_PERF]", "req={} End", requestId);
+    PERFORMANCE_LOGGING("[CB_OPER] [PTP_PORT_PERF] [24H]", "End req={} count:{}", requestId, portRecords24h.size());
+    PERFORMANCE_LOGGING("[CB_OPER] [PTP_PORT_PERF]", "End req={}", requestId);
     return sysrepo::ErrorCode::Ok;
 }
 
@@ -1824,7 +1836,7 @@ sysrepo::ErrorCode tsnctrld::changeInterfaceCallback(sysrepo::Session sess, uint
                                                      const std::string &moduleName,
                                                      const std::optional<std::string> &subXPath, sysrepo::Event event,
                                                      uint32_t requestId) {
-    PERFORMANCE_LOGGING("[CB_CHANGE] [IF]", "req={} Start", requestId);
+    PERFORMANCE_LOGGING("[CB_CHANGE] [IF]", "Start req={}", requestId);
     // m_ifcache.setCurrentRequestId(requestId);
 
     static const std::string handledModuleName = "ietf-interfaces";
@@ -1836,12 +1848,12 @@ sysrepo::ErrorCode tsnctrld::changeInterfaceCallback(sysrepo::Session sess, uint
 
     if (sess.getOriginatorName() == "tsnctrld-internal") {
         SPDLOG_DEBUG("[CB_CHANGE] [IF] Whatever just happened, we did it, so we can trust it...");
-        PERFORMANCE_LOGGING("[CB_CHANGE] [IF]", "req={} End Internal", requestId);
+        PERFORMANCE_LOGGING("[CB_CHANGE] [IF]", "End req={} Internal", requestId);
         return sysrepo::ErrorCode::Ok;
     }
 
     if (event != sysrepo::Event::Change) {
-        PERFORMANCE_LOGGING("[CB_CHANGE] [IF]", "req={} End No change", requestId);
+        PERFORMANCE_LOGGING("[CB_CHANGE] [IF]", "End req={} No change", requestId);
         return sysrepo::ErrorCode::Ok;
     }
 
@@ -1861,11 +1873,15 @@ sysrepo::ErrorCode tsnctrld::changeInterfaceCallback(sysrepo::Session sess, uint
             "[CB_CHANGE] [IF] [REJECT] Edits to 'ietf-interfaces' (specifically the top-level `/interfaces` "
             "element) are currently not implemented. Attempted change to path: {}",
             change.node.path());
-        PERFORMANCE_LOGGING("[CB_CHANGE] [IF]", "req={} End Unsupported change", requestId);
+        sess.setErrorMessage(
+            fmt::format("Edits to 'ietf-interfaces' (specifically the top-level `/interfaces` "
+                        "element) are currently not implemented. Attempted change to path: {}",
+                        change.node.path()));
+        PERFORMANCE_LOGGING("[CB_CHANGE] [IF]", "End req={} Unsupported change", requestId);
         return sysrepo::ErrorCode::Unsupported;
     }
     SPDLOG_DEBUG("[CB_CHANGE] [IF] [ALLOW] All attempted changes were allowed, accepting");
-    PERFORMANCE_LOGGING("[CB_CHANGE] [IF]", "req={} End Allowed", requestId);
+    PERFORMANCE_LOGGING("[CB_CHANGE] [IF]", "End req={} Allowed", requestId);
     return sysrepo::ErrorCode::Ok;
 }
 
@@ -1890,7 +1906,7 @@ sysrepo::ErrorCode tsnctrld::changeInterfaceCallback(sysrepo::Session sess, uint
 sysrepo::ErrorCode tsnctrld::changeBridgeCallback(sysrepo::Session sess, uint32_t subId, const std::string &moduleName,
                                                   const std::optional<std::string> &subXPath, sysrepo::Event event,
                                                   uint32_t requestId) {
-    PERFORMANCE_LOGGING("[CB_CHANGE] [BR]", "req={} Start", requestId);
+    PERFORMANCE_LOGGING("[CB_CHANGE] [BR]", "Start req={}", requestId);
     // m_ifcache.setCurrentRequestId(requestId);
 
     static const std::string handledModuleName = "ieee802-dot1q-bridge";
@@ -1902,12 +1918,12 @@ sysrepo::ErrorCode tsnctrld::changeBridgeCallback(sysrepo::Session sess, uint32_
 
     if (sess.getOriginatorName() == "tsnctrld-internal") {
         SPDLOG_DEBUG("[CB_CHANGE] [BR] Whatever just happened, we did it, so we can trust it...");
-        PERFORMANCE_LOGGING("[CB_CHANGE] [BR]", "req={} End Internal", requestId);
+        PERFORMANCE_LOGGING("[CB_CHANGE] [BR]", "End req={} Internal", requestId);
         return sysrepo::ErrorCode::Ok;
     }
 
     if (event != sysrepo::Event::Change) {
-        PERFORMANCE_LOGGING("[CB_CHANGE] [BR]", "req={} End No Change", requestId);
+        PERFORMANCE_LOGGING("[CB_CHANGE] [BR]", "End req={} No Change", requestId);
         return sysrepo::ErrorCode::Ok;
     }
 
@@ -1927,11 +1943,15 @@ sysrepo::ErrorCode tsnctrld::changeBridgeCallback(sysrepo::Session sess, uint32_
             "[CB_CHANGE] [BR] [REJECT] Edits to 'ieee802-dot1q-bridge' (specifically the top-level `/bridges` element) "
             "are currently not implemented. Attempted change to path: {}",
             change.node.path());
-        PERFORMANCE_LOGGING("[CB_CHANGE] [BR]", "req={} End Unsupported change", requestId);
+        sess.setErrorMessage(
+            fmt::format("Edits to 'ieee802-dot1q-bridge' (specifically the top-level `/bridges` "
+                        "element) are currently not implemented. Attempted change to path: {}",
+                        change.node.path()));
+        PERFORMANCE_LOGGING("[CB_CHANGE] [BR]", "End req={} Unsupported change", requestId);
         return sysrepo::ErrorCode::Unsupported;
     }
     SPDLOG_DEBUG("[CB_CHANGE] [BR] [ALLOW] All attempted changes were allowed, accepting");
-    PERFORMANCE_LOGGING("[CB_CHANGE] [BR]", "req={} End Allowed", requestId);
+    PERFORMANCE_LOGGING("[CB_CHANGE] [BR]", "End req={} Allowed", requestId);
     return sysrepo::ErrorCode::Ok;
 }
 
@@ -1958,7 +1978,7 @@ sysrepo::ErrorCode tsnctrld::changeBridgePortCallback(sysrepo::Session sess, uin
                                                       const std::string &moduleName,
                                                       const std::optional<std::string> &subXPath, sysrepo::Event event,
                                                       uint32_t requestId) {
-    PERFORMANCE_LOGGING("[CB_CHANGE] [BP]", "req={} Start", requestId);
+    PERFORMANCE_LOGGING("[CB_CHANGE] [BP]", "Start req={}", requestId);
     // m_ifcache.setCurrentRequestId(requestId);
 
     static const std::string handledModuleName = "ieee802-dot1q-bridge";
@@ -1970,12 +1990,12 @@ sysrepo::ErrorCode tsnctrld::changeBridgePortCallback(sysrepo::Session sess, uin
 
     if (sess.getOriginatorName() == "tsnctrld-internal") {
         SPDLOG_DEBUG("[CB_CHANGE] [BP] Whatever just happened, we did it, so we can trust it...");
-        PERFORMANCE_LOGGING("[CB_CHANGE] [BP]", "req={} End Internal", requestId);
+        PERFORMANCE_LOGGING("[CB_CHANGE] [BP]", "End req={} Internal", requestId);
         return sysrepo::ErrorCode::Ok;
     }
 
     if (event != sysrepo::Event::Change) {
-        PERFORMANCE_LOGGING("[CB_CHANGE] [BP]", "req={} End No Change", requestId);
+        PERFORMANCE_LOGGING("[CB_CHANGE] [BP]", "End req={} No Change", requestId);
         return sysrepo::ErrorCode::Ok;
     }
 
@@ -1995,11 +2015,15 @@ sysrepo::ErrorCode tsnctrld::changeBridgePortCallback(sysrepo::Session sess, uin
             "[CB_CHANGE] [BP] [REJECT] Edits to 'ieee802-dot1q-bridge' (specifically the `bridge-port` element) "
             "are currently not implemented. Attempted change to path: {}",
             change.node.path());
-        PERFORMANCE_LOGGING("[CB_CHANGE] [BP]", "req={} End Unsupported change", requestId);
+        sess.setErrorMessage(
+            fmt::format("Edits to 'ieee802-dot1q-bridge' (specifically the `/bridge-port` "
+                        "element) are currently not implemented. Attempted change to path: {}",
+                        change.node.path()));
+        PERFORMANCE_LOGGING("[CB_CHANGE] [BP]", "End req={} Unsupported change", requestId);
         return sysrepo::ErrorCode::Unsupported;
     }
     SPDLOG_DEBUG("[CB_CHANGE] [BP] [ALLOW] All attempted changes were allowed, accepting");
-    PERFORMANCE_LOGGING("[CB_CHANGE] [BP]", "req={} End Allowed", requestId);
+    PERFORMANCE_LOGGING("[CB_CHANGE] [BP]", "End req={} Allowed", requestId);
     return sysrepo::ErrorCode::Ok;
 }
 
@@ -2027,7 +2051,7 @@ sysrepo::ErrorCode tsnctrld::changeBridgePortCallback(sysrepo::Session sess, uin
 sysrepo::ErrorCode tsnctrld::changeGptCallback(sysrepo::Session sess, uint32_t subId, const std::string &moduleName,
                                                const std::optional<std::string> &subXPath, sysrepo::Event event,
                                                uint32_t requestId) {
-    PERFORMANCE_LOGGING("[CB_CHANGE] [GPT]", "req={} Start", requestId);
+    PERFORMANCE_LOGGING("[CB_CHANGE] [GPT]", "Start req={}", requestId);
     // m_ifcache.setCurrentRequestId(requestId);
 
     static const std::string handledModuleName = "ieee802-dot1q-sched-bridge";
@@ -2039,7 +2063,7 @@ sysrepo::ErrorCode tsnctrld::changeGptCallback(sysrepo::Session sess, uint32_t s
 
     if (sess.getOriginatorName() == "tsnctrld-internal") {
         SPDLOG_DEBUG("[CB_CHANGE] [GPT] Whatever just happened, we did it, so we can trust it...");
-        PERFORMANCE_LOGGING("[CB_CHANGE] [GPT]", "req={} End Internal", requestId);
+        PERFORMANCE_LOGGING("[CB_CHANGE] [GPT]", "End req={} Internal", requestId);
         return sysrepo::ErrorCode::Ok;
     }
 
@@ -2070,18 +2094,14 @@ sysrepo::ErrorCode tsnctrld::changeGptCallback(sysrepo::Session sess, uint32_t s
             if (change.node.asTerm().valueStr() == "true") {
                 std::string ifname = change.node.parent()->parent()->parent()->findPath("name")->asTerm().valueStr();
                 // std::string ifname = extractListKey(change.node.path(), "interface", "name");
-
+                PERFORMANCE_LOGGING("[CB_CHANGE] [GPT] [IF]", "Start req={} iface={}", requestId, ifname);
                 SPDLOG_DEBUG("[CB_CHANGE] [GPT] Applying new config for {}", ifname);
 
                 try {
                     // Update our internal cache and apply to hardware
                     // This function should be the one we optimized earlier (Zero-Copy)
                     SPDLOG_DEBUG("[CB_CHANGE] [GPT] Getting data from sysrepo ");
-                    PERFORMANCE_LOGGING("[CB_CHANGE] [GPT]", "req={} Get current config (if={}) start", requestId,
-                                        ifname);
                     ietfInterface_t *iface = this->syncInterfaceFromSysrepo(sess, ifname, requestId);
-                    PERFORMANCE_LOGGING("[CB_CHANGE] [GPT]", "req={} Get current config (if={}) end", requestId,
-                                        ifname);
 
                     if (iface != nullptr) {
 #if SPDLOG_ACTIVE_LEVEL <= SPDLOG_LEVEL_DEBUG
@@ -2096,51 +2116,83 @@ sysrepo::ErrorCode tsnctrld::changeGptCallback(sysrepo::Session sess, uint32_t s
                             printTaprioConfig(taprioCfg);
 #endif
                             SPDLOG_DEBUG("[CB_CHANGE] [GPT] Sending qdisc");
-                            PERFORMANCE_LOGGING("[CB_CHANGE] [GPT]", "req={} Set Qdisc (if={}) start", requestId,
-                                                ifname);
                             QdiscManager::setQdisc(m_sock, ifname, taprioCfg);
-                            PERFORMANCE_LOGGING("[CB_CHANGE] [GPT]", "req={} Set Qdisc (if={}) done", requestId,
-                                                ifname);
                             SPDLOG_DEBUG("[CB_CHANGE] [GPT] Qdisc \"sent\"");
-                            m_pathsToReset.push_back(std::string(change.node.path()));
+                            std::lock_guard<std::mutex> lock(m_pendingResetsMutex);
+                            m_pendingResets[requestId].push_back(std::string(change.node.path()));
                         } else {
                             SPDLOG_DEBUG("[CB_CHANGE] [GPT] Gate is disabled, removing qdisc:");
-                            PERFORMANCE_LOGGING("[CB_CHANGE] [GPT]", "req={} Remove Qdisc (if={}) start", requestId,
-                                                ifname);
                             QdiscManager::removeQdisc(m_sock, ifname);
-                            PERFORMANCE_LOGGING("[CB_CHANGE] [GPT]", "req={} Remove Qdisc (if={}) done", requestId,
-                                                ifname);
                             SPDLOG_DEBUG("[CB_CHANGE] [GPT] Remove-request sent:");
-                            m_pathsToReset.push_back(std::string(change.node.path()));
+                            std::lock_guard<std::mutex> lock(m_pendingResetsMutex);
+                            m_pendingResets[requestId].push_back(std::string(change.node.path()));
                         }
+                    } else {
+                        spdlog::error("[CB_CHANGE] [GPT] [ERROR] Ifname {} not found by kernel", ifname);
+                        {
+                            std::lock_guard<std::mutex> lock(m_pendingResetsMutex);
+                            m_pendingResets.erase(requestId);
+                        }
+                        sess.setErrorMessage(fmt::format("Interface {} not found by kernel", ifname));
+                        PERFORMANCE_LOGGING("[CB_CHANGE] [GPT] [IF]", "End req={} iface={} Unknown interface",
+                                            requestId, ifname);
+                        PERFORMANCE_LOGGING("[CB_CHANGE] [GPT]", "End req={} Unknown interface {}", requestId, ifname);
+                        return sysrepo::ErrorCode::OperationFailed;
                     }
                 } catch (const std::exception &e) {
                     spdlog::error("[CB_CHANGE] [GPT] [ERROR] Hardware rejected config: {}", e.what());
-                    m_pathsToReset.clear();
+                    {
+                        std::lock_guard<std::mutex> lock(m_pendingResetsMutex);
+                        m_pendingResets.erase(requestId);
+                    }
                     sess.setErrorMessage(e.what());
-                    PERFORMANCE_LOGGING("[CB_CHANGE] [GPT]", "req={} End Exception", requestId);
+                    PERFORMANCE_LOGGING("[CB_CHANGE] [GPT] [IF]", "End req={} iface={} Exception", requestId, ifname);
+                    PERFORMANCE_LOGGING("[CB_CHANGE] [GPT]", "End req={} Exception", requestId);
                     return sysrepo::ErrorCode::OperationFailed;
                 }
+                PERFORMANCE_LOGGING("[CB_CHANGE] [GPT] [IF]", "End req={} iface={}", requestId, ifname);
             }
         }
+        PERFORMANCE_LOGGING("[CB_CHANGE] [GPT]", "End req={} Changed", requestId);
+        return sysrepo::ErrorCode::Ok;
     }
 
     // 2. PHASE: RESET TRIGGER (Event::Done)
     if (event == sysrepo::Event::Done) {
-        for (const auto &path : m_pathsToReset) {
-            PERFORMANCE_LOGGING("[CB_CHANGE] [GPT]", "req={} Requesting reset of trigger {}", requestId, path);
-            this->resetTriggerLeaf(path, requestId);
+        std::lock_guard<std::mutex> map_lock(m_pendingResetsMutex);
+
+        auto it = m_pendingResets.find(requestId);
+        if (it != m_pendingResets.end()) {
+            // Add to our background worker queue
+            {
+                std::lock_guard<std::mutex> q_lock(m_resetMutex);
+                for (const auto &path : it->second) {
+                    // Pass path directly as string if you removed the struct,
+                    // or as the struct if you kept it
+                    m_resetQueue.push_back({path, requestId});
+                }
+            }
+            m_resetCv.notify_one();  // Wake up background thread
+
+            // Clean up this transaction's pending paths
+            m_pendingResets.erase(it);
         }
-        m_pathsToReset.clear();
+        PERFORMANCE_LOGGING("[CB_CHANGE] [GPT]", "End req={} Done", requestId);
+        return sysrepo::ErrorCode::Ok;
     }
 
     // 3. PHASE: ROLLBACK (Event::Abort)
     if (event == sysrepo::Event::Abort) {
         // TODO
-        PERFORMANCE_LOGGING("[CB_CHANGE] [GPT]", "req={} Aborted", requestId);
+        {
+            std::lock_guard<std::mutex> lock(m_pendingResetsMutex);
+            m_pendingResets.erase(requestId);
+        }
+        PERFORMANCE_LOGGING("[CB_CHANGE] [GPT]", "End req={} Aborted", requestId);
+        return sysrepo::ErrorCode::Ok;
     }
 
-    PERFORMANCE_LOGGING("[CB_CHANGE] [GPT]", "req={} End", requestId);
+    PERFORMANCE_LOGGING("[CB_CHANGE] [GPT]", "End req={} Fallback", requestId);
     return sysrepo::ErrorCode::Ok;
 }
 
@@ -2154,7 +2206,7 @@ sysrepo::ErrorCode tsnctrld::changeGptCallback(sysrepo::Session sess, uint32_t s
 sysrepo::ErrorCode tsnctrld::changeLldpCallback(sysrepo::Session sess, uint32_t subId, const std::string &moduleName,
                                                 const std::optional<std::string> &subXPath, sysrepo::Event event,
                                                 uint32_t requestId) {
-    PERFORMANCE_LOGGING("[CB_CHANGE] [LLDP]", "req={} Start", requestId);
+    PERFORMANCE_LOGGING("[CB_CHANGE] [LLDP]", "Start req={}", requestId);
     // m_ifcache.setCurrentRequestId(requestId);
 
     static const std::string handledModuleName = "ieee802-dot1ab-lldp";
@@ -2166,12 +2218,12 @@ sysrepo::ErrorCode tsnctrld::changeLldpCallback(sysrepo::Session sess, uint32_t 
 
     if (sess.getOriginatorName() == "tsnctrld-internal") {
         SPDLOG_DEBUG("[CB_CHANGE] [LLDP] Whatever just happened, we did it, so we can trust it...");
-        PERFORMANCE_LOGGING("[CB_CHANGE] [LLDP]", "req={} End Internal", requestId);
+        PERFORMANCE_LOGGING("[CB_CHANGE] [LLDP]", "End req={} Internal", requestId);
         return sysrepo::ErrorCode::Ok;
     }
 
     if (event != sysrepo::Event::Change) {
-        PERFORMANCE_LOGGING("[CB_CHANGE] [LLDP]", "req={} End No change", requestId);
+        PERFORMANCE_LOGGING("[CB_CHANGE] [LLDP]", "End req={} No change", requestId);
         return sysrepo::ErrorCode::Ok;
     }
 
@@ -2184,10 +2236,13 @@ sysrepo::ErrorCode tsnctrld::changeLldpCallback(sysrepo::Session sess, uint32_t 
             "[CB_CHANGE] [LLDP] [REJECT] Edits to 'ieee802-dot1ab-lldp' (LLDP) are currently not implemented. "
             "Attempted change: {}",
             change.node.path());
-        PERFORMANCE_LOGGING("[CB_CHANGE] [LLDP]", "req={} End Unsupported change", requestId);
+        sess.setErrorMessage(fmt::format(
+            "Edits to 'ieee802-dot1ab-lldp' (LLDP) are currently not implemented. Attempted change to path: {}",
+            change.node.path()));
+        PERFORMANCE_LOGGING("[CB_CHANGE] [LLDP]", "End req={} Unsupported change", requestId);
         return sysrepo::ErrorCode::Unsupported;
     }
-    PERFORMANCE_LOGGING("[CB_CHANGE] [LLDP]", "req={} End Allowed", requestId);
+    PERFORMANCE_LOGGING("[CB_CHANGE] [LLDP]", "End req={} Allowed", requestId);
     return sysrepo::ErrorCode::Ok;
 }
 
@@ -2201,7 +2256,7 @@ sysrepo::ErrorCode tsnctrld::changeLldpCallback(sysrepo::Session sess, uint32_t 
 sysrepo::ErrorCode tsnctrld::changePtpCallback(sysrepo::Session sess, uint32_t subId, const std::string &moduleName,
                                                const std::optional<std::string> &subXPath, sysrepo::Event event,
                                                uint32_t requestId) {
-    PERFORMANCE_LOGGING("[CB_CHANGE] [PTP]", "req={} Start", requestId);
+    PERFORMANCE_LOGGING("[CB_CHANGE] [PTP]", "Start req={}", requestId);
     // m_ifcache.setCurrentRequestId(requestId);
 
     static const std::string handledModuleName = "ieee1588-ptp-tt";
@@ -2213,12 +2268,12 @@ sysrepo::ErrorCode tsnctrld::changePtpCallback(sysrepo::Session sess, uint32_t s
 
     if (sess.getOriginatorName() == "tsnctrld-internal") {
         SPDLOG_DEBUG("[CB_CHANGE] [PTP] Whatever just happened, we did it, so we can trust it...");
-        PERFORMANCE_LOGGING("[CB_CHANGE] [PTP]", "req={} End Internal", requestId);
+        PERFORMANCE_LOGGING("[CB_CHANGE] [PTP]", "End req={} Internal", requestId);
         return sysrepo::ErrorCode::Ok;
     }
 
     if (event != sysrepo::Event::Change) {
-        PERFORMANCE_LOGGING("[CB_CHANGE] [PTP]", "req={} End No change", requestId);
+        PERFORMANCE_LOGGING("[CB_CHANGE] [PTP]", "End req={} No change", requestId);
         return sysrepo::ErrorCode::Ok;
     }
 
@@ -2231,10 +2286,13 @@ sysrepo::ErrorCode tsnctrld::changePtpCallback(sysrepo::Session sess, uint32_t s
             "[CB_CHANGE] [PTP] [REJECT] Edits to 'ieee1588-ptp-tt' (PTP) are currently not implemented. "
             "Attempted change: {}",
             change.node.path());
-        PERFORMANCE_LOGGING("[CB_CHANGE] [PTP]", "req={} End Unsupported Change", requestId);
+        sess.setErrorMessage(
+            fmt::format("Edits to 'ieee1588-ptp-tt' (PTP) are currently not implemented. Attempted change to path: {}",
+                        change.node.path()));
+        PERFORMANCE_LOGGING("[CB_CHANGE] [PTP]", "End req={} Unsupported Change", requestId);
         return sysrepo::ErrorCode::Unsupported;
     }
-    PERFORMANCE_LOGGING("[CB_CHANGE] [PTP]", "req={} End Allowed", requestId);
+    PERFORMANCE_LOGGING("[CB_CHANGE] [PTP]", "End req={} Allowed", requestId);
     return sysrepo::ErrorCode::Ok;
 }
 
@@ -2334,7 +2392,16 @@ tsnctrld::tsnctrld(const PtpManagerConfig &config)
 /**
  * @brief Use the default destructor
  */
-tsnctrld::~tsnctrld() = default;
+tsnctrld::~tsnctrld() {
+    {
+        std::lock_guard<std::mutex> lock(m_resetMutex);
+        m_stopResetThread = true;
+    }
+    m_resetCv.notify_all();
+    if (m_resetThread.joinable()) {
+        m_resetThread.join();
+    }
+}
 
 /**
  * @brief Exit if another instance of tsnctrld is already running on the system.
@@ -2499,7 +2566,6 @@ int main(int argc, char *argv[]) {
 
         if (clockSyncEnabled) {
             Timesync::launch(nicVec, asGrandmaster, disciplineWithNtp);
-            PERFORMANCE_LOGGING("[MAIN]", "Timesync done");
         }
 
         std::signal(SIGINT, signal_handler);
@@ -2509,9 +2575,9 @@ int main(int argc, char *argv[]) {
             .assumedPortCount = static_cast<uint16_t>(nicVec.size()),
             .enabled = enablePtpMonitoring,
         });
-        PERFORMANCE_LOGGING("[MAIN]", "Construct done");
+        PERFORMANCE_LOGGING("[MAIN] [INIT]", "Start");
         daemon.initialize();
-        PERFORMANCE_LOGGING("[MAIN]", "Init done");
+        PERFORMANCE_LOGGING("[MAIN] [INIT]", "End");
         while (keep_running) {
             std::this_thread::sleep_for(std::chrono::seconds(1));
         }

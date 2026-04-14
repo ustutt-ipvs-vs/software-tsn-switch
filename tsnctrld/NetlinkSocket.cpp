@@ -98,7 +98,7 @@ rtattr *NetlinkSocket::addRtaAttribute(nlmsghdr *nlh, const int maxlen, const in
  * @param len Length of the message in bytes
  */
 void NetlinkSocket::sendMessage(nlmsghdr *nlh, const size_t len) {
-    PERFORMANCE_LOGGING("[NL] [SEND]", "Start");
+    PERFORMANCE_LOGGING("[NL] [SEND_SNYC]", "Start");
     nlh->nlmsg_flags |= NLM_F_ACK;
     struct iovec iov = {.iov_base = nlh, .iov_len = len};
     struct sockaddr_nl kernel = {.nl_family = AF_NETLINK};
@@ -113,10 +113,9 @@ void NetlinkSocket::sendMessage(nlmsghdr *nlh, const size_t len) {
     if (sendmsg(socketFd, &msg, 0) < 0) {
         throw std::runtime_error("Failed to send message to kernel");
     }
-    PERFORMANCE_LOGGING("[NL] [SEND]", "Sent, receiving");
 
     this->saveResponse();
-    PERFORMANCE_LOGGING("[NL] [SEND]", "End");
+    PERFORMANCE_LOGGING("[NL] [SEND_SNYC]", "End");
 }
 
 /**
@@ -126,6 +125,7 @@ void NetlinkSocket::sendMessage(nlmsghdr *nlh, const size_t len) {
  * Handles NLMSG_DONE and NLMSG_ERROR messages.
  */
 void NetlinkSocket::saveResponse() {
+    PERFORMANCE_LOGGING("[NL] [RECV]", "Start");
     std::vector<char> buffer(BUFFER_SIZE_REC);
     ssize_t len;
 
@@ -136,6 +136,7 @@ void NetlinkSocket::saveResponse() {
 
         for (; NLMSG_OK(nlh, len); nlh = NLMSG_NEXT(nlh, len)) {
             if (nlh->nlmsg_type == NLMSG_DONE) {
+                PERFORMANCE_LOGGING("[NL] [RECV]", "End");
                 return;
             }
 
@@ -170,7 +171,7 @@ void NetlinkSocket::saveResponse() {
                         }
                         rta = RTA_NEXT(rta, rta_len);
                     }
-
+                    PERFORMANCE_LOGGING("[NL] [RECV]", "End Exception");
                     throw std::runtime_error("Error in received message with code: " + std::to_string(error->error) +
                                              extendedError);
                 }
@@ -184,6 +185,7 @@ void NetlinkSocket::saveResponse() {
     if (len < 0 && errno != EAGAIN && errno != EWOULDBLOCK) {
         perror("recv failed");
     }
+    PERFORMANCE_LOGGING("[NL] [RECV]", "End");
 }
 
 /**

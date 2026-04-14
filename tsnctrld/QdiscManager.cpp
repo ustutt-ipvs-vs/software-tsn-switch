@@ -107,7 +107,6 @@ void QdiscManager::setQdisc(NetlinkSocket& netlinkSocket, const std::string& ifn
         builder.addChildAttribute(sduId, TCA_TAPRIO_TC_ENTRY_MAX_SDU, &entry.queueMaxSdu, sizeof(entry.queueMaxSdu));
         builder.addChildAttribute(sduId, TCA_TAPRIO_TC_ENTRY_FP, &entry.preemtible, sizeof(entry.preemtible));
     }
-    PERFORMANCE_LOGGING("[QDISC] [SET]", "Sending");
 
     tc_sizespec stab_spec{.overhead = 24, .linklayer = TC_LINKLAYER_ETHERNET, .mpu = 64};
 
@@ -145,7 +144,6 @@ void QdiscManager::removeQdisc(NetlinkSocket& netlinkSocket, const std::string& 
     req.tcm.tcm_handle = 0;
     req.tcm.tcm_parent = TC_H_ROOT;
 
-    PERFORMANCE_LOGGING("[QDISC] [DEL]", "Sending");
     netlinkSocket.sendMessage(&req.nh, req.nh.nlmsg_len);
     PERFORMANCE_LOGGING("[QDISC] [DEL]", "End");
 }
@@ -214,7 +212,6 @@ void QdiscManager::getAllQdiscInfo(NetlinkSocket& netlinkSocket) {
     req.tcm.tcm_handle = 0;
     req.tcm.tcm_parent = TC_H_ROOT;
 
-    PERFORMANCE_LOGGING("[QDISC] [GET_ALL]", "Send");
     netlinkSocket.sendMessage(&req.nlh, req.nlh.nlmsg_len);
     PERFORMANCE_LOGGING("[QDISC] [GET_ALL]", "End");
 }
@@ -232,6 +229,7 @@ void QdiscManager::getAllQdiscInfo(NetlinkSocket& netlinkSocket) {
  */
 void QdiscManager::getInterfacesInResponse(const NetlinkSocket& sock, std::map<int, ietfInterface_t>& interfacesMap,
                                            uint32_t currentReqId) {
+    PERFORMANCE_LOGGING("[QDISC] [RESP]", "Start req={}", currentReqId);
     SPDLOG_TRACE("[QM] [Parse Full Response] Iterating over interfaces in response...");
     for (const nlmsghdr* nlh : sock.getResponse()) {
         if (nlh->nlmsg_type != RTM_NEWQDISC && nlh->nlmsg_type != RTM_GETQDISC) {
@@ -240,7 +238,8 @@ void QdiscManager::getInterfacesInResponse(const NetlinkSocket& sock, std::map<i
 
         auto* tcm = (tcmsg*)NLMSG_DATA(nlh);
         int ifindex = tcm->tcm_ifindex;
-        PERFORMANCE_LOGGING("[QDISC] [RESP]", "ifindex={} Start", ifindex);
+        PERFORMANCE_LOGGING("[QDISC] [RESP] [PER_IF]", "Start req={} ifindex={} handle={} parent={}", currentReqId,
+                            ifindex, tcm->tcm_handle, tcm->tcm_parent);
         SPDLOG_TRACE("[QM] [Parse Full Response] Current interface: index={}, handle={}, parent={}", ifindex,
                      tcm->tcm_handle, tcm->tcm_parent);
 
@@ -269,8 +268,10 @@ void QdiscManager::getInterfacesInResponse(const NetlinkSocket& sock, std::map<i
                     break;
             }
         }
-        PERFORMANCE_LOGGING("[QDISC] [RESP]", "ifindex={} End", ifindex);
+        PERFORMANCE_LOGGING("[QDISC] [RESP] [PER_IF]", "End req={} ifindex={} handle={} parent={}", currentReqId,
+                            ifindex, tcm->tcm_handle, tcm->tcm_parent);
     }
+    PERFORMANCE_LOGGING("[QDISC] [RESP]", "End req={}", currentReqId);
 };
 
 /**

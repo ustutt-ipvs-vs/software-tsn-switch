@@ -95,7 +95,6 @@ void LinkManager::getAllInterfaces(NetlinkSocket& netlinkSocket) {
     // For a dump request, other fields (ifi_index, flags) are usually left as 0
 
     // 3. Send and Handle Response
-    PERFORMANCE_LOGGING("[LINK] [GET_ALL]", "Send");
     netlinkSocket.sendMessage(&req.nlh, req.nlh.nlmsg_len);
     PERFORMANCE_LOGGING("[LINK] [GET_ALL]", "End");
 }
@@ -128,7 +127,6 @@ void LinkManager::getInterface(NetlinkSocket& netlinkSocket, int ifindex) {
     req.ifm.ifi_index = ifindex;
 
     // 3. Send and Handle Response
-    PERFORMANCE_LOGGING("[LINK] [GET]", "Send");
     netlinkSocket.sendMessage(&req.nlh, req.nlh.nlmsg_len);
     PERFORMANCE_LOGGING("[LINK] [GET]", "End");
 }
@@ -147,6 +145,7 @@ void LinkManager::getInterface(NetlinkSocket& netlinkSocket, int ifindex) {
  */
 void LinkManager::getInterfacesInResponse(const NetlinkSocket& sock, std::map<int, ietfInterface_t>& interfacesMap,
                                           uint32_t currentReqId) {
+    PERFORMANCE_LOGGING("[LINK] [RESP]", "Start req={}", currentReqId);
     for (const nlmsghdr* nlh : sock.getResponse()) {
         // We only care about New/Get Link messages
         if (nlh->nlmsg_type != RTM_NEWLINK) {
@@ -155,7 +154,7 @@ void LinkManager::getInterfacesInResponse(const NetlinkSocket& sock, std::map<in
 
         auto* ifm = (struct ifinfomsg*)NLMSG_DATA(nlh);
         int ifindex = ifm->ifi_index;
-        PERFORMANCE_LOGGING("[LINK] [RESP]", "ifindex={} Start", ifindex);
+        PERFORMANCE_LOGGING("[LINK] [RESP] [PER_IF]", "Start req={} ifindex={}", currentReqId, ifindex);
 
         ietfInterface_t& current = interfacesMap[ifindex];
 
@@ -230,8 +229,9 @@ void LinkManager::getInterfacesInResponse(const NetlinkSocket& sock, std::map<in
                 current.type = IfType::LAG;
             }
         }
-        PERFORMANCE_LOGGING("[LINK] [RESP]", "ifindex={} End", ifindex);
+        PERFORMANCE_LOGGING("[LINK] [RESP] [PER_IF]", "End req={} ifindex={}", currentReqId, ifindex);
     }
+    PERFORMANCE_LOGGING("[LINK] [RESP]", "End req={}", currentReqId);
 }
 
 /**
@@ -241,6 +241,7 @@ void LinkManager::getInterfacesInResponse(const NetlinkSocket& sock, std::map<in
  * `numActiveTxQueues` will be set to the correct number.
  */
 void LinkManager::getActiveQueues(int sock, ietfInterface_t& iface) {
+    PERFORMANCE_LOGGING("[LINK] [QUEUE_COUNT]", "Start iface={}", iface.name);
     uint32_t active = 1;
     struct ethtool_channels channels = {};
     struct ifreq ifr = {};
@@ -252,11 +253,13 @@ void LinkManager::getActiveQueues(int sock, ietfInterface_t& iface) {
     if (ioctl(sock, SIOCETHTOOL, &ifr) < 0) {
         SPDLOG_DEBUG("[LM] [Active TX Qs] Interface {} does not support GCHANNELS, assuming 1 queue", iface.name);
         iface.numActiveTxQueues = active;
+        PERFORMANCE_LOGGING("[LINK] [QUEUE_COUNT]", "End iface={} Single Queue", iface.name);
         return;
     }
 
     active = (channels.combined_count > 0) ? channels.combined_count : channels.tx_count;
     iface.numActiveTxQueues = active;
+    PERFORMANCE_LOGGING("[LINK] [QUEUE_COUNT]", "End iface={}", iface.name);
 }
 
 /**
@@ -266,6 +269,7 @@ void LinkManager::getActiveQueues(int sock, ietfInterface_t& iface) {
  * `speed` will be set to the correct number.
  */
 void LinkManager::getLinkSpeed(int sock, ietfInterface_t& iface) {
+    PERFORMANCE_LOGGING("[LINK] [LINK_SPEED]", "Start iface={}", iface.name);
     uint64_t speed = kInterfaceSpeedUnknown;
     struct ifreq ifr = {};
 
@@ -292,6 +296,7 @@ void LinkManager::getLinkSpeed(int sock, ietfInterface_t& iface) {
             } else {
                 spdlog::warn("[LM] [SPEED] Invalid link_mode_masks_nwords value {}", req->link_mode_masks_nwords);
                 iface.speed = speed;
+                PERFORMANCE_LOGGING("[LINK] [LINK_SPEED]", "End iface={} Unknown", iface.name);
                 return;
             }
 
@@ -335,4 +340,5 @@ void LinkManager::getLinkSpeed(int sock, ietfInterface_t& iface) {
     }
 
     iface.speed = speed;
+    PERFORMANCE_LOGGING("[LINK] [LINK_SPEED]", "End iface={}", iface.name);
 }
