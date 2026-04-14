@@ -2,6 +2,7 @@
 // To compile: g++ -O2 -o traffic_source traffic_source.cpp
 
 #include <arpa/inet.h>
+#include <fcntl.h>
 #include <linux/if_packet.h>
 #include <net/ethernet.h>
 #include <net/if.h>
@@ -74,6 +75,9 @@ int main(int argc, char *argv[]) {
         perror("setsockopt");
         return 1;
     }
+    // Make sendto() calls non-blocking to simulate packet loss during high traffic
+    int socketFlags = fcntl(sendSocket, F_GETFL, 0);
+    fcntl(sendSocket, F_SETFL, socketFlags | O_NONBLOCK);
 
     size_t payloadSize = frameSizeNoCrc - 14;
     size_t frameSize = frameSizeNoCrc + 4;
@@ -104,9 +108,11 @@ int main(int argc, char *argv[]) {
     uint32_t frameNumber = 0;
     auto nextFrameTime = std::chrono::steady_clock::now();
     while (running) {
-        if (sendto(sendSocket, frame, frameSizeNoCrc, 0, (struct sockaddr *)&sockAddr, sizeof(sockAddr)) < 0) {
-            perror("sendto");
-        }
+        ssize_t sendResult =
+            sendto(sendSocket, frame, frameSizeNoCrc, 0, (struct sockaddr *)&sockAddr, sizeof(sockAddr));
+        // if (sendResult < 0) {
+        //     perror("sendto");
+        // }
         nextFrameTime += frameInterval;
         frameNumber += 1;
         if (frameNumber % framesPerSec == 0) {
