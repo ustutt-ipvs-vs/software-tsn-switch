@@ -14,14 +14,37 @@
 #include <csignal>
 #include <cstring>
 #include <iostream>
+#include <mutex>
 #include <thread>
 #include <vector>
 
+auto LOG_INTERVAL = std::chrono::seconds(1);
+
 std::atomic<bool> running{true};
+std::mutex mutex;
+
+long recentFrames = 0;
+long droppedFrames = 0;
+long totalFrames = 0;
 
 void handleSignal(int signal) {
     if (signal == SIGINT || signal == SIGTERM) {
         running = false;
+    }
+}
+
+void reportStats() {
+    auto nextTickTime = std::chrono::steady_clock::now() + LOG_INTERVAL;
+    while (running) {
+        std::this_thread::sleep_until(nextTickTime);
+        std::unique_lock<std::mutex> lock(mutex);
+        std::clog << std::to_string(recentFrames) << " frames sent (" << std::to_string(totalFrames)
+                  << " total), though " << std::to_string(droppedFrames)
+                  << " frames were dropped due to send queue overload" << "\n";
+        recentFrames = 0;
+        droppedFrames = 0;
+        lock.unlock();
+        nextTickTime += LOG_INTERVAL;
     }
 }
 
@@ -104,24 +127,29 @@ int main(int argc, char *argv[]) {
     sockAddr.sll_halen = ETH_ALEN;
     memcpy(sockAddr.sll_addr, destMac, 6);
 
+    // Launch stats reporter
+    std::thread receiverThread(reportStats);
+    receiverThread.detach();
+
     std::clog << "Sending frames..." << "\n";
-    uint32_t frameNumber = 0;
     auto nextFrameTime = std::chrono::steady_clock::now();
     while (running) {
         ssize_t sendResult =
             sendto(sendSocket, frame, frameSizeNoCrc, 0, (struct sockaddr *)&sockAddr, sizeof(sockAddr));
-        // if (sendResult < 0) {
-        //     perror("sendto");
-        // }
-        nextFrameTime += frameInterval;
-        frameNumber += 1;
-        if (frameNumber % framesPerSec == 0) {
-            std::clog << std::to_string(frameNumber) << " frames sent in total, each is "
-                      << std::to_string(frameSizeNoCrc) << " bytes long." << "\n";
+
+        std::unique_lock<std::mutex> lock(mutex);
+        ++recentFrames;
+        ++totalFrames;
+        if (sendResult < 0) {
+            // perror("sendto");
+            ++droppedFrames;
         }
+        lock.unlock();
+
+        nextFrameTime += frameInterval;
         std::this_thread::sleep_until(nextFrameTime);
     }
-    std::clog << "Exiting, " << std::to_string(frameNumber) << " frames were sent in total." << "\n";
+    std::clog << "Exiting, " << std::to_string(totalFrames) << " frames were sent in total." << "\n";
     close(sendSocket);
     return 0;
 }

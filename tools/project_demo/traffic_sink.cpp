@@ -87,12 +87,12 @@ int main() {
     auto nextTickTime = std::chrono::steady_clock::now() + LOG_INTERVAL;
     while (running) {
         std::this_thread::sleep_until(nextTickTime);
-        nextTickTime += LOG_INTERVAL;
         std::unique_lock<std::mutex> lock(mutex);
         std::clog << std::to_string(recentFrames) << " frames received (" << std::to_string(totalFrames)
                   << " total), the last one was " << std::to_string(recentFrameSize) << " bytes long" << "\n";
         recentFrames = 0;
         lock.unlock();
+        nextTickTime += LOG_INTERVAL;
     }
 
     close(receiveSocket);
