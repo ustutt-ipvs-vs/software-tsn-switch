@@ -28,17 +28,20 @@ int main(int argc, char *argv[]) {
     std::signal(SIGINT, handleSignal);
     std::signal(SIGTERM, handleSignal);
 
-    if (argc != 5) {
-        std::clog << "Usage: " << argv[0] << " <NETW_IFACE> <DEST_MAC> <PAYLOAD_SIZE> <FRAMES_PER_SEC>" << "\n";
+    if (argc != 6) {
+        std::clog << "Usage: " << argv[0] << " <NETW_IFACE> <DEST_MAC> <PAYLOAD_SIZE> <FRAMES_PER_SEC> <SKB_PRIO>"
+                  << "\n";
         std::clog << "\n";
         std::clog << "NETW_IFACE: Name of the network interface to send from, e.g. 'eth0'" << "\n";
         std::clog << "DEST_MAC: Destination MAC address, e.g. '00:25:90:94:70:32'" << "\n";
-        std::clog << "FRAME_SIZE: How many bytes each ethernet frame's payload should contain. Any value 60 <= x <= "
-                     "1514 is allowed."
-                  << "\n";
+        std::clog
+            << "FRAME_SIZE: How many bytes each ethernet frame's payload should contain. Any value 60 <= x <= 1514"
+               "1514 is allowed."
+            << "\n";
         std::clog << "FRAMES_PER_SEC: How many frames to send per second." << "\n";
+        std::clog << "SKB_PRIO: The internal SKB priority the frames are handled with. Any value 0 <= x <= 7" << "\n";
         std::clog << std::flush;
-        return 1;
+        return 0;
     }
 
     if (geteuid() != 0) {
@@ -50,9 +53,14 @@ int main(int argc, char *argv[]) {
     size_t frameSizeNoCrc = std::stoi(argv[3]);
     int framesPerSec = std::stoi(argv[4]);
     auto frameInterval = std::chrono::microseconds(1000000 / framesPerSec);
+    int skbPriority = std::stoi(argv[5]);
 
     if (frameSizeNoCrc < 60 || frameSizeNoCrc > 1514) {
         std::cerr << "FRAME_SIZE is not in 60 <= x <= 1514 interval" << "\n";
+        return 1;
+    }
+    if (skbPriority < 0 || skbPriority > 7) {
+        std::cerr << "SKB_PRIO is not in 0 <= x <= 7 interval" << "\n";
         return 1;
     }
 
@@ -60,6 +68,10 @@ int main(int argc, char *argv[]) {
     int sendSocket = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
     if (sendSocket < 0) {
         perror("socket");
+        return 1;
+    }
+    if (setsockopt(sendSocket, SOL_SOCKET, SO_PRIORITY, &skbPriority, sizeof(skbPriority)) < 0) {
+        perror("setsockopt");
         return 1;
     }
 
