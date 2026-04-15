@@ -66,7 +66,7 @@ int main(int argc, char** argv) {
     nc_client_ssh_set_username("netconf-api");
 
     ly_ctx* ctx = nullptr;
-    struct nc_session* session = nc_connect_ssh("vstsn01.infra.informatik.uni-stuttgart.de", 830, ctx);
+    struct nc_session* session = nc_connect_ssh("vstsn03.infra.informatik.uni-stuttgart.de", 830, ctx);
     if (!session) return 1;
 
     // std::vector<struct lyd_node*> nodes;
@@ -87,24 +87,24 @@ int main(int argc, char** argv) {
             std::string label = fmt::format("Iteration={} Msg={}", i, j);
 
             // --- EDIT-CONFIG ---
-            PERFORMANCE_LOGGING(label.c_str(), "EDIT_CANDIDATE_START");
+            PERFORMANCE_LOGGING("[EDIT_CANDIDATE]", "Start iter={} msg={}", i, j);
             struct nc_rpc* rpc_edit =
                 nc_rpc_edit(NC_DATASTORE_CANDIDATE, NC_RPC_EDIT_DFLTOP_MERGE, NC_RPC_EDIT_TESTOPT_SET,
                             NC_RPC_EDIT_ERROPT_STOP, xml_configs[j].c_str(), NC_PARAMTYPE_CONST);
             send_rpc_safe(session, rpc_edit, "edit-config", &msgid);
-            PERFORMANCE_LOGGING(label.c_str(), "EDIT_CANDIDATE_DONE req={}", msgid);
+            PERFORMANCE_LOGGING("[EDIT_CANDIDATE]", "End iter={} msg={} id:{}", i, j, msgid);
 
             // --- COMMIT ---
-            PERFORMANCE_LOGGING(label.c_str(), "COMMIT_START");
+            PERFORMANCE_LOGGING("[COMMIT]", "Start iter={} msg={}", i, j);
             struct nc_rpc* rpc_commit = nc_rpc_commit(0, 0, nullptr, nullptr, NC_PARAMTYPE_CONST);
             send_rpc_safe(session, rpc_commit, "commit", &msgid);
-            PERFORMANCE_LOGGING(label.c_str(), "COMMIT_DONE req={}", msgid);
+            PERFORMANCE_LOGGING("[COMMIT]", "End iter={} msg={} id:{}", i, j, msgid);
 
             // --- GET ---
-            PERFORMANCE_LOGGING(label.c_str(), "GET_START");
+            PERFORMANCE_LOGGING("[GET]", "Start iter={}", i);
             struct nc_rpc* rpc_get = nc_rpc_get(combined_get_filter, NC_WD_EXPLICIT, NC_PARAMTYPE_CONST);
             send_rpc_safe(session, rpc_get, "get", &msgid);
-            PERFORMANCE_LOGGING(label.c_str(), "GET_DONE req={}", msgid);
+            PERFORMANCE_LOGGING("[GET]", "End iter={} id:{}", i, msgid);
         }
     }
 

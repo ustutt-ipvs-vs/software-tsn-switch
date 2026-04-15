@@ -43,10 +43,11 @@ class InterfacesCache {
     void setCurrentRequestId(uint32_t reqId);
     ietfInterface_t* getInterface(int ifindex);
     ietfInterface_t* getInterface(const std::string& name);
+    ietfInterface_t* getEmptyInterface(const std::string& name);
     std::map<int, ietfInterface_t>& getAllInterfaces();
 
-    // ietfInterface_t* ensureLinkData(NetlinkSocket& sock, int ifindex);
-    // ietfInterface_t* ensureLinkData(NetlinkSocket& sock, const std::string& name);
+    ietfInterface_t* ensureLinkData(NetlinkSocket& sock, int ifindex);
+    ietfInterface_t* ensureLinkData(NetlinkSocket& sock, const std::string& name);
     void ensureFullLinkData(NetlinkSocket& sock);
 
     // ietfInterface_t* ensureQdiscData(NetlinkSocket& sock, int ifindex);

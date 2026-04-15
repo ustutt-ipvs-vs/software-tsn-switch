@@ -76,34 +76,85 @@ std::map<int, ietfInterface_t>& InterfacesCache::getAllInterfaces() {
     return m_interfaces;
 }
 
-// ietfInterface_t* InterfacesCache::ensureLinkData(NetlinkSocket& sock, int ifindex) {
-//     ietfInterface_t* iface = getInterface(ifindex);
-//
-//     // 1. Freshness Check
-//     if (iface && iface->lastLinkUpdateId == m_currentRequestId) {
-//         return iface;  // Cache Hit
-//     }
-//
-//     // 2. Fetch Targeted
-//     // Note: RTM_GETLINK always returns full attributes.
-//     // Partial parsing isn't useful here as the kernel constructs the full message anyway.
-//     try {
-//         LinkManager::getInterface(sock, ifindex);
-//     } catch (...) {
-//         return nullptr;  // Interface likely doesn't exist
-//     }
-//
-//     // 3. Parse & Upsert
-//     LinkManager::getInterfacesInResponse(sock, m_interfaces, m_currentRequestId);
-//
-//     return getInterface(ifindex);
-// }
-//
-// ietfInterface_t* InterfacesCache::ensureLinkData(NetlinkSocket& sock, const std::string& name) {
-//     unsigned int idx = if_nametoindex(name.c_str());
-//     if (idx == 0) return nullptr;  // OS doesn't know this name
-//     return ensureLinkData(sock, static_cast<int>(idx));
-// }
+/**
+ * @brief Used to ensure an @ref IetfInterface_t for a given ifindex is present in the cache with fresh link data and
+ * return a pointer to it.
+ *
+ * @param sock An instance of a @ref NetlinkSocket which is used to send the message and retrieve the response.
+ * @param ifindex The index of the interface to return
+ * @return Returns a pointer to the cached struct, or nullptr if the ifindex is unknown.
+ */
+ietfInterface_t* InterfacesCache::ensureLinkData(NetlinkSocket& sock, int ifindex) {
+    PERFORMANCE_LOGGING("[IFCACHE] [LINK_SINGLE_IDX]", "Start req={} ifindex={}", m_currentRequestId, ifindex);
+    ietfInterface_t* iface = getInterface(ifindex);
+
+    // 1. Freshness Check
+    if ((iface != nullptr) && iface->lastLinkUpdateId == m_currentRequestId) {
+        PERFORMANCE_LOGGING("[IFCACHE] [LINK_SINGLE_IDX]", "End req={} ifindex={} Cached", m_currentRequestId, ifindex);
+        return iface;  // Cache Hit
+    }
+
+    // 2. Fetch Targeted
+    // Note: RTM_GETLINK always returns full attributes.
+    // Partial parsing isn't useful here as the kernel constructs the full message anyway.
+    try {
+        LinkManager::getInterface(sock, ifindex);
+    } catch (...) {
+        PERFORMANCE_LOGGING("[IFCACHE] [LINK_SINGLE_IDX]", "End req={} ifindex={} Error", m_currentRequestId, ifindex);
+        return nullptr;  // Interface likely doesn't exist
+    }
+
+    // 3. Parse & Upsert
+    LinkManager::getInterfacesInResponse(sock, m_interfaces, m_currentRequestId);
+
+    PERFORMANCE_LOGGING("[IFCACHE] [LINK_SINGLE_IDX]", "End req={} ifindex={}", m_currentRequestId, ifindex);
+    return getInterface(ifindex);
+}
+
+/**
+ * @brief Used to ensure an @ref IetfInterface_t for a given name is present in the cache with fresh link data and
+ * return a pointer to it.
+ *
+ * @param sock An instance of a @ref NetlinkSocket which is used to send the message and retrieve the response.
+ * @param name The name of the interface to return
+ * @return Returns a pointer to the cached struct, or nullptr if the name is unknown.
+ */
+ietfInterface_t* InterfacesCache::ensureLinkData(NetlinkSocket& sock, const std::string& name) {
+    PERFORMANCE_LOGGING("[IFCACHE] [LINK_SINGLE_NAME]", "Start req={} ifname={}", m_currentRequestId, name);
+    unsigned int idx = if_nametoindex(name.c_str());
+    if (idx == 0) {
+        PERFORMANCE_LOGGING("[IFCACHE] [LINK_SINGLE_NAME]", "End req={} ifname={} Unknown ifname", m_currentRequestId,
+                            name);
+        return nullptr;  // OS doesn't know this name
+    }
+    PERFORMANCE_LOGGING("[IFCACHE] [LINK_SINGLE_NAME]", "End req={} ifname={}", m_currentRequestId, name);
+    return ensureLinkData(sock, static_cast<int>(idx));
+}
+
+/**
+ * @brief For a given, valid name, returns the existing @ref IetfInterface_t for this index, or creates an empty @ref
+ * IetfInterface_t in the cache for this request, with only index and name set. Used when you do not care about the
+ * values in the kernel, but rather want to fill it with the configuration data.
+ *
+ * @param name Name of the interface to return.
+ * @return Returns nullptr if no interface known to the kernel has the given name, an @ref IetfInterface_t otherwise. If
+ * the cache for the current request already contains an entry for this name, that entry is returned. If not, a new
+ * entry with only the name and index set is created and returned.
+ */
+ietfInterface_t* InterfacesCache::getEmptyInterface(const std::string& name) {
+    PERFORMANCE_LOGGING("[IFCACHE] [LINK_EMPTY]", "Start req={} ifname={}", m_currentRequestId, name);
+    unsigned int idx = if_nametoindex(name.c_str());
+    if (idx == 0) {
+        PERFORMANCE_LOGGING("[IFCACHE] [LINK_EMPTY]", "End req={} Unknown ifname", m_currentRequestId, name);
+        return nullptr;  // OS doesn't know this name
+    }
+
+    const int key = static_cast<int>(idx);
+    auto [it, _] = m_interfaces.try_emplace(
+        key, ietfInterface_t{.ifindex = key, .name = name, .lastLinkUpdateId = m_currentRequestId});
+    PERFORMANCE_LOGGING("[IFCACHE] [LINK_EMPTY]", "End req={} ifname={}", m_currentRequestId, name);
+    return &it->second;
+}
 
 /**
  * @brief Ensure Link Data is fresh for ALL interfaces.
@@ -114,9 +165,9 @@ std::map<int, ietfInterface_t>& InterfacesCache::getAllInterfaces() {
  * @param sock An instance of a @ref NetlinkSocket which is used to send the message and retrieve the response.
  */
 void InterfacesCache::ensureFullLinkData(NetlinkSocket& sock) {
-    PERFORMANCE_LOGGING("[IFCACHE] [LINK]", "req={} Start", m_currentRequestId);
+    PERFORMANCE_LOGGING("[IFCACHE] [LINK]", "Start req={}", m_currentRequestId);
     if (m_fullLinkDumpDone) {
-        PERFORMANCE_LOGGING("[IFCACHE] [LINK]", "req={} Already fresh", m_currentRequestId);
+        PERFORMANCE_LOGGING("[IFCACHE] [LINK]", "End req={} Already fresh", m_currentRequestId);
         return;
     }
 
@@ -128,13 +179,10 @@ void InterfacesCache::ensureFullLinkData(NetlinkSocket& sock) {
     }
 
     // 2. Full Dump
-    PERFORMANCE_LOGGING("[IFCACHE] [LINK]", "req={} Sending query", m_currentRequestId);
     LinkManager::getAllInterfaces(sock);  // Sends RTM_GETLINK with NLM_F_DUMP
-    PERFORMANCE_LOGGING("[IFCACHE] [LINK]", "req={} Receiving response", m_currentRequestId);
 
     // 3. Parse Response
     LinkManager::getInterfacesInResponse(sock, m_interfaces, m_currentRequestId);
-    PERFORMANCE_LOGGING("[IFCACHE] [LINK]", "req={} Received, cleaning", m_currentRequestId);
 
     // 4. Prune Dead Interfaces
     // If lastLinkUpdateId wasn't updated to currentReqId, the kernel didn't report it.
@@ -146,18 +194,17 @@ void InterfacesCache::ensureFullLinkData(NetlinkSocket& sock) {
         }
     }
 
+    PERFORMANCE_LOGGING("[IFCACHE] [LINK] [QS+SPEED]", "Start req={}", m_currentRequestId);
     for (auto& [id, iface] : m_interfaces) {
-        PERFORMANCE_LOGGING("[IFCACHE] [LINK]", "req={} Interface={} Getting TX-Queue count", m_currentRequestId,
-                            iface.name);
-
+        PERFORMANCE_LOGGING("[IFCACHE] [LINK] [QS+SPEED]", "Start req={} ifname={}", m_currentRequestId, iface.name);
         LinkManager::getActiveQueues(m_ethtool_sock, iface);
-        PERFORMANCE_LOGGING("[IFCACHE] [LINK]", "req={} Interface={} Getting nominal speed", m_currentRequestId,
-                            iface.name);
         LinkManager::getLinkSpeed(m_ethtool_sock, iface);
+        PERFORMANCE_LOGGING("[IFCACHE] [LINK] [QS+SPEED]", "End req={} ifname={}", m_currentRequestId, iface.name);
     }
+    PERFORMANCE_LOGGING("[IFCACHE] [LINK] [QS+SPEED]", "End req={}", m_currentRequestId);
 
     m_fullLinkDumpDone = true;
-    PERFORMANCE_LOGGING("[IFCACHE] [LINK]", "req={} End", m_currentRequestId);
+    PERFORMANCE_LOGGING("[IFCACHE] [LINK]", "End req={}", m_currentRequestId);
 }
 
 /**
@@ -168,19 +215,16 @@ void InterfacesCache::ensureFullLinkData(NetlinkSocket& sock) {
  * @param sock An instance of a @ref NetlinkSocket which is used to send the message and retrieve the response.
  */
 void InterfacesCache::ensureFullQdiscData(NetlinkSocket& sock) {
-    PERFORMANCE_LOGGING("[IFCACHE] [QDISC]", "req={} Start", m_currentRequestId);
+    PERFORMANCE_LOGGING("[IFCACHE] [QDISC]", "Start req={}", m_currentRequestId);
     if (m_fullQdiscDumpDone) {
         return;
     }
 
     // 1. Full Dump
-    PERFORMANCE_LOGGING("[IFCACHE] [QDISC]", "req={} Sending query", m_currentRequestId);
     QdiscManager::getAllQdiscInfo(sock);
-    PERFORMANCE_LOGGING("[IFCACHE] [QDISC]", "req={} Receiving response", m_currentRequestId);
 
     // 2. Parse Response (No filter)
     QdiscManager::getInterfacesInResponse(sock, m_interfaces, m_currentRequestId);
-    PERFORMANCE_LOGGING("[IFCACHE] [QDISC]", "req={} Received, cleaning", m_currentRequestId);
 
     // Unlike in ensureFullLinkData(), no entries from the list are deleted, only the GPTs for which no schedules are
     // set are invalidated.
@@ -192,5 +236,5 @@ void InterfacesCache::ensureFullQdiscData(NetlinkSocket& sock) {
     }
 
     m_fullQdiscDumpDone = true;
-    PERFORMANCE_LOGGING("[IFCACHE] [QDISC]", "req={} End", m_currentRequestId);
+    PERFORMANCE_LOGGING("[IFCACHE] [QDISC]", "End req={}", m_currentRequestId);
 }

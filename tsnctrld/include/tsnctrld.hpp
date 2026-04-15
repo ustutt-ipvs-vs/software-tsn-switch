@@ -1,6 +1,7 @@
 #ifndef ENPRO_SWITCH_TSNCTRLD_HPP
 #define ENPRO_SWITCH_TSNCTRLD_HPP
 
+#include <condition_variable>
 #include <libyang-cpp/Context.hpp>
 #include <sysrepo-cpp/Changes.hpp>
 #include <sysrepo-cpp/Connection.hpp>
@@ -14,6 +15,11 @@
 #include "NetlinkSocket.h"
 #include "PtpManager.h"
 #include "QdiscManager.h"
+
+struct ResetTask {
+    std::string xpath;
+    uint32_t requestId;
+};
 
 /**
  * @brief The main class of the "tsnctrld" control daemon for bridging the gap between sysrepo and kernel.
@@ -37,7 +43,14 @@ class tsnctrld {
 
     InterfacesCache m_ifcache;
 
-    std::vector<std::string> m_pathsToReset;
+    std::mutex m_resetMutex;
+    std::condition_variable m_resetCv;
+    std::vector<ResetTask> m_resetQueue;
+    bool m_stopResetThread = false;
+    std::thread m_resetThread;
+
+    std::unordered_map<uint32_t, std::vector<std::string>> m_pendingResets;
+    std::mutex m_pendingResetsMutex;
 
     sysrepo::ErrorCode defaultOperCallback(const sysrepo::Session& sess, uint32_t subId, const std::string& moduleName,
                                            const std::optional<std::string>& subXPath,
@@ -118,6 +131,7 @@ class tsnctrld {
     ietfInterface_t* syncInterfaceFromSysrepo(sysrepo::Session& sess, const std::string& ifname, uint32_t requestId);
 
     void resetTriggerLeaf(const std::string& xpath, uint32_t requestId);
+    void resetWorkerLoop();
 
     template <typename T>
     T getLeaf(const std::optional<libyang::DataNode>& node, const std::string& path);
