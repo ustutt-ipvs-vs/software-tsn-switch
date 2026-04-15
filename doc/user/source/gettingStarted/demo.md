@@ -24,6 +24,24 @@ sudo ip netns exec $CPID ip link set dveth-a up
 sudo ip netns exec $CPID ip address
 ```
 
+Setup commands V2:
+```
+cmake -S . -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=Release && make --directory=build
+sudo docker build -t tsnctrld-demo tools/project_demo/
+find ./tools/virtual_wiring/ -type f -iname "*.sh" -exec chmod +x {} \;
+sudo docker run --rm -it --network=none --name demo1 tsnctrld-demo
+sudo docker run --rm -it --network=none --name demo2 tsnctrld-demo
+sudo ./tools/virtual_wiring/vbridge_create.sh enp2s0f2
+sudo ./tools/virtual_wiring/container_link.sh demo1
+sudo ./tools/virtual_wiring/container_link.sh demo2
+```
+
+After containers have stopped:
+```
+sudo ./tools/virtual_wiring/container_cleanup.sh
+sudo ./tools/virtual_wiring/vbridge_remove.sh
+```
+
 Teardown (terminating the container erases namespace and veth pair):
 ```
 ip link del dbridge
