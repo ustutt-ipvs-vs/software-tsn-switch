@@ -1,0 +1,31 @@
+#!/bin/bash
+
+# Create a virtual bridge called "tsn-bridge" and connect the provided network
+# interfaces to it.
+
+# Usage: sudo ./create_vbridge.sh <nic> [<nic> ...]
+# Example: sudo ./create_vbridge.sh enp2s0f0 enp2s0f2
+
+BRIDGE="tsn-bridge"
+
+set -e # Terminate on error
+
+# Check for root privileges
+if [ "$EUID" -ne 0 ]; then
+    echo "Error: You must run this script with root privileges (sudo)" >&2
+    exit 1
+fi
+
+echo "Creating bridge '$BRIDGE'" >&2
+ip link add name $BRIDGE type bridge vlan_filtering 1
+
+for NIC in "$@"; do
+    echo "Connecting NIC '$NIC'" >&2
+    ip link set $NIC master $BRIDGE
+    ip link set $NIC up
+done
+
+echo "Setting '$BRIDGE' to UP" >&2
+ip link set $BRIDGE up
+
+echo "Done."
