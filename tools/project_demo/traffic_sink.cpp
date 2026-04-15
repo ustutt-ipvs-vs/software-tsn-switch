@@ -57,11 +57,6 @@ int main() {
     std::signal(SIGINT, handleSignal);
     std::signal(SIGTERM, handleSignal);
 
-    if (geteuid() != 0) {
-        std::cerr << "No root access (did you forget sudo?)" << "\n";
-        return 1;
-    }
-
     // Setup socket
     receiveSocket = socket(AF_INET, SOCK_DGRAM, 0);
     if (receiveSocket < 0) {

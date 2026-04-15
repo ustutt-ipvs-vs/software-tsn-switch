@@ -63,11 +63,6 @@ int main(int argc, char* argv[]) {
         return 0;
     }
 
-    if (geteuid() != 0) {
-        std::cerr << "No root access (did you forget sudo?)" << "\n";
-        return 1;
-    }
-
     char* ipAddr = argv[1];
     size_t payloadSize = std::stoi(argv[2]);
     int dgramsPerSec = std::stoi(argv[3]);
