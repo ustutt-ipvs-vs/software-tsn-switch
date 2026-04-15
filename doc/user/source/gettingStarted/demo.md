@@ -39,6 +39,14 @@ sudo ip netns exec ns-demo2 ip address show
 ./traffic_sink
 ./traffic_source veth-demo1 <DEST_MAC> 1500 10000 0
 ./traffic_source veth-demo2 <DEST_MAC> 1500 10000 0
+
+sudo ip link add link enp2s0f2 \
+name enp2s0f2.100 \
+type vlan id 100
+
+sudo ip link set enp2s0f2.100 \
+type vlan \
+egress 0:0 1:1 2:2 3:3 4:4 5:5 6:6 7:7
 ```
 
 After containers have stopped:
