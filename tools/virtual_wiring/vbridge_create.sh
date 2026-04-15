@@ -27,6 +27,7 @@ ip link add name $BRIDGE type bridge vlan_filtering 1
 
 for NIC in "$@"; do
     echo "Connecting $NIC <-> $NIC.100 <-> $BRIDGE" >&2
+    ip addr flush dev $NIC
     ip link add link $NIC name $NIC.100 type vlan id 100 \
         egress 0:0 1:1 2:2 3:3 4:4 5:5 6:6 7:7
     ip link set $NIC.100 master $BRIDGE

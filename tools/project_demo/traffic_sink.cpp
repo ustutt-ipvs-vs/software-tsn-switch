@@ -1,10 +1,7 @@
-// Listen for experiment link layer traffic (Ethertype: 0x88B5) and display stats
+// Listen for datagrams at port 53660 and print stats
 // To compile: g++ -O2 -o traffic_sink traffic_sink.cpp
 
 #include <arpa/inet.h>
-#include <linux/if_packet.h>
-#include <net/ethernet.h>
-#include <net/if.h>
 #include <sys/socket.h>
 #include <unistd.h>
 
@@ -16,15 +13,16 @@
 #include <mutex>
 #include <thread>
 
-auto LOG_INTERVAL = std::chrono::seconds(1);
+constexpr uint16_t PORT = 53660;
+constexpr auto LOG_INTERVAL = std::chrono::seconds(1);
 
 int receiveSocket;
 std::atomic<bool> running{true};
 std::mutex mutex;
 
-long recentFrames = 0;
-long totalFrames = 0;
-int recentFrameSize = 0;
+long recentDgrams = 0;
+long totalDgrams = 0;
+int recentDgramSize = 0;
 
 void handleSignal(int signal) {
     if (signal == SIGINT || signal == SIGTERM) {
@@ -33,11 +31,13 @@ void handleSignal(int signal) {
 }
 
 void countIncomingFrames() {
-    uint8_t buffer[1518];
+    uint8_t buffer[1500];
+    sockaddr_in senderAddr;
+    socklen_t senderAddrLen = sizeof(senderAddr);
 
-    std::clog << "Listening for frames..." << "\n";
+    std::clog << "Listening for datagrams..." << "\n";
     while (true) {
-        ssize_t bytesRead = recvfrom(receiveSocket, buffer, sizeof(buffer), 0, nullptr, nullptr);
+        ssize_t bytesRead = recvfrom(receiveSocket, buffer, sizeof(buffer), 0, (sockaddr*)&senderAddr, &senderAddrLen);
         if (bytesRead < 0) {
             if (running) {
                 perror("recvfrom");
@@ -46,9 +46,9 @@ void countIncomingFrames() {
         }
 
         std::unique_lock<std::mutex> lock(mutex);
-        ++recentFrames;
-        ++totalFrames;
-        recentFrameSize = bytesRead;
+        ++recentDgrams;
+        ++totalDgrams;
+        recentDgramSize = bytesRead;
         lock.unlock();
     }
 }
@@ -63,17 +63,18 @@ int main() {
     }
 
     // Setup socket
-    receiveSocket = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
+    receiveSocket = socket(AF_INET, SOCK_DGRAM, 0);
     if (receiveSocket < 0) {
         perror("socket");
         exit(1);
     }
 
     // Configure socket
-    struct sockaddr_ll sockAddr{};
-    sockAddr.sll_family = AF_PACKET;
-    sockAddr.sll_protocol = htons(0x88B5);  // Local Experimental Ethertype 1
-    if (bind(receiveSocket, (struct sockaddr*)&sockAddr, sizeof(sockAddr)) < 0) {
+    sockaddr_in recvAddr;
+    recvAddr.sin_family = AF_INET;
+    recvAddr.sin_addr.s_addr = INADDR_ANY;  // Receive from any network interface
+    recvAddr.sin_port = htons(PORT);
+    if (bind(receiveSocket, (const sockaddr*)&recvAddr, sizeof(recvAddr)) < 0) {
         perror("bind");
         close(receiveSocket);
         exit(1);
@@ -88,15 +89,15 @@ int main() {
     while (running) {
         std::this_thread::sleep_until(nextTickTime);
         std::unique_lock<std::mutex> lock(mutex);
-        std::clog << std::to_string(recentFrames) << " frames received (" << std::to_string(totalFrames)
-                  << " total), the last one was " << std::to_string(recentFrameSize) << " bytes long" << "\n";
-        recentFrames = 0;
+        std::clog << std::to_string(recentDgrams) << " datagrams received (" << std::to_string(totalDgrams)
+                  << " total), the last one had " << std::to_string(recentDgramSize) << " bytes of payload" << "\n";
+        recentDgrams = 0;
         lock.unlock();
         nextTickTime += LOG_INTERVAL;
     }
 
     close(receiveSocket);
     std::unique_lock<std::mutex> lock(mutex);
-    std::clog << "Exiting, " << std::to_string(totalFrames) << " frames were received in total." << "\n";
+    std::clog << "Exiting, " << std::to_string(totalDgrams) << " datagrams were received in total." << "\n";
     lock.unlock();
 }

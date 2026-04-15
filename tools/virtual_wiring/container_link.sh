@@ -4,8 +4,8 @@
 # must already run) using a veth pair for TAPRIO. Keep in mind that the link is
 # destroyed when the container stops.
 
-# Usage: sudo ./container_link.sh <container-name>
-# Example: sudo ./create_ns.sh demo1
+# Usage: sudo ./container_link.sh <container-name> <container-cidr>
+# Example: sudo ./create_ns.sh demo1 172.29.253.225/27
 
 # After you created the link, view its namespace here: ip netns list
 # And its contents here: sudo ip netns exec <NS-NAME> ip address show
@@ -15,9 +15,9 @@ BRIDGE="tsn-bridge"
 
 set -e # Terminate on error
 
-if [ "$#" -ne 1 ]; then
+if [ "$#" -ne 2 ]; then
     echo "Error: Wrong number of arguments!" >&2
-    echo "Usage: sudo ./container_link.sh <container-name>" >&2
+    echo "Usage: sudo ./container_link.sh <container-name> <container-cidr>" >&2
     exit 1
 fi
 
@@ -49,5 +49,8 @@ echo "Moving end 'veth-$1' into namespace 'ns-$1'" >&2
 ip link set veth-$1 netns ns-$1
 ip netns exec ns-$1 ip link set lo up
 ip netns exec ns-$1 ip link set veth-$1 up
+
+echo "Assigning CIDR $2 to interface 'veth-$1'" >&2
+ip netns exec ns-$1 ip address add $2 dev veth-$1
 
 echo "Done."

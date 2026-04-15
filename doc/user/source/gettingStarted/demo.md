@@ -32,8 +32,8 @@ find ./tools/virtual_wiring/ -type f -iname "*.sh" -exec chmod +x {} \;
 sudo docker run --rm -it --network=none --name demo1 tsnctrld-demo
 sudo docker run --rm -it --network=none --name demo2 tsnctrld-demo
 sudo ./tools/virtual_wiring/vbridge_create.sh enp2s0f2
-sudo ./tools/virtual_wiring/container_link.sh demo1
-sudo ./tools/virtual_wiring/container_link.sh demo2
+sudo ./tools/virtual_wiring/container_link.sh demo1 172.29.253.225/27
+sudo ./tools/virtual_wiring/container_link.sh demo2 172.29.253.226/27
 sudo ip netns exec ns-demo1 ip address show
 sudo ip netns exec ns-demo2 ip address show
 ./traffic_sink
@@ -52,7 +52,7 @@ egress 0:0 1:1 2:2 3:3 4:4 5:5 6:6 7:7
 After containers have stopped:
 ```
 sudo ./tools/virtual_wiring/container_cleanup.sh
-sudo ./tools/virtual_wiring/vbridge_remove.sh
+sudo ./tools/virtual_wiring/vbridge_remove.sh enp2s0f2
 ```
 
 Teardown (terminating the container erases namespace and veth pair):
