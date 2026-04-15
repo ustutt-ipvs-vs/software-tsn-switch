@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Create a virtual bridge called "tsn-bridge" and connect the provided network
-# interfaces to it.
+# interfaces to it, creating a vlan interface in between.
 
 # Usage: sudo ./vbridge_create.sh <nic> [<nic> ...]
 # Example: sudo ./vbridge_create.sh enp2s0f0 enp2s0f2
@@ -25,11 +25,13 @@ fi
 echo "Creating bridge '$BRIDGE'" >&2
 ip link add name $BRIDGE type bridge vlan_filtering 1
 
-sleep .5  # The bridge needs a bit of time before it can be wired
 for NIC in "$@"; do
-    echo "Connecting NIC '$NIC'" >&2
-    ip link set $NIC master $BRIDGE
+    echo "Connecting $NIC <-> $NIC.100 <-> $BRIDGE" >&2
+    ip link add link $NIC name $NIC.100 type vlan id 100 \
+        egress 0:0 1:1 2:2 3:3 4:4 5:5 6:6 7:7
+    ip link set $NIC.100 master $BRIDGE
     ip link set $NIC up
+    ip link set $NIC.100 up
 done
 
 echo "Setting '$BRIDGE' to UP" >&2
