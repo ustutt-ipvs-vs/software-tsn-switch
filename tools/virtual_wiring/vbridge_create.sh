@@ -25,6 +25,7 @@ fi
 echo "Creating bridge '$BRIDGE'" >&2
 ip link add name $BRIDGE type bridge vlan_filtering 1
 
+sleep .5  # The bridge needs a bit of time before it can be wired
 for NIC in "$@"; do
     echo "Connecting NIC '$NIC'" >&2
     ip link set $NIC master $BRIDGE

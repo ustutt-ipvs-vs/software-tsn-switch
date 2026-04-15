@@ -34,6 +34,11 @@ sudo docker run --rm -it --network=none --name demo2 tsnctrld-demo
 sudo ./tools/virtual_wiring/vbridge_create.sh enp2s0f2
 sudo ./tools/virtual_wiring/container_link.sh demo1
 sudo ./tools/virtual_wiring/container_link.sh demo2
+sudo ip netns exec ns-demo1 ip address show
+sudo ip netns exec ns-demo2 ip address show
+./traffic_sink
+./traffic_source veth-demo1 <DEST_MAC> 1500 10000 0
+./traffic_source veth-demo2 <DEST_MAC> 1500 10000 0
 ```
 
 After containers have stopped:
