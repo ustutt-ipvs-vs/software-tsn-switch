@@ -50,7 +50,7 @@ int main(int argc, char* argv[]) {
     std::signal(SIGINT, handleSignal);
     std::signal(SIGTERM, handleSignal);
 
-    if (argc != 6) {
+    if (argc != 5) {
         std::clog << "Usage: " << argv[0] << " <IP_ADDR> <PAYLOAD_SIZE> <DGRAMS_PER_SEC> <SKB_PRIO>" << "\n";
         std::clog << "\n";
         std::clog << "IP_ADDR: The IP address to send to, e.g. 172.29.253.225" << "\n";

@@ -20,7 +20,7 @@ echo "Removing '$BRIDGE'" >&2
 ip link del $BRIDGE
 
 for NIC in "$@"; do
-    echo "Removing $NIC.100" >&2
+    echo "Removing '$NIC.100'" >&2
     ip link del $NIC.100
 done
 

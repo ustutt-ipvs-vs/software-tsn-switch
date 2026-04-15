@@ -34,6 +34,8 @@ sudo docker run --rm -it --network=none --name demo2 tsnctrld-demo
 sudo ./tools/virtual_wiring/vbridge_create.sh enp2s0f2
 sudo ./tools/virtual_wiring/container_link.sh demo1 172.29.253.225/27
 sudo ./tools/virtual_wiring/container_link.sh demo2 172.29.253.226/27
+sudo ./tools/virtual_wiring/container_link.sh demo1 172.29.253.227/27
+sudo ./tools/virtual_wiring/container_link.sh demo2 172.29.253.228/27
 sudo ip netns exec ns-demo1 ip address show
 sudo ip netns exec ns-demo2 ip address show
 ./traffic_sink
