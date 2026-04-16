@@ -38,7 +38,7 @@ echo "Container '$1' has PID $PID" >&2
 mkdir -p /var/run/netns
 ln -sf /proc/$PID/ns/net /var/run/netns/ns-$1
 
-echo "Setting up veth chain 'veth-$1.100' 'veth-$1' <-> 'veth-$1-b'" >&2
+echo "Setting up veth chain 'veth-$1.100' <-> 'veth-$1' <-> 'veth-$1-b'" >&2
 ip link add veth-$1 numtxqueues 8 numrxqueues 8 type veth peer name veth-$1-b numtxqueues 8 numrxqueues 8
 ip link add link veth-$1 name veth-$1.100 type vlan id 100 \
     egress 0:0 1:1 2:2 3:3 4:4 5:5 6:6 7:7
