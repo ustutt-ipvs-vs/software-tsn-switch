@@ -53,7 +53,7 @@ int main(int argc, char* argv[]) {
     if (argc != 5) {
         std::clog << "Usage: " << argv[0] << " <IP_ADDR> <PAYLOAD_SIZE> <DGRAMS_PER_SEC> <SKB_PRIO>" << "\n";
         std::clog << "\n";
-        std::clog << "IP_ADDR: The IP address to send to, e.g. 172.29.253.225" << "\n";
+        std::clog << "IP_ADDR: The IP address to send to, e.g. 172.29.253.1" << "\n";
         std::clog << "PAYLOAD_SIZE: How many bytes each datagram's payload should contain. Any value 36 <= x <= 1472 "
                      "is allowed."
                   << "\n";
@@ -68,6 +68,11 @@ int main(int argc, char* argv[]) {
     int dgramsPerSec = std::stoi(argv[3]);
     auto dgramInterval = std::chrono::microseconds(1000000 / dgramsPerSec);
     int skbPriority = std::stoi(argv[4]);
+
+    if (skbPriority >= 7 && geteuid() != 0) {
+        std::cerr << "Root privileges required to send with SKB priority 7! (did you forget sudo?)" << "\n";
+        return 1;
+    }
 
     if (payloadSize < 36 || payloadSize > 1472) {
         std::cerr << "FRAME_SIZE is not in 60 <= x <= 1514 interval" << "\n";

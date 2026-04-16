@@ -5,7 +5,7 @@
 # destroyed when the container stops.
 
 # Usage: sudo ./container_link.sh <container-name> <container-cidr>
-# Example: sudo ./create_ns.sh demo1 172.29.253.225/27
+# Example: sudo ./create_ns.sh demo1 172.29.253.1/24
 
 # After you created the link, view its namespace here: ip netns list
 # And its contents here: sudo ip netns exec <NS-NAME> ip address show
