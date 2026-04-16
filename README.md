@@ -1,8 +1,19 @@
 # Software-based TSN Switch & Controller
 
-This repository contains the source code for the development project **"Software-based TSN Switch for Linux"**.
+A TSN network (IEEE 802.1Q) is a real-time network where you can configure each switch in the network to forward incoming Ethernet frames based on a precise schedule.
+This causes the network to become deterministic:
+With an appropriate schedule you can guarantee that your high-priority frames will always arrive on time and without being dropped.
 
-The goal of this project is the realization of a deterministic real-time network connection (Time-Sensitive Networking) for Linux end devices, virtual machines, and containers. The system consists of a software switch component (tsnctrld) and a central controller (cnc).
+This project allows you to use a Debian computer as a TSN switch, allowing you to connect Docker containers and virtual machines to have them take part in the TSN network.
+Our two primary software components are:
+
+- A daemon (`tsnctrld`) that turns your Debian computer into a TSN switch:
+  It makes the device's forwarding schedules configurable from afar via NETCONF and ensures precise clock synchronization with neighboring devices.
+- A Centralized Network Control (CNC) unit that accepts full-network schedules as an input and distributes & applies them to all the TSN switches in your network using NETCONF.
+
+## Features
+TODO
+
 
 ## Documentation (VPN required)
 For end-users: [User Documentation](http://enpro-switch-64df46.gitlab-pages-vs.informatik.uni-stuttgart.de/docs-user)  
@@ -29,9 +40,6 @@ The repository is organized as a monorepo containing the following components:
 
 * **`doc/`:**
     Project documentation files for end-users (`user/`) and developers (`dev/`).
-
-* **`cmake/`:**
-    Helper modules for the build system (e.g., to locate libraries like libnetconf2).
 
 ## Building & Checking
 Please view the corresponding guide in the [developer documentation](http://enpro-switch-64df46.gitlab-pages-vs.informatik.uni-stuttgart.de/docs-dev/howto-build-check.html)! (VPN required!)
