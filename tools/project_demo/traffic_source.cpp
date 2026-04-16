@@ -65,8 +65,8 @@ int main(int argc, char* argv[]) {
 
     char* ipAddr = argv[1];
     size_t payloadSize = std::stoi(argv[2]);
-    int dgramsPerSec = std::stoi(argv[3]);
-    auto dgramInterval = std::chrono::microseconds(1000000 / dgramsPerSec);
+    uint32_t dgramsPerSec = std::stoi(argv[3]);
+    auto dgramInterval = std::chrono::nanoseconds(1000000000 / dgramsPerSec);
     int skbPriority = std::stoi(argv[4]);
 
     if (skbPriority >= 7 && geteuid() != 0) {
@@ -75,7 +75,7 @@ int main(int argc, char* argv[]) {
     }
 
     if (payloadSize < 36 || payloadSize > 1472) {
-        std::cerr << "FRAME_SIZE is not in 60 <= x <= 1514 interval" << "\n";
+        std::cerr << "FRAME_SIZE is not in 60 <= x <= 1472 interval" << "\n";
         return 1;
     }
     if (skbPriority < 0 || skbPriority > 7) {
