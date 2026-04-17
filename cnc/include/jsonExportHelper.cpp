@@ -97,8 +97,7 @@ struct CncEvent {
             }
 
             // Complete interface JSON with missing admin fields
-            iface_json["gcl"] = {
-                                 // Defaulting to 255 (all open) if GCL is inactive.
+            iface_json["gcl"] = {// Defaulting to 255 (all open) if GCL is inactive.
                                  {"adminGateStates", 255},
 
                                  {"cycleTime", max_cycle_time},

@@ -38,7 +38,8 @@ void reportStats() {
         std::unique_lock<std::mutex> lock(mutex);
         std::clog << std::to_string(recentDgrams) << " datagrams sent (" << std::to_string(totalDgrams)
                   << " total), though " << std::to_string(droppedDgrams)
-                  << " datagrams were dropped due to send queue overload" << "\n";
+                  << " datagrams were dropped due to send queue overload"
+                  << "\n";
         recentDgrams = 0;
         droppedDgrams = 0;
         lock.unlock();
@@ -51,14 +52,18 @@ int main(int argc, char* argv[]) {
     std::signal(SIGTERM, handleSignal);
 
     if (argc != 5) {
-        std::clog << "Usage: " << argv[0] << " <IP_ADDR> <PAYLOAD_SIZE> <DGRAMS_PER_SEC> <SKB_PRIO>" << "\n";
+        std::clog << "Usage: " << argv[0] << " <IP_ADDR> <PAYLOAD_SIZE> <DGRAMS_PER_SEC> <SKB_PRIO>"
+                  << "\n";
         std::clog << "\n";
-        std::clog << "IP_ADDR: The IP address to send to, e.g. 172.29.253.1" << "\n";
+        std::clog << "IP_ADDR: The IP address to send to, e.g. 172.29.253.1"
+                  << "\n";
         std::clog << "PAYLOAD_SIZE: How many bytes each datagram's payload should contain. Any value 36 <= x <= 1472 "
                      "is allowed."
                   << "\n";
-        std::clog << "DGRAMS_PER_SEC: How many datagrams to send per second." << "\n";
-        std::clog << "SKB_PRIO: The internal SKB priority the frames are handled with. Any value 0 <= x <= 7" << "\n";
+        std::clog << "DGRAMS_PER_SEC: How many datagrams to send per second."
+                  << "\n";
+        std::clog << "SKB_PRIO: The internal SKB priority the frames are handled with. Any value 0 <= x <= 7"
+                  << "\n";
         std::clog << std::flush;
         return 0;
     }
@@ -70,16 +75,19 @@ int main(int argc, char* argv[]) {
     int skbPriority = std::stoi(argv[4]);
 
     if (skbPriority >= 7 && geteuid() != 0) {
-        std::cerr << "Root privileges required to send with SKB priority 7! (did you forget sudo?)" << "\n";
+        std::cerr << "Root privileges required to send with SKB priority 7! (did you forget sudo?)"
+                  << "\n";
         return 1;
     }
 
     if (payloadSize < 36 || payloadSize > 1472) {
-        std::cerr << "FRAME_SIZE is not in 60 <= x <= 1472 interval" << "\n";
+        std::cerr << "FRAME_SIZE is not in 60 <= x <= 1472 interval"
+                  << "\n";
         return 1;
     }
     if (skbPriority < 0 || skbPriority > 7) {
-        std::cerr << "SKB_PRIO is not in 0 <= x <= 7 interval" << "\n";
+        std::cerr << "SKB_PRIO is not in 0 <= x <= 7 interval"
+                  << "\n";
         return 1;
     }
 
@@ -110,7 +118,8 @@ int main(int argc, char* argv[]) {
     std::thread statsThread(reportStats);
     statsThread.detach();
 
-    std::clog << "Sending datagrams..." << "\n";
+    std::clog << "Sending datagrams..."
+              << "\n";
     auto nextDgramTime = std::chrono::steady_clock::now();
     while (running) {
         ssize_t sendResult =
@@ -128,7 +137,8 @@ int main(int argc, char* argv[]) {
         nextDgramTime += dgramInterval;
         std::this_thread::sleep_until(nextDgramTime);
     }
-    std::clog << "Exiting, " << std::to_string(totalDgrams) << " datagrams were sent in total." << "\n";
+    std::clog << "Exiting, " << std::to_string(totalDgrams) << " datagrams were sent in total."
+              << "\n";
     close(sendSocket);
     return 0;
 }

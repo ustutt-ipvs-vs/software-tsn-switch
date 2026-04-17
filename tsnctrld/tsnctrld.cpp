@@ -2474,7 +2474,8 @@ std::unique_ptr<argparse::ArgumentParser> parseArguments(int argc, char *argv[])
         exit(1);
     }
     if (!argParser->is_used("--disable-clock-sync") && !argParser->is_used("--nic")) {
-        std::cerr << "Error, you must provide exactly one of these options: '--disable-clock-sync' OR '--nic'" << "\n"
+        std::cerr << "Error, you must provide exactly one of these options: '--disable-clock-sync' OR '--nic'"
+                  << "\n"
                   << "Reason: To use gPTP, you must provide NICs that gPTP can use via '--nic'. Alternatively, you can "
                      "disable gPTP with '--disable-clock-sync'"
                   << "\n"
@@ -2500,7 +2501,8 @@ std::unique_ptr<argparse::ArgumentParser> parseArguments(int argc, char *argv[])
     }
     if (!argParser->is_used("--grandmaster") && argParser->is_used("--ntp")) {
         std::cerr
-            << "Error, you provided the '--ntp' or '-n' flag without also providing the '--grandmaster' flag" << "\n"
+            << "Error, you provided the '--ntp' or '-n' flag without also providing the '--grandmaster' flag"
+            << "\n"
             << "Reason: The '--ntp' flag modifies the behaviour of the '--grandmaster' flag and is useless otherwise"
             << "\n"
             << "Hint: Read the user documentation for '--grandmaster' and '--ntp' and decide whether to include them "

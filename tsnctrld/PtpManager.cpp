@@ -60,7 +60,7 @@ PtpManager::PtpManager(const PtpManagerConfig& config)
     m_local_path = "/var/run/tsnctrld_ptp";
     unlink(m_local_path.c_str());
 
-    struct sockaddr_un local_addr{};
+    struct sockaddr_un local_addr {};
     local_addr.sun_family = AF_LOCAL;
     strncpy(local_addr.sun_path, m_local_path.c_str(), sizeof(local_addr.sun_path) - 1);
 
@@ -644,7 +644,7 @@ int32_t PtpManager::sendManagementGet(uint16_t managementId) {
     std::memcpy(buffer.data(), &msg, sizeof(ptp::PtpManagementMsg));
     std::memcpy(buffer.data() + sizeof(ptp::PtpManagementMsg), &tlv, sizeof(ptp::PtpManagementTlv));
 
-    struct sockaddr_un target_addr{};
+    struct sockaddr_un target_addr {};
     target_addr.sun_family = AF_LOCAL;
     strncpy(target_addr.sun_path, m_target_path.c_str(), sizeof(target_addr.sun_path) - 1);
 
@@ -675,7 +675,7 @@ bool PtpManager::receiveManagementResponse(uint16_t expectedId, uint16_t expecte
     }
     // SPDLOG_TRACE("[PTP] [RECV_RESP] Receiving response with expected MID {}", expectedId);
     std::vector<uint8_t> rx_buffer(1024);
-    struct pollfd pfd{};
+    struct pollfd pfd {};
     pfd.fd = m_fd;
     pfd.events = POLLIN;
 

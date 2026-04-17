@@ -119,7 +119,7 @@ bool LldpParser::parseLldpData(const struct lyd_node* rootNode, CncNode_t& node)
                 neighbor.chassisId = getXPathValue(remoteDataNode, "chassis-id");
                 neighbor.portId = getXPathValue(remoteDataNode, "port-id");
                 neighbor.systemName = getXPathValue(remoteDataNode, "system-name");
-                neighbor.ttl = 0;  
+                neighbor.ttl = 0;
 
                 struct ly_set* mgmtAddrSet = nullptr;
                 if (lyd_find_xpath(remoteDataNode, "management-address", &mgmtAddrSet) == LY_SUCCESS &&

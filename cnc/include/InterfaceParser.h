@@ -8,7 +8,7 @@ namespace cnc {
 /**
  * @brief Parses interface information from libyang XML nodes and populates CncNode_t structures.
  * This parser is responsible for extracting interface-related data, including GCL configurations, from
- * the XML data provided by the NETCONF/YANG models. It maps the relevant XML nodes to the corresponding 
+ * the XML data provided by the NETCONF/YANG models. It maps the relevant XML nodes to the corresponding
  * fields in the CncNode_t and ietfInterface_t structures defined in CncTypes.h.
  */
 class InterfaceParser {

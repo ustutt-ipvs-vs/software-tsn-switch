@@ -19,7 +19,7 @@ void signalHandler(int signum) {
 }
 
 int main(int argc, char** argv) {
-    std::string config_path = "cnc/config/inventory.json";
+    std::string config_path = "/etc/inventory.json";
 
     // check if user passed arg
     if (argc > 1) {

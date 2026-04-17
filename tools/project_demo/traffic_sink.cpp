@@ -35,7 +35,8 @@ void countIncomingFrames() {
     sockaddr_in senderAddr;
     socklen_t senderAddrLen = sizeof(senderAddr);
 
-    std::clog << "Listening for datagrams..." << "\n";
+    std::clog << "Listening for datagrams..."
+              << "\n";
     while (true) {
         ssize_t bytesRead = recvfrom(receiveSocket, buffer, sizeof(buffer), 0, (sockaddr*)&senderAddr, &senderAddrLen);
         if (bytesRead < 0) {
@@ -85,7 +86,8 @@ int main() {
         std::this_thread::sleep_until(nextTickTime);
         std::unique_lock<std::mutex> lock(mutex);
         std::clog << std::to_string(recentDgrams) << " datagrams received (" << std::to_string(totalDgrams)
-                  << " total), the last one had " << std::to_string(recentDgramSize) << " bytes of payload" << "\n";
+                  << " total), the last one had " << std::to_string(recentDgramSize) << " bytes of payload"
+                  << "\n";
         recentDgrams = 0;
         lock.unlock();
         nextTickTime += LOG_INTERVAL;
@@ -93,6 +95,7 @@ int main() {
 
     close(receiveSocket);
     std::unique_lock<std::mutex> lock(mutex);
-    std::clog << "Exiting, " << std::to_string(totalDgrams) << " datagrams were received in total." << "\n";
+    std::clog << "Exiting, " << std::to_string(totalDgrams) << " datagrams were received in total."
+              << "\n";
     lock.unlock();
 }

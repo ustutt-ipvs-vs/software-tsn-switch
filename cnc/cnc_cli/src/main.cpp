@@ -170,13 +170,15 @@ int parseAndExec(int argc, char* argv[]) {  // NOLINT(modernize-avoid-c-arrays)
         auto category = getCommand.get<std::string>("category");
         std::vector<std::string> validCategories = {"schedule", "topology", "lldp", "gptp", "graph"};
         if (std::find(validCategories.begin(), validCategories.end(), category) == validCategories.end()) {
-            std::cerr << "Error: '" << category << "' is not a valid category (schedule|topology|lldp|gptp)" << "\n";
+            std::cerr << "Error: '" << category << "' is not a valid category (schedule|topology|lldp|gptp)"
+                      << "\n";
             return 1;
         }
         auto format = getCommand.get<std::string>("--format");
         std::vector<std::string> validFormats = {"indented", "json"};
         if (std::find(validFormats.begin(), validFormats.end(), format) == validFormats.end()) {
-            std::cerr << "Error: '" << format << "' is not a valid format (indented|json)" << "\n";
+            std::cerr << "Error: '" << format << "' is not a valid format (indented|json)"
+                      << "\n";
             return 1;
         }
         auto selectAll = getCommand.get<bool>("--all");
@@ -216,7 +218,8 @@ int parseAndExec(int argc, char* argv[]) {  // NOLINT(modernize-avoid-c-arrays)
             std::cout << grpcClient.getTopologyGraph(asJson) << "\n";
         }
     } else {
-        std::cerr << "Error: You have to provide one of these subcommands: 'set-schedule' or 'get'" << "\n";
+        std::cerr << "Error: You have to provide one of these subcommands: 'set-schedule' or 'get'"
+                  << "\n";
         return 1;
     }
     return 0;

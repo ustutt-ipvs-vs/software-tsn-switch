@@ -252,7 +252,7 @@ LldpDaemon::LldpDaemon(sysrepo::Session& operSession) : m_operSess(operSession) 
             throw std::runtime_error("Failed to open the lldp socket. Is lldpd running?");
         }
 
-        struct sockaddr_un addr{};
+        struct sockaddr_un addr {};
         addr.sun_family = AF_UNIX;
         strncpy(addr.sun_path, lldpctl_get_default_transport(), sizeof(addr.sun_path) - 1);
         auto res = connect(m_watchConn_Fd, (struct sockaddr*)&addr, sizeof(addr));
@@ -794,7 +794,7 @@ ssize_t LldpDaemon::watch_recv_cb(lldpctl_conn_t* conn, const uint8_t* data, siz
         if (p_res == 0) {  // Timeout occurred
             if (offset > 0) {
                 return static_cast<ssize_t>(offset);
-            }  // Return what we have so far
+            }             // Return what we have so far
             return -501;  // LLDPCTL_ERR_WOULDBLOCK
         }
         if (p_res < 0) {  // Error in poll
