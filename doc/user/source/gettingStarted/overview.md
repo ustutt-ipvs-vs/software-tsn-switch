@@ -15,7 +15,7 @@ Each physical Ethernet cable in the network belongs to either one or the other n
 
 ## Example setup
 
-![Example setup involving tsnctrld and cnc](tsnswitch_overview.png)
+![Example setup involving tsnctrld and cnc](fig/tsnswitch_overview.drawio.png)
 
 This is a simple example network to demonstrate how our software components interact.
 The real-time application traffic among TSN talkers & listeners travels through the blue connections (data plane), while the Time-Aware-Shapers in that data plane are configured through NETCONF messages from the CNC, which are travelling in the red control plane.

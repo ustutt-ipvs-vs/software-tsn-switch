@@ -14,8 +14,7 @@ Our two primary software components are:
 ## Features
 TODO
 
-
-## Documentation (VPN required)
+## Getting started
 For end-users: [User Documentation](http://enpro-switch-64df46.gitlab-pages-vs.informatik.uni-stuttgart.de/docs-user)  
 For developers: [Developer Documentation](http://enpro-switch-64df46.gitlab-pages-vs.informatik.uni-stuttgart.de/docs-dev)
 
@@ -42,4 +41,4 @@ The repository is organized as a monorepo containing the following components:
     Project documentation files for end-users (`user/`) and developers (`dev/`).
 
 ## Building & Checking
-Please view the corresponding guide in the [developer documentation](http://enpro-switch-64df46.gitlab-pages-vs.informatik.uni-stuttgart.de/docs-dev/howto-build-check.html)! (VPN required!)
+Please view the corresponding guide in the [developer documentation](http://enpro-switch-64df46.gitlab-pages-vs.informatik.uni-stuttgart.de/docs-dev/howto-build-check.html)!
