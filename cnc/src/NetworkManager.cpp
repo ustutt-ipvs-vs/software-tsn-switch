@@ -311,7 +311,7 @@ void NetworkManager::discoverNetwork() {
 
     fetchInterfaces();
     fetchLldpData();
-    // fetchPtpData(); // removed only for testing, because tsnctld crashes on fetchPtp
+    fetchPtpData(); 
     fetchOperationGcl();
 
     spdlog::info("Network discovery completed.");
