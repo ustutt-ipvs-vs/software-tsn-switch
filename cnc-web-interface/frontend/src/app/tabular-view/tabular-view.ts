@@ -10,7 +10,7 @@ import {LldpNeighborComponent} from "./lldp/lldp-neighbor.component";
 import {PtpComponent} from "./ptp/ptp.component";
 import {GclSchedComponent} from "./gcl-sched/gcl-sched.component";
 import {Subject} from "rxjs";
-import {CncNode, IetfInterface, Topology} from "../grpc/cnc";
+import {CncNode, IetfInterface, LldpNode, Topology} from "../grpc/cnc";
 import {MatIcon} from "@angular/material/icon";
 import {InterfaceSaveEvent} from "../models/dataTypes";
 import {MatTooltip} from "@angular/material/tooltip";
@@ -92,9 +92,23 @@ export class TabularView {
 
     saveNode(node: CncNode) {
         if (!this.canSaveNode(node)) return;
+
+        const snapshot = this.nodeSnapshots.get(node.id);
+        const nodeWithChangedInterfacesOnly: CncNode = {
+            ...node,
+            interfaces: snapshot ? this.getChangedInterfaces(node, snapshot) : node.interfaces
+        };
+
         this.nodeEditingKey = null;
         this.nodeSnapshots.delete(node.id);
-        this.nodeSave.next(node);
+        this.nodeSave.next(nodeWithChangedInterfacesOnly);
+    }
+
+    private getChangedInterfaces(current: CncNode, snapshot: CncNode): IetfInterface[] {
+        return current.interfaces.filter(intf => {
+            const original = snapshot.interfaces.find(i => i.name === intf.name);
+            return !original || JSON.stringify(intf) !== JSON.stringify(original);
+        });
     }
 
     isNodeEditing(nodeId: number): boolean {
@@ -115,7 +129,8 @@ export class TabularView {
     getCycleTimeNs(intf: IetfInterface): number {
         const num = intf.bridgePort?.gateParameterTable?.operCycleTime?.numerator ?? 0;
         const den = intf.bridgePort?.gateParameterTable?.operCycleTime?.denominator ?? 0;
-        return num / den * 1_000_000_000;
+        if (den === 0 && num === 0) return 0;
+        return Math.round((num / den)  * 1_000_000_000);
     }
 
     getIntervalSum(intf: IetfInterface): number {
@@ -124,7 +139,9 @@ export class TabularView {
     }
 
     isCycleTimeValid(intf: IetfInterface): boolean {
-        return this.getIntervalSum(intf) === this.getCycleTimeNs(intf);
+        if (this.disableLoopbackInf(intf.name)) return true;
+        const tolerance = 1;
+        return Math.abs(this.getIntervalSum(intf) - this.getCycleTimeNs(intf)) <= tolerance;
     }
 
     private isCycleTimeValidByName(node: CncNode, intfName: string): boolean {
@@ -138,5 +155,9 @@ export class TabularView {
 
     disableLoopbackInf(interfaceName: string) {
         return interfaceName === 'lo';
+    }
+
+    interfaceLldpData(allLldpData: LldpNode, intfName: string) {
+        return allLldpData.ports.find((port) => port.name === intfName);
     }
 }

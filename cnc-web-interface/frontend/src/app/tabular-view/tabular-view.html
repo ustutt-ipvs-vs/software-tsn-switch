@@ -6,6 +6,13 @@
         <span class="host-name">{{ nodeData?.hostName }}</span>
         <div>
             @if (isNodeEditing(nodeData.id)) {
+                <div class="edit-container">
+                @if (!canSaveNode(nodeData)) {
+                    <span class="span-element">
+                        <mat-icon color="warn" style="margin-right: 4px;">warning</mat-icon>
+                        Invalid cycle times in one or more interfaces
+                    </span>
+                }
                 <button mat-stroked-button class="cancel-btn" (click)="cancelNodeEdit(nodeData)">
                     <mat-icon>cancel</mat-icon>Cancel
                 </button>
@@ -14,6 +21,7 @@
                         (click)="saveNode(nodeData)">
                     <mat-icon>save</mat-icon>Save
                 </button>
+                </div>
             } @else {
                 <button mat-stroked-button class="edit-btn" (click)="enterNodeEditMode(nodeData)">
                     <mat-icon>edit</mat-icon>Edit
@@ -28,7 +36,12 @@
                     <div mat-card-avatar class="status-icon"
                          [class.online]="intf.operStatus === 1"
                          [class.unknown]="intf.operStatus === 4"></div>
-                    <mat-card-title class="mat-card-title">{{ intf.name }}</mat-card-title>
+                    <mat-card-title class="mat-card-title">
+                        {{ intf.name }}
+                        @if ((isNodeEditing(nodeData.id) || isEditing(nodeData.id, intf.name)) && !isCycleTimeValid(intf)) {
+                            <mat-icon color="warn" matTooltip="Interval sum and cycle time mismatch">error</mat-icon>
+                        }
+                    </mat-card-title>
                     <mat-card-subtitle>IfIndex: {{ intf.ifindex }} | Type: {{ intf.type }}</mat-card-subtitle>
                     <div>
                         @if (isEditing(nodeData.id, intf.name)) {
@@ -60,7 +73,9 @@
                                           [editMode]="isNodeEditing(nodeData.id) || isEditing(nodeData.id, intf.name)"/>
                     </mat-tab>
                     <mat-tab label="LLDP Neighbor">
-                        <app-lldp-neighbor [lldpNode]="nodeData?.lldpAllData"/>
+                        <app-lldp-neighbor
+                                [lldpPort]="interfaceLldpData(nodeData!.lldpAllData!, intf.name)"
+                                [lldpNode]="nodeData.lldpAllData"/>
                     </mat-tab>
                     <mat-tab label="PTP">
                         <app-ptp [ptpNode]="nodeData?.ptpAllData"/>

@@ -29,7 +29,7 @@ export class GclSchedComponent {
     getCycleTimeNs(): number {
         const num = this.intf.bridgePort?.gateParameterTable?.operCycleTime?.numerator ?? 0;
         const den = this.intf.bridgePort?.gateParameterTable?.operCycleTime?.denominator ?? 0;
-        if (den === 0) return 0;
+        if (den === 0 && num === 0) return 0;
         return Math.round((num / den) * 1_000_000_000);
     }
 

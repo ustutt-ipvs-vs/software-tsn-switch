@@ -1,6 +1,6 @@
 import {Component, Input} from '@angular/core';
 import {CommonModule} from "@angular/common";
-import {LldpNode} from "../../grpc/cnc";
+import {LldpNode, LldpPort} from "../../grpc/cnc";
 
 @Component({
     selector: 'app-lldp-neighbor',
@@ -11,4 +11,6 @@ import {LldpNode} from "../../grpc/cnc";
 })
 export class LldpNeighborComponent {
     @Input() lldpNode: LldpNode | undefined;
+    @Input() lldpPort: LldpPort | undefined;
+
 }

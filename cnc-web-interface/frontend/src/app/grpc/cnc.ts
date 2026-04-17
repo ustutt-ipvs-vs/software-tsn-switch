@@ -685,6 +685,10 @@ export interface SetNodeScheduleRequest {
      * @generated from protobuf field: repeated cnc.rpc.IetfInterface interfaces = 2
      */
     interfaces: IetfInterface[];
+    /**
+     * @generated from protobuf field: cnc.rpc.ScheduleUpdateMode mode = 3
+     */
+    mode: ScheduleUpdateMode;
 }
 /**
  * @generated from protobuf message cnc.rpc.SetInterfaceScheduleRequest
@@ -1010,6 +1014,23 @@ export enum PtpPortState {
      * @generated from protobuf enum value: PTP_PORT_STATE_TIME_RECEIVER = 9;
      */
     TIME_RECEIVER = 9
+}
+/**
+ * @generated from protobuf enum cnc.rpc.ScheduleUpdateMode
+ */
+export enum ScheduleUpdateMode {
+    /**
+     * @generated from protobuf enum value: HOLD = 0;
+     */
+    HOLD = 0,
+    /**
+     * @generated from protobuf enum value: ZERO = 1;
+     */
+    ZERO = 1,
+    /**
+     * @generated from protobuf enum value: DENY = 2;
+     */
+    DENY = 2
 }
 // @generated message type with reflection information, may provide speed optimized methods
 class RationalTime$Type extends MessageType<RationalTime> {
@@ -3027,13 +3048,15 @@ class SetNodeScheduleRequest$Type extends MessageType<SetNodeScheduleRequest> {
     constructor() {
         super("cnc.rpc.SetNodeScheduleRequest", [
             { no: 1, name: "host_name", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
-            { no: 2, name: "interfaces", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => IetfInterface }
+            { no: 2, name: "interfaces", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => IetfInterface },
+            { no: 3, name: "mode", kind: "enum", T: () => ["cnc.rpc.ScheduleUpdateMode", ScheduleUpdateMode] }
         ]);
     }
     create(value?: PartialMessage<SetNodeScheduleRequest>): SetNodeScheduleRequest {
         const message = globalThis.Object.create((this.messagePrototype!));
         message.hostName = "";
         message.interfaces = [];
+        message.mode = 0;
         if (value !== undefined)
             reflectionMergePartial<SetNodeScheduleRequest>(this, message, value);
         return message;
@@ -3048,6 +3071,9 @@ class SetNodeScheduleRequest$Type extends MessageType<SetNodeScheduleRequest> {
                     break;
                 case /* repeated cnc.rpc.IetfInterface interfaces */ 2:
                     message.interfaces.push(IetfInterface.internalBinaryRead(reader, reader.uint32(), options));
+                    break;
+                case /* cnc.rpc.ScheduleUpdateMode mode */ 3:
+                    message.mode = reader.int32();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -3067,6 +3093,9 @@ class SetNodeScheduleRequest$Type extends MessageType<SetNodeScheduleRequest> {
         /* repeated cnc.rpc.IetfInterface interfaces = 2; */
         for (let i = 0; i < message.interfaces.length; i++)
             IetfInterface.internalBinaryWrite(message.interfaces[i], writer.tag(2, WireType.LengthDelimited).fork(), options).join();
+        /* cnc.rpc.ScheduleUpdateMode mode = 3; */
+        if (message.mode !== 0)
+            writer.tag(3, WireType.Varint).int32(message.mode);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);

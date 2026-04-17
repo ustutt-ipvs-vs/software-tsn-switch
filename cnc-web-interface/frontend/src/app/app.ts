@@ -7,10 +7,13 @@ import {MatSidenavModule} from "@angular/material/sidenav";
 import {TopologicalView} from "./topological-view/topological-view";
 import {
     CncNode,
-    GclConfig, IetfInterface,
+    GclConfig,
+    IetfInterface,
+    ScheduleUpdateMode,
     SetInterfaceScheduleRequest,
     SetNodeScheduleRequest,
-    Topology, TopologyGraph
+    Topology,
+    TopologyGraph
 } from "./grpc/cnc";
 import {CncService} from "./grpc/CncService";
 import {MOCK_TOPOLOGY} from "./test-data/topology-data-mock";
@@ -74,8 +77,6 @@ export class App implements OnInit {
                 interfaceName: changedIntf.name,
                 newAdminGcl: newAdminGcl,
             };
-            console.log("Starting Interface save for schedule of interface:", changedIntf)
-            console.log("Saved Admin GCL: ", newAdminGcl);
             this.cncService.setInterfaceSchedule(request).then(result => {
                 console.log('Saved interface schedule: ', result);
             });
@@ -83,7 +84,6 @@ export class App implements OnInit {
 
         this.cdr.detectChanges();
     }
-//todo set admin instead of oper data
     onNodeSave(node: CncNode) {
         if (!this.nodeData) return;
 
@@ -91,13 +91,25 @@ export class App implements OnInit {
         if (idx === -1) return;
         this.nodeData.nodes[idx] = node;
 
+        if (node.interfaces.length === 0) {
+            console.log('No interfaces changed, skipping save.');
+            return;
+        }
+
+        for(const iface of node.interfaces) {
+            if (iface?.bridgePort?.gateParameterTable) {
+                iface.bridgePort.gateParameterTable = this.mapOperToAdminData(iface.bridgePort.gateParameterTable);
+            }
+        }
+
         const request: SetNodeScheduleRequest = {
             hostName: node.hostName,
-            interfaces: node.interfaces
+            interfaces: node.interfaces,
+            mode: ScheduleUpdateMode.HOLD
         }
         this.cncService.setNodeSchedule(request).then(result => {
-            console.log('Saved all schedules for node: ', result)
-        })
+            console.log('Saved changed interfaces for node: ', result)
+        });
     }
 
     mapOperToAdminData(gclConfig: GclConfig): GclConfig {

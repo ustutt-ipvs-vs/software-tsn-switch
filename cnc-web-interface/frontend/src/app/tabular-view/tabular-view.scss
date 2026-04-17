@@ -111,3 +111,21 @@
     right: 16px;
   }
 }
+
+.span-element {
+  font-size: 14px;
+  font-family: Roboto, "Helvetica Neue", sans-serif;
+  font-style: normal;
+  background-color: rgba(255, 0, 0, 0.2);
+  padding: 7px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+}
+
+.edit-container {
+  display: flex;
+  align-items: center;
+  width: 600px;
+  justify-content: flex-end;
+}

@@ -28,9 +28,38 @@
                     <span class="lldp-label">Chassis ID Subtype</span>
                     <span>{{ lldpNode?.localSystemData?.chassisIdSubtype || '-' }}</span>
 
-                    <span class="lldp-label">Neighbor Port</span>
+                    <span class="lldp-label">Interface Name</span>
+                    <span>{{ lldpPort?.name || '-' }}</span>
+
+                    <span class="lldp-label">Destination Mac Address</span>
+                    <span>{{ lldpPort?.destMacAddress || '-' }}</span>
+
+                    <span class="lldp-label">Admin Status</span>
+                    <span>{{ lldpPort?.adminStatus || '-' }}</span>
                 </div>
             </div>
+
+            @for (neighbor of lldpPort?.neighbors; track $index) {
+                <div class="lldp-section">
+                    <span class="section-title">Neighbor Information</span>
+                    <div class="lldp-grid">
+                        <span class="lldp-label">System Name</span>
+                        <span>{{ neighbor.systemName || '-' }}</span>
+
+                        <span class="lldp-label">Chassis ID</span>
+                        <span>{{ neighbor.chassisId || '-' }}</span>
+
+                        <span class="lldp-label">Port ID</span>
+                        <span>{{ neighbor.portId || '-' }}</span>
+
+                        <span class="lldp-label">Management IP</span>
+                        <span>{{ neighbor.managementIp || '-' }}</span>
+
+                        <span class="lldp-label">Time to Live</span>
+                        <span>{{ neighbor.ttl || '-' }}</span>
+                    </div>
+                </div>
+            }
 
         </div>
     } @else {

@@ -140,12 +140,16 @@
                 </div>
             }
         }
-    } @else {<strong class="parameter-table-name">Loopback Interface</strong>}
-    @if (editMode) {
-        <button mat-stroked-button class="add-btn" (click)="addEntry()">
-            <mat-icon>add</mat-icon>
-            Add Entry
-        </button>
+        @if (editMode) {
+            <button mat-stroked-button class="add-btn" (click)="addEntry()">
+                <mat-icon>add</mat-icon>
+                Add Entry
+            </button>
+        }
+
+    } @else {
+        <strong class="parameter-table-name">Loopback Interface, not editable</strong>
     }
+
 
 </div>
