@@ -547,7 +547,6 @@ ietfInterface_t *tsnctrld::syncInterfaceFromSysrepo(sysrepo::Session &sess, cons
     auto tcData = bpData->findPath("traffic-class/traffic-class-table");
 #if SPDLOG_ACTIVE_LEVEL <= SPDLOG_LEVEL_DEBUG
     if (tcData.has_value()) {
-        // TODO: Use old code for flags once linter stops complaining
         // SPDLOG_TRACE(
         //    "  -> [SYSREPO->STRUCT] [DEBUG] tcData:\n {}",
         //    tcData
@@ -558,7 +557,6 @@ ietfInterface_t *tsnctrld::syncInterfaceFromSysrepo(sysrepo::Session &sess, cons
         //                libyang::PrintFlags::WithDefaultsAll)  // NOLINT(clang-analyzer-optin.core.EnumCastOutOfRange)
         //        .value_or("Missing"));
 
-        // TODO: Remove linter workaround
         using PF = libyang::PrintFlags;
         using T = std::underlying_type_t<PF>;
         auto flags = static_cast<PF>(static_cast<T>(PF::Siblings) | static_cast<T>(PF::EmptyContainers) |
@@ -2176,7 +2174,6 @@ sysrepo::ErrorCode tsnctrld::changeGptCallback(sysrepo::Session sess, uint32_t s
 
     // 3. PHASE: ROLLBACK (Event::Abort)
     if (event == sysrepo::Event::Abort) {
-        // TODO
         {
             std::lock_guard<std::mutex> lock(m_pendingResetsMutex);
             m_pendingResets.erase(requestId);

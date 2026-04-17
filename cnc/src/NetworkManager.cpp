@@ -135,14 +135,6 @@ bool NetworkManager::connectAllNodes(const InventoryMap& inventory) {
                     // here lldp performance metric
                     spdlog::info("[LLDP Event] Neighbor change detected on node {}. Fetching fresh data...", hostName);
 
-                    // Debug log for raw notification data (TODO: remove in production)
-                    // char *str_out = nullptr;
-                    // lyd_print_mem(&str_out, rawData, LYD_XML, LYD_PRINT_SIBLINGS);
-                    // if (str_out) {
-                    //    spdlog::info("!!! NOTIFICATION EMPFANGEN !!!\n{}", str_out);
-                    //    free(str_out);
-                    //}
-
                     PERFORMANCE_LOGGING("[NetworkManager::fetchLldpDataForNode]", "LLDP_PIPELINE");
                     this->fetchLldpDataForNode(hostName);
                     PERFORMANCE_LOGGING("[NetworkManager::finished]", "LLDP_PIPELINE");

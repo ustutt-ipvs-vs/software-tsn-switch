@@ -97,13 +97,12 @@ struct CncEvent {
             }
 
             // Complete interface JSON with missing admin fields
-            iface_json["gcl"] = {// TODO: Find where to get the default admin state from FIPS.
+            iface_json["gcl"] = {
                                  // Defaulting to 255 (all open) if GCL is inactive.
                                  {"adminGateStates", 255},
 
                                  {"cycleTime", max_cycle_time},
 
-                                 // TODO: Determine cycle extension based on topology/hardware capability.
                                  // Setting a safe default of 500ns for now.
                                  {"cycleTimeExtension", 500},
 

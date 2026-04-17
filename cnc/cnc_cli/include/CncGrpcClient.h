@@ -25,7 +25,6 @@ class CncGrpcClient {
      */
     std::string getTopology(bool asJson);
 
-    // TODO
     std::string getTopologyGraph(bool asJson);
 
     /**

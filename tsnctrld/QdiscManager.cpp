@@ -183,8 +183,6 @@ void QdiscManager::getQdiscInfo(NetlinkSocket& netlinkSocket, const std::string&
         if (tcm->tcm_ifindex != if_index) {
             continue;
         }
-        // TODO: Move to actually parsing single qdisc, not just printing
-        // printSingleQdisc(nlh);
     }
 }
 

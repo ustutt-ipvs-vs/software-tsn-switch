@@ -24,7 +24,6 @@ std::string GclXmlBuilder::buildXmlForNode(const CncNode_t& node) {
         // Ignore loopback interfaces
         if (iface.type == IfType::LOOPBACK) continue;
         // Assume GCL data is present if gateParameterTable has entries
-        // TODO: Add hasGcl flag to check for GCL presence
         if (iface.bridgePort.gateParameterTable.configChange == true) {
             appendInterfaceXml(ss, iface);
         }

@@ -61,7 +61,6 @@ TaprioConfig NetconfNetlinkMapper::mapToTaprio(const ietfInterface_t& iface) {
         taprioConf.prioTc[i] = bp.trafficClassData.priorityMap[i];
     }
     for (uint32_t i = 8; i < TC_QOPT_BITMASK + 1; ++i) {
-        // TODO: How are priorities above 7 mapped? YANG only supports 8, linux 16
         taprioConf.prioTc[i] = 0;
     }
 

@@ -42,7 +42,7 @@ bool JsonImporter::importFromFile(const std::string& filename, Topology& topolog
 
                     iface.name = ifaceItem.value("name", "");
 
-                    // 3. GCL Parsing TODO: look into standard values --> maybe error instead of defaults?
+                    // 3. GCL Parsing
                     if (ifaceItem.contains("gcl")) {
                         auto gclItem = ifaceItem["gcl"];
                         GclConfig_t& gclConfig = iface.bridgePort.gateParameterTable;

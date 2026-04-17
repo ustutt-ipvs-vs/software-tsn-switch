@@ -573,8 +573,7 @@ grpc::Status CncServiceImpl::SetNodeSchedule(grpc::ServerContext* context,
 
     PERFORMANCE_LOGGING("[CncServiceImpl::SetNodeSchedule]", "Finished deploying config to node: " + hostName);
 
-    // 4. Zur Verifikation frische Daten holen (ist safe, weil wir das writeLock haben!) --> TODO: eben nicht muss
-    // gefixt werden weil wir nur nen mutex auf einen node haben
+    // 4. Zur Verifikation frische Daten holen
     spdlog::info("[gRPC] Fetching operational GCL for verification...");
     networkManager->fetchOperationGcl();
 
