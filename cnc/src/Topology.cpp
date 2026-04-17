@@ -32,3 +32,13 @@ ietfInterface_t* Topology::getInterface(const LldpNeighbor_t& neighborInfo) {
 
     return nullptr;
 }
+
+std::mutex& Topology::getNodeMutex(const std::string& nodeName) {
+    std::lock_guard<std::mutex> lock(mapMutex);
+
+    if (nodeMutexes.count(nodeName) == 0) {
+        nodeMutexes[nodeName] = std::make_unique<std::mutex>();
+    }
+
+    return *nodeMutexes[nodeName];
+}

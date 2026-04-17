@@ -2,10 +2,14 @@
 
 #include <cstdint>
 #include <string>
-
+#include <map>
+#include <thread>
+#include <atomic>
+#include <functional>
 // Forward declarations
 // Netconf session and RPC structures
 struct nc_session;
+struct lyd_node;
 
 namespace common {
 /**
@@ -16,7 +20,15 @@ namespace common {
  * data and applying configuration changes via candidate datastore edit/commit workflows.
  */
 class NetconfSession {
-   public:
+private:
+    // Pointer to the underlying NETCONF session
+    struct nc_session* session_ = nullptr;
+
+    std::map<std::string, std::function<void(struct lyd_node*)>> subscriptions_;
+    std::thread listenerThread_;
+    std::atomic<bool> listening_{false};
+
+public:
     // Constructor and Destructor
     NetconfSession();
     ~NetconfSession();
@@ -45,9 +57,9 @@ class NetconfSession {
     /**
      * @brief Retrieves data from the NETCONF server using the specified XPath filter.
      * @param xpath The XPath filter to apply (default is empty, which retrieves all data).
-     * @return The retrieved data as a string.
+     * @return The retrieved data as a lyd_node pointer.
      */
-    std::string getData(const std::string& xpath = "");
+    struct lyd_node* getData(const std::string& xpath = "");
 
     /**
      * @brief Edits the configuration data on the NETCONF server into the candidate datastore.
@@ -62,8 +74,22 @@ class NetconfSession {
      */
     bool commit();
 
-   private:
-    // Pointer to the underlying NETCONF session
-    struct nc_session* session_ = nullptr;
+    /**
+     * @brief Subscribes to notifications matching the specified XPath filter and registers a callback.
+     * @param xpath The XPath filter for notifications to subscribe to.
+     * @param callback The callback function to invoke when a matching notification is received.
+     * @return true if the subscription is successful, false otherwise.
+     */
+    bool subscribe(const std::string& xpath, std::function<void(struct lyd_node*)> callback);
+
+    /**
+     * @brief Starts a background thread to listen for incoming notifications and dispatch them to registered callbacks.
+     */
+    void startNotificationListener();
+
+    /**
+     * @brief Stops the background notification listener thread and cleans up resources.
+     */
+    void stopNotificationListener();
 };
 }  // namespace common

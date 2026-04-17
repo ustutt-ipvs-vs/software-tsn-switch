@@ -1,0 +1,184 @@
+<div class="tab-content ptp-content">
+    @if (node.currentDs) {
+    <div class="ptp-top-grid">
+        <div class="ptp-section">
+            <span class="section-title">Current DS</span>
+            <div class="lldp-grid">
+                <span class="lldp-label">Steps Removed</span>
+                <span>{{ node.currentDs.stepsRemoved }}</span>
+
+                <span class="lldp-label">Offset</span>
+                <span [class]="offsetSyncClass(node.currentDs.offsetFromTimeTransmitter)">
+                    {{ node.currentDs.offsetFromTimeTransmitter }} ns
+                </span>
+
+                <span class="lldp-label">Mean Delay</span>
+                <span>{{ node.currentDs.meanDelay }} ns</span>
+            </div>
+        </div>
+
+        <div class="ptp-section">
+            <span class="section-title">Parent DS</span>
+            <div class="lldp-grid">
+                <span class="lldp-label">Parent Clock</span>
+                <code>{{ node.parentDs?.parentClockIdentity }}</code>
+
+                <span class="lldp-label">Parent Port</span>
+                <span>{{ node.parentDs?.parentPortNumber }}</span>
+
+                <span class="lldp-label">Grandmaster</span>
+                <code>{{ node.parentDs?.grandParentClockIdentity }}</code>
+            </div>
+        </div>
+    </div>
+
+    <div class="ptp-section">
+        <mat-tab-group dynamicHeight class="ptp-inner-tabs">
+
+            <mat-tab label="Node">
+                <div class="ptp-inner-content">
+                    <div class="lldp-grid">
+                        <span class="lldp-label">Clock Identity</span>
+                        <code>{{ node.defaultDs?.clockIdentity }}</code>
+
+                        <span class="lldp-label">Instance Type</span>
+                        <span>{{ ptpInstanceTypeLabel(node.defaultDs?.instanceType) }}</span>
+
+                        <span class="lldp-label">Priority</span>
+                        <span>{{ node.defaultDs?.priority1 }}</span>
+                    </div>
+
+                    <mat-divider class="ptp-divider"></mat-divider>
+
+                    <div class="ptp-perf-header">
+                        <span class="section-title">Performance</span>
+                        <mat-button-toggle-group [(ngModel)]="nodePerfWindow" class="perf-toggle">
+                            <mat-button-toggle value="15m">15 min</mat-button-toggle>
+                            <mat-button-toggle value="24h">24 h</mat-button-toggle>
+                        </mat-button-toggle-group>
+                    </div>
+
+                    <table mat-table
+                           [dataSource]="nodePerfWindow === '15m' ? node!.performanceRecords15M : node!.performanceRecords24H"
+                           class="mat-elevation-z0 ptp-table">
+
+                        <ng-container matColumnDef="period">
+                            <th mat-header-cell *matHeaderCellDef>Period</th>
+                            <td mat-cell *matCellDef="let r">{{ r.pmTime }}</td>
+                        </ng-container>
+
+                        <ng-container matColumnDef="valid">
+                            <th mat-header-cell *matHeaderCellDef>Valid</th>
+                            <td mat-cell *matCellDef="let r">
+                                <mat-icon [style.color]="r.measurementValid ? '#4caf50' : '#f44336'">
+                                    {{ r.measurementValid ? 'check_circle' : 'cancel' }}
+                                </mat-icon>
+                            </td>
+                        </ng-container>
+
+                        <ng-container matColumnDef="offsetAvg">
+                            <th mat-header-cell *matHeaderCellDef>Offset Avg</th>
+                            <td mat-cell *matCellDef="let r" [class]="offsetSyncClass(r.offsetFromTimeTransmitter.avg)">
+                                {{ r.offsetFromTimeTransmitter.avg }} ns
+                            </td>
+                        </ng-container>
+
+                        <ng-container matColumnDef="offsetMin">
+                            <th mat-header-cell *matHeaderCellDef>Min</th>
+                            <td mat-cell *matCellDef="let r">{{ r.offsetFromTimeTransmitter.min }} ns</td>
+                        </ng-container>
+
+                        <ng-container matColumnDef="offsetMax">
+                            <th mat-header-cell *matHeaderCellDef>Max</th>
+                            <td mat-cell *matCellDef="let r">{{ r.offsetFromTimeTransmitter.max }} ns</td>
+                        </ng-container>
+
+                        <tr mat-header-row *matHeaderRowDef="nodePerColumns"></tr>
+                        <tr mat-row *matRowDef="let row; columns: nodePerColumns"></tr>
+                    </table>
+                </div>
+            </mat-tab>
+
+            @for (port of node.ports; track port.portIndex) {
+                <mat-tab [label]="'Port ' + port.portIndex">
+                    <div class="ptp-inner-content">
+                        <div class="lldp-grid">
+                            <span class="lldp-label">Interface</span>
+                            <span>{{ port.underlyingInterface }}</span>
+
+                            <span class="lldp-label">Clock Identity</span>
+                            <code>{{ port.portDs?.portClockIdentity }}</code>
+
+                            <span class="lldp-label">Port Number</span>
+                            <span>{{ port.portDs?.portPortNumber }}</span>
+
+                            <span class="lldp-label">State</span>
+                            <span class="port-state-badge" [class]="ptpPortStateClass(port.portDs?.portState)">
+                                {{ ptpPortStateLabel(port.portDs?.portState) }}
+                            </span>
+
+                            <span class="lldp-label">Mean Link Delay</span>
+                            <span>{{ port.portDs?.meanLinkDelay }} ns</span>
+                        </div>
+
+                        <mat-divider class="ptp-divider"></mat-divider>
+
+                        <div class="ptp-perf-header">
+                            <span class="section-title">Link Delay Performance</span>
+                            <mat-button-toggle-group [(ngModel)]="portPerfWindow" class="perf-toggle">
+                                <mat-button-toggle value="15m">15 min</mat-button-toggle>
+                                <mat-button-toggle value="24h">24 h</mat-button-toggle>
+                            </mat-button-toggle-group>
+                        </div>
+
+                        <table mat-table
+                               [dataSource]="portPerfWindow === '15m' ? port.portPerformanceRecords15M : port.portPerformanceRecords24H"
+                               class="mat-elevation-z0 ptp-table">
+
+                            <ng-container matColumnDef="period">
+                                <th mat-header-cell *matHeaderCellDef>Period</th>
+                                <td mat-cell *matCellDef="let r">{{ r.pmTime }}</td>
+                            </ng-container>
+
+                            <ng-container matColumnDef="valid">
+                                <th mat-header-cell *matHeaderCellDef>Valid</th>
+                                <td mat-cell *matCellDef="let r">
+                                    <mat-icon [style.color]="r.measurementValid ? '#4caf50' : '#f44336'">
+                                        {{ r.measurementValid ? 'check_circle' : 'cancel' }}
+                                    </mat-icon>
+                                </td>
+                            </ng-container>
+
+                            <ng-container matColumnDef="linkDelayAvg">
+                                <th mat-header-cell *matHeaderCellDef>Avg</th>
+                                <td mat-cell *matCellDef="let r">{{ r.meanLinkDelay.avg }} ns</td>
+                            </ng-container>
+
+                            <ng-container matColumnDef="linkDelayMin">
+                                <th mat-header-cell *matHeaderCellDef>Min</th>
+                                <td mat-cell *matCellDef="let r">{{ r.meanLinkDelay.min }} ns</td>
+                            </ng-container>
+
+                            <ng-container matColumnDef="linkDelayMax">
+                                <th mat-header-cell *matHeaderCellDef>Max</th>
+                                <td mat-cell *matCellDef="let r">{{ r.meanLinkDelay.max }} ns</td>
+                            </ng-container>
+
+                            <ng-container matColumnDef="linkDelayStddev">
+                                <th mat-header-cell *matHeaderCellDef>Stddev</th>
+                                <td mat-cell *matCellDef="let r">{{ r.meanLinkDelay.stddev }} ns</td>
+                            </ng-container>
+
+                            <tr mat-header-row *matHeaderRowDef="portPerfColumns"></tr>
+                            <tr mat-row *matRowDef="let row; columns: portPerfColumns"></tr>
+                        </table>
+                    </div>
+                </mat-tab>
+            }
+
+        </mat-tab-group>
+    </div>
+    } @else {
+        <p>No PTP information detected.</p>
+    }
+</div>

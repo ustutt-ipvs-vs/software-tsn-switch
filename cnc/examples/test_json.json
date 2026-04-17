@@ -1,0 +1,31 @@
+{
+  "host_name": "vstsn01",
+  "interface_name": "veth-blue-host",
+  "new_admin_gcl": {
+    "gate_enabled": true,
+    "admin_gate_states": 255,
+    "admin_cycle_time_extension_ns": 500,
+    "admin_cycle_time": {
+      "numerator": 1000000,
+      "denominator": 1000000000
+    },
+    "admin_base_time": {
+      "seconds": "0",
+      "nanoseconds": 0
+    },
+    "admin_control_list": [
+      {
+        "index": 0,
+        "operation_name": "sched:set-gate-states",
+        "gate_states_value": 255,
+        "time_interval_value": 700000
+      },
+      {
+        "index": 1,
+        "operation_name": "sched:set-gate-states",
+        "gate_states_value": 255,
+        "time_interval_value": 300000
+      }
+    ]
+  }
+}

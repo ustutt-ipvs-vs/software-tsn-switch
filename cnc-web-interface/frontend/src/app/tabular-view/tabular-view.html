@@ -1,0 +1,74 @@
+@for (nodeData of topology!.nodes; track $index) {
+    @if ($index !== 0) {
+        <div class="divider-box"></div>
+    }
+    <div #nodeAnchor [attr.data-node-id]="nodeData.id" class="node-container">
+        <span class="host-name">{{ nodeData?.hostName }}</span>
+        <div>
+            @if (isNodeEditing(nodeData.id)) {
+                <button mat-stroked-button class="cancel-btn" (click)="cancelNodeEdit(nodeData)">
+                    <mat-icon>cancel</mat-icon>Cancel
+                </button>
+                <button mat-stroked-button class="save-btn"
+                        [disabled]="!canSaveNode(nodeData)"
+                        (click)="saveNode(nodeData)">
+                    <mat-icon>save</mat-icon>Save
+                </button>
+            } @else {
+                <button mat-stroked-button class="edit-btn" (click)="enterNodeEditMode(nodeData)">
+                    <mat-icon>edit</mat-icon>Edit
+                </button>
+            }
+        </div>
+    </div>
+    <div class="tabular-view-parent-container">
+        @for (intf of nodeData?.interfaces; track $index) {
+            <mat-card class="interface-card">
+                <mat-card-header class="card-header">
+                    <div mat-card-avatar class="status-icon"
+                         [class.online]="intf.operStatus === 1"
+                         [class.unknown]="intf.operStatus === 4"></div>
+                    <mat-card-title class="mat-card-title">{{ intf.name }}</mat-card-title>
+                    <mat-card-subtitle>IfIndex: {{ intf.ifindex }} | Type: {{ intf.type }}</mat-card-subtitle>
+                    <div>
+                        @if (isEditing(nodeData.id, intf.name)) {
+                            <button mat-stroked-button class="cancel-btn"
+                                    (click)="cancelInterfaceEdit(nodeData, intf.name)">
+                                <mat-icon>cancel</mat-icon>Cancel
+                            </button>
+                            <button mat-stroked-button class="save-btn"
+                                    [disabled]="!canSaveInterface(nodeData, intf.name)"
+                                    (click)="saveInterface(nodeData, intf.name)">
+                                <mat-icon>save</mat-icon>Save
+                            </button>
+                        } @else {
+                            <button mat-stroked-button class="edit-btn"
+                                    (click)="enterInterfaceEditMode(nodeData.id, intf)"
+                                    [disabled]="disableLoopbackInf(intf.name)"
+                                    matTooltip="Loopback interface not editable"
+                                    [matTooltipDisabled]="!disableLoopbackInf(intf.name)"
+                            >
+                                <mat-icon>edit</mat-icon>Edit
+                            </button>
+                        }
+                    </div>
+                </mat-card-header>
+
+                <mat-tab-group dynamicHeight>
+                    <mat-tab label="GCL Schedule">
+                        <app-gcl-schedule [intf]="intf"
+                                          [editMode]="isNodeEditing(nodeData.id) || isEditing(nodeData.id, intf.name)"/>
+                    </mat-tab>
+                    <mat-tab label="LLDP Neighbor">
+                        <app-lldp-neighbor [lldpNode]="nodeData?.lldpAllData"/>
+                    </mat-tab>
+                    <mat-tab label="PTP">
+                        <app-ptp [ptpNode]="nodeData?.ptpAllData"/>
+                    </mat-tab>
+                </mat-tab-group>
+            </mat-card>
+        }
+    </div>
+    <div class="divider-box"></div>
+    <mat-divider/>
+}

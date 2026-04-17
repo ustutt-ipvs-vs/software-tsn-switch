@@ -10,7 +10,7 @@
             "args": [],
             "stopAtEntry": false,
             // Set the working directory to the workspace root
-            "cwd": "${workspaceFolder}",
+            "cwd": "${workspaceFolder}/build/cnc",
             
             "environment": [],
             "externalConsole": false,

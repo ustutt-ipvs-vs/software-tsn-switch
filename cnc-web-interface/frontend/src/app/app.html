@@ -1,0 +1,47 @@
+<mat-sidenav-container class="sidenav-container">
+    <mat-sidenav #sidenav mode="side" class="side-nav">
+        <div class="nav-wrapper">
+            <button mat-flat-button
+                    (click)="view = 'topological'"
+                    [class.active]="view === 'topological'"
+                    class="nav-btn">
+                <mat-icon>hub</mat-icon>
+                <span>Topological View</span>
+            </button>
+            <button mat-flat-button
+                    (click)="view = 'tabular'"
+                    [class.active]="view === 'tabular'"
+                    class="nav-btn">
+                <mat-icon>table_chart</mat-icon>
+                <span>Tabular View</span>
+            </button>
+        </div>
+    </mat-sidenav>
+
+    <mat-sidenav-content>
+        <mat-toolbar class="top-toolbar">
+            <button mat-icon-button (click)="sidenav.toggle()">
+                <mat-icon>menu</mat-icon>
+            </button>
+            <span class="header-name">EnPro Software TSN Switch</span>
+            <span class="spacer"></span>
+        </mat-toolbar>
+
+        <div class="parent-container">
+            @if (view === 'tabular') {
+                <app-tabular-view
+                    [topology]="nodeData"
+                    (interfaceSave)="saveInterfaceData($event)"
+                    (nodeSave)="onNodeSave($event)"
+                />
+            }
+            @else if (view === 'topological') {
+                <app-topological-view
+                        [nodes]="nodeData!"
+                        [graph]="topologyGraph!"
+                        (nodeSelected)="onTopologyNodeSelected($event)"
+                />
+            }
+        </div>
+    </mat-sidenav-content>
+</mat-sidenav-container>

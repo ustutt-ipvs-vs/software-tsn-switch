@@ -5,6 +5,8 @@
 
 #include <string>
 
+struct lyd_node;  // Forward declaration for libyang data node
+
 namespace cnc {
 /**
  * @brief Parses Gate Control List (GCL) operational XML data and maps it to CncTypes.h data structures.
@@ -21,7 +23,7 @@ class GclParser {
      * @param node Reference to the CncNode_t structure to populate.
      * @return true if parsing is successful, false otherwise.
      */
-    static bool parseOperationalGclData(const std::string& xmlData, CncNode_t& node);
+    static bool parseOperationalGclData(const struct lyd_node* rootNode, CncNode_t& node);
 
    private:
     /**
@@ -29,6 +31,6 @@ class GclParser {
      * @param xmlNodePtr Pointer to the XML node containing the interface GCL data.
      * @param iface Reference to the ietfInterface_t structure to populate.
      */
-    static void parseInterfaceGcl(const void* xmlNodePtr, ietfInterface_t& iface);
+    static void parseInterfaceGcl(const struct lyd_node* gclNode, ietfInterface_t& iface);
 };
 }  // namespace cnc

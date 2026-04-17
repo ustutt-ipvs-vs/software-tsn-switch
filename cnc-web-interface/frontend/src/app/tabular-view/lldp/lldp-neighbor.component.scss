@@ -1,0 +1,46 @@
+.tab-content {
+  padding: 16px;
+}
+
+.lldp-grid-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  padding: 16px;
+}
+
+.lldp-section {
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  padding: 12px 16px;
+
+  &--full {
+    grid-column: 1 / -1;
+  }
+}
+
+.section-title {
+  display: block;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #1976d2;
+  margin-bottom: 10px;
+}
+
+.lldp-grid {
+  display: grid;
+  grid-template-columns: 160px 1fr;
+  row-gap: 6px;
+  align-items: center;
+}
+
+.lldp-label {
+  font-weight: 600;
+}
+
+.ptp-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}

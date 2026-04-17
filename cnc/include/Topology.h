@@ -3,6 +3,8 @@
 #include <map>
 #include <string>
 #include <vector>
+#include <mutex>
+#include <memory>
 
 #include "CncTypes.h"
 
@@ -41,10 +43,27 @@ class Topology {
      */
     ietfInterface_t* getInterface(const LldpNeighbor_t& neighborInfo);
 
+    /**
+     * @brief Retrieves a mutex for synchronizing access to a specific node
+     * @param nodeName The hostname of the node for which to retrieve the mutex
+     * @return Reference to the mutex associated with the node
+     */
+     std::mutex& getNodeMutex(const std::string& nodeName);
+
    private:
     /**
      * @brief Internal helper for fast lookups.
      * Avoids looping through the vector every time if searching for a node.
      */
     std::map<std::string, CncNode_t*> nodeLookup;
+
+    /**
+     * @brief Mutexes for synchronizing access to individual nodes. The map is protected by 'mapMutex' to ensure thread safety when adding new nodes.
+     */
+    std::map<std::string, std::unique_ptr<std::mutex>> nodeMutexes;
+
+    /**
+     * @brief Mutex to protect access to the 'nodeMutexes' map when adding new nodes or retrieving mutexes.
+     */
+    std::mutex mapMutex;
 };
