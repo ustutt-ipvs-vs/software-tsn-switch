@@ -189,7 +189,7 @@ This runs both the Angular dev server and `grpcwebproxy` concurrently. The front
 http://localhost:4200
 ```
 
-The gRPC-Web proxy listens on port `8080` and forwards requests to the CNC daemon at `localhost:50051`.
+The gRPC-Web proxy listens on port `8080` and forwards requests to the CNC daemon.
 
 ---
 
@@ -291,7 +291,7 @@ Expected startup output:
 | Component | Details |
 |---|---|
 | Frontend | Served statically from the pkg snapshot at `http://localhost:4200` |
-| gRPC-Web Proxy | Spawned as subprocess, listens on port `8080`, forwards to `localhost:50051` |
+| gRPC-Web Proxy | Spawned as subprocess, listens on port `8080` |
 | SPA fallback | All unmatched GET requests return `index.html` for Angular client-side routing |
 
 ### Path Resolution Inside the Binary

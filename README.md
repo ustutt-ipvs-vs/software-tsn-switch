@@ -28,6 +28,9 @@ The repository is organized as a monorepo containing the following components:
 * **`tsnctrld/` (TSN Control Daemon):**
     The local agent on the Linux host. It acts as a NETCONF server, applies GCL configurations via Netlink in the kernel (TAPRIO), and monitors LLDP neighborhoods.
 
+* **`cnc-web-interface/`:**
+    A visual layer on top of the CNC and the TSN Control Daemon. It allows you to inspect network topology, view per-node data, and edit GCL schedules through a browser-based UI.
+
 * **`common/`:**
     Shared C++ libraries, helper functions, and data structures used by both the CNC and the agent.
 
