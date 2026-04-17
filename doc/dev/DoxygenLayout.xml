@@ -11,9 +11,7 @@
       <tab type="user" url="@ref howto-test-network-env" title="Setup test network env"/>
       <tab type="user" url="@ref howto-change-ci-container" title="Change CI Container"/>
     </tab>
-    <tab type="user" url="@ref arch-index" visible="yes" title="Architecture" intro="">
-      <!-- Add elements here... -->
-    </tab>
+    <tab type="user" url="@ref arch-webinterface" visible="yes" title="Architecture" intro=""/>
     <tab type="topics" visible="yes" title="" intro=""/>
     <tab type="modules" visible="yes" title="" intro="">
       <tab type="modulelist" visible="yes" title="" intro=""/>

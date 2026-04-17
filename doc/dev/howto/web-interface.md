@@ -1,4 +1,4 @@
-# Developer Documentation — CNC Web Interface
+# Developer Documentation — CNC Web Interface {#arch-webinterface}
 
 This document outlines the frontend architecture, installation steps, and the build/bundling process for the CNC Web Interface.
 The web interface is an additional building block on top of the CNC and the TSN control daemon. It provides a visual form of interaction for the underlying components and their data.
