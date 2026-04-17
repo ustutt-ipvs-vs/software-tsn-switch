@@ -12,9 +12,9 @@ std::string CncGrpcClient::getTopology(bool asJson) {
     EmptyRequest request;
     Topology reply;
     grpc::ClientContext context;
-    
+
     grpc::Status status = stub_->GetNetworkState(&context, request, &reply);
-    
+
     return status.ok() ? formatResponse(reply, asJson) : "gRPC Error: " + status.error_message();
 }
 
@@ -49,7 +49,7 @@ std::string CncGrpcClient::getLldp(bool selectAll, const std::vector<std::string
             request.set_host_name(target.substr(0, dotPos));
             request.set_interface_name(target.substr(dotPos + 1));
             LldpPort reply;
-            
+
             grpc::Status status = stub_->GetInterfaceLldpData(&context, request, &reply);
             final_output += "--- Target: " + target + " ---\n";
             final_output += status.ok() ? formatResponse(reply, asJson) : "Error: " + status.error_message();
@@ -59,7 +59,7 @@ std::string CncGrpcClient::getLldp(bool selectAll, const std::vector<std::string
             NodeRequest request;
             request.set_host_name(target);
             LldpNode reply;
-            
+
             grpc::Status status = stub_->GetNodeLldpData(&context, request, &reply);
             final_output += "--- Target: " + target + " ---\n";
             final_output += status.ok() ? formatResponse(reply, asJson) : "Error: " + status.error_message();
@@ -90,7 +90,7 @@ std::string CncGrpcClient::getPtp(bool selectAll, const std::vector<std::string>
             request.set_host_name(target.substr(0, dotPos));
             request.set_interface_name(target.substr(dotPos + 1));
             PtpPort reply;
-            
+
             grpc::Status status = stub_->GetInterfacePtpData(&context, request, &reply);
             final_output += "--- Target: " + target + " ---\n";
             final_output += status.ok() ? formatResponse(reply, asJson) : "Error: " + status.error_message();
@@ -100,7 +100,7 @@ std::string CncGrpcClient::getPtp(bool selectAll, const std::vector<std::string>
             NodeRequest request;
             request.set_host_name(target);
             PtpNode reply;
-            
+
             grpc::Status status = stub_->GetNodePtpData(&context, request, &reply);
             final_output += "--- Target: " + target + " ---\n";
             final_output += status.ok() ? formatResponse(reply, asJson) : "Error: " + status.error_message();
@@ -112,7 +112,8 @@ std::string CncGrpcClient::getPtp(bool selectAll, const std::vector<std::string>
 
 std::string CncGrpcClient::getSchedule(bool selectAll, const std::vector<std::string>& targets, bool asJson) {
     if (selectAll) {
-        return "Error: Schedule data requires specific interface targets (e.g., vstsn01.enp2s0f0). --all is not supported here.";
+        return "Error: Schedule data requires specific interface targets (e.g., vstsn01.enp2s0f0). --all is not "
+               "supported here.";
     }
 
     std::string final_output = "";
@@ -126,24 +127,26 @@ std::string CncGrpcClient::getSchedule(bool selectAll, const std::vector<std::st
             request.set_host_name(target.substr(0, dotPos));
             request.set_interface_name(target.substr(dotPos + 1));
             GclConfig reply;
-            
+
             grpc::Status status = stub_->GetInterfaceGcl(&context, request, &reply);
-            
+
             if (status.ok()) {
                 if (asJson) {
-                    // package output into a wrapper message so that it can directly used as a perfect JSON input for setInterfaceSchedule
+                    // package output into a wrapper message so that it can directly used as a perfect JSON input for
+                    // setInterfaceSchedule
                     SetInterfaceScheduleRequest wrapper;
                     wrapper.set_host_name(request.host_name());
                     wrapper.set_interface_name(request.interface_name());
-                    *wrapper.mutable_new_admin_gcl() = reply; // Zuweisung des gesamten GclConfig Objekts
-                    
+                    *wrapper.mutable_new_admin_gcl() = reply;  // Zuweisung des gesamten GclConfig Objekts
+
                     // format the wrapper message as JSON
                     std::string jsonStr;
                     google::protobuf::util::JsonPrintOptions options;
-                    options.add_whitespace = true; // makes json more readable
-                    options.always_print_primitive_fields = true; // ensures all fields are included in the JSON, even if they have default values (e.g., empty lists)
+                    options.add_whitespace = true;                 // makes json more readable
+                    options.always_print_primitive_fields = true;  // ensures all fields are included in the JSON, even
+                                                                   // if they have default values (e.g., empty lists)
                     google::protobuf::util::MessageToJsonString(wrapper, &jsonStr, options);
-                    
+
                     final_output += jsonStr + "\n";
                 } else {
                     // standard view with target header and formatted GCL data (for user)
@@ -155,7 +158,8 @@ std::string CncGrpcClient::getSchedule(bool selectAll, const std::vector<std::st
             }
         } else {
             // target has no dot. For GCL we need interfaces!
-            final_output += "--- Target: " + target + " ---\n"; // maybe remove or else you cannot reuse this json to put back into cnc
+            final_output += "--- Target: " + target +
+                            " ---\n";  // maybe remove or else you cannot reuse this json to put back into cnc
             final_output += "Error: Schedule requires an interface target with a dot (e.g., vstsn01.enp2s0f0).\n\n";
         }
     }

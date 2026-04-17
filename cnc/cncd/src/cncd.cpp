@@ -1,10 +1,12 @@
+#include <grpcpp/grpcpp.h>
+#include <unistd.h>
+
+#include <chrono>
+#include <csignal>
 #include <iostream>
 #include <memory>
-#include <csignal>
-#include <chrono>
 #include <thread>
-#include <unistd.h>
-#include <grpcpp/grpcpp.h>
+
 #include "CncServiceImpl.h"
 #include "spdlog/spdlog.h"
 
@@ -16,12 +18,12 @@ void signalHandler(int signum) {
     g_shutdownRequested = 1;
 }
 
-int main (int argc, char** argv) {
+int main(int argc, char** argv) {
     std::string config_path = "cnc/config/inventory.json";
 
     // check if user passed arg
     if (argc > 1) {
-        config_path = argv[1]; // use the provided path
+        config_path = argv[1];  // use the provided path
         spdlog::info("Using provided config path: {}", config_path);
     } else {
         spdlog::info("No path provided. Using default: {}", config_path);
@@ -32,7 +34,7 @@ int main (int argc, char** argv) {
 
     std::string socket_path = "/tmp/cnc_socket";
     std::string server_address = "unix://" + socket_path;
-    std::string tcp_address = "0.0.0.0:50051"; // for testing in Postman
+    std::string tcp_address = "0.0.0.0:50051";  // for testing in Postman
 
     unlink(socket_path.c_str());
 

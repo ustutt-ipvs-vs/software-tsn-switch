@@ -1,10 +1,10 @@
 #pragma once
 
 #include <map>
+#include <memory>
+#include <mutex>
 #include <string>
 #include <vector>
-#include <mutex>
-#include <memory>
 
 #include "CncTypes.h"
 
@@ -48,7 +48,7 @@ class Topology {
      * @param nodeName The hostname of the node for which to retrieve the mutex
      * @return Reference to the mutex associated with the node
      */
-     std::mutex& getNodeMutex(const std::string& nodeName);
+    std::mutex& getNodeMutex(const std::string& nodeName);
 
    private:
     /**
@@ -58,7 +58,8 @@ class Topology {
     std::map<std::string, CncNode_t*> nodeLookup;
 
     /**
-     * @brief Mutexes for synchronizing access to individual nodes. The map is protected by 'mapMutex' to ensure thread safety when adding new nodes.
+     * @brief Mutexes for synchronizing access to individual nodes. The map is protected by 'mapMutex' to ensure thread
+     * safety when adding new nodes.
      */
     std::map<std::string, std::unique_ptr<std::mutex>> nodeMutexes;
 

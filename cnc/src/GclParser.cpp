@@ -1,5 +1,4 @@
 #include "../include/GclParser.h"
-#include "PerformanceLogger.h"
 
 #include <libyang/libyang.h>
 #include <spdlog/spdlog.h>
@@ -8,6 +7,7 @@
 #include <iostream>
 #include <string>
 
+#include "PerformanceLogger.h"
 #include "spdlog/spdlog.h"
 
 namespace cnc {
@@ -174,7 +174,8 @@ void GclParser::parseInterfaceGcl(const struct lyd_node* gclNode, ietfInterface_
 
     // oper-cycle-time
     struct lyd_node* operCycleTimeNode = nullptr;
-    if (lyd_find_path(gclNode, "oper-cycle-time", 0, &operCycleTimeNode) == LY_SUCCESS && operCycleTimeNode != nullptr) {
+    if (lyd_find_path(gclNode, "oper-cycle-time", 0, &operCycleTimeNode) == LY_SUCCESS &&
+        operCycleTimeNode != nullptr) {
         gclConfig.operCycleTime.numerator = getXpathValueUint32(operCycleTimeNode, "numerator");
         gclConfig.operCycleTime.denominator = getXpathValueUint32(operCycleTimeNode, "denominator");
     }
@@ -216,8 +217,7 @@ void GclParser::parseInterfaceGcl(const struct lyd_node* gclNode, ietfInterface_
     }
 
     // admin-gate-states
-    gclConfig.adminGateStates = static_cast<uint8_t>(
-        getXpathValueUint32(gclNode, "admin-gate-states", 255));
+    gclConfig.adminGateStates = static_cast<uint8_t>(getXpathValueUint32(gclNode, "admin-gate-states", 255));
 
     // admin-cycle-time-extension
     gclConfig.adminCycleTimeExtensionNs = getXpathValueUint32(gclNode, "admin-cycle-time-extension", 0);
@@ -231,7 +231,8 @@ void GclParser::parseInterfaceGcl(const struct lyd_node* gclNode, ietfInterface_
 
     // admin-base-time
     struct lyd_node* adminBaseTimeNode = nullptr;
-    if (lyd_find_path(gclNode, "admin-base-time", 0, &adminBaseTimeNode) == LY_SUCCESS && adminBaseTimeNode != nullptr) {
+    if (lyd_find_path(gclNode, "admin-base-time", 0, &adminBaseTimeNode) == LY_SUCCESS &&
+        adminBaseTimeNode != nullptr) {
         gclConfig.adminBaseTime.seconds = getXpathValueUint64(adminBaseTimeNode, "seconds");
         gclConfig.adminBaseTime.nanoseconds = getXpathValueUint32(adminBaseTimeNode, "nanoseconds");
     }

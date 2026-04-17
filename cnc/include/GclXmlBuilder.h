@@ -36,7 +36,7 @@ class GclXmlBuilder {
      * @param iface The IetfInterface_t containing the GCL data.
      * @return A string containing the XML configuration.
      */
-    static std::string buildXmlForInterface(const ietfInterface_t &iface);
+    static std::string buildXmlForInterface(const ietfInterface_t& iface);
 
    private:
     /**
