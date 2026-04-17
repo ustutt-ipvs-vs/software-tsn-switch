@@ -15,7 +15,7 @@ By using our software components, you can shape the traffic of the first device 
     Decide now which is which.
 4. On both switches, run `ip address show` to view the network connections.
     The network interfaces of both the control plane and the data plane have to be UP on both switches (Hint: `sudo ip link set <NIC> up`).
-    Also write down the names of both switches' *data plane* NICs (network interface card, e.g. "eth0" or "enp2s0f2").
+    Also write down the names of both switches' *data plane* NICs (network interface cards, e.g. "eth0" or "enp2s0f2").
 5. If the switches don't have an IP address on the *control plane* yet, assign one to each now.
    Either way, write down their control plane IP addresses.
    Don't give them IP addresses on the *data plane*!
