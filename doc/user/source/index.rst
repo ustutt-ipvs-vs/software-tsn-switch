@@ -32,7 +32,7 @@ This project also includes a Centralized Network Control (CNC) daemon for Debian
 
    Installation <cnc/install>
    Quickstart <cnc/quickstart>
-   CLI <cnc/cli>
+   CLI <cnc/clargs>
 
 .. toctree::
    :maxdepth: 2
