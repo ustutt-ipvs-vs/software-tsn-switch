@@ -28,7 +28,7 @@ class Timesync {
     static void logCommandOutput(const std::string& commandName, const std::string& commandOutput,
                                  spdlog::level::level_enum loggingLevel);
     static void logCommandAndExit(const std::string& commandName, const std::vector<std::string>& command);
-    static bool isAlphanumeric(const std::string& s);
+    static bool isValidNicName(const std::string& s);
 };
 
 #endif  // ENPRO_TIMESYNC

@@ -92,4 +92,5 @@ sysrepocfg --copy-from running --datastore startup
 
 ## Build project
 cd $SCRIPT_DIR/.. && \
-cmake -S . -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON && make --directory=build
+cmake -S . -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=Release && \
+make --directory=build

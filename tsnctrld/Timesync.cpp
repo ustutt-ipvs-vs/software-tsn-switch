@@ -40,9 +40,9 @@ void Timesync::launch(const std::vector<std::string>& nicVec, bool asGrandmaster
         spdlog::critical("[TIMESYNC] Internal error: asGrandmaster is false and disciplineWithNtp is true");
         exit(1);
     }
-    // Check the NIC names for non-alphanumeric characters to prevent command injection attacks
+    // Check the NIC names for unusual characters to prevent command injection attacks
     for (const std::string& nic : nicVec) {
-        if (!isAlphanumeric(nic)) {
+        if (!isValidNicName(nic)) {
             spdlog::critical("[TIMESYNC] A provided NIC contains illegal characters: {}", nic);
             exit(1);
         }
@@ -424,11 +424,12 @@ void Timesync::logCommandAndExit(const std::string& commandName, const std::vect
 }
 
 /**
- * @brief Whether the string contains only alphanumeric characters
+ * @brief Whether the string contains only alphanumeric characters, with `_.-` being allowed
  *
  * @param str The string to test
- * @return Whether @p str contains only alphanumeric characters, the empty string returns @a true
+ * @return Whether @p str contains only `[A-Za-z0-9_.-]` characters, the empty string returns @a true
  */
-bool Timesync::isAlphanumeric(const std::string& str) {
-    return std::ranges::all_of(str, [](unsigned char ch) { return std::isalnum(ch); });
+bool Timesync::isValidNicName(const std::string& str) {
+    return !std::ranges::any_of(
+        str, [](unsigned char ch) { return !std::isalnum(ch) && ch != '_' && ch != '.' && ch != '-'; });
 }
