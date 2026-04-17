@@ -87,9 +87,9 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # ==============================================================================
 # --- RUNNABLE FILES ---
 
-add_executable(tsnctrld_app tsnctrld/tsnctrld.cpp)
+add_executable(tsnctrld tsnctrld/tsnctrld.cpp)
 target_link_libraries(
-    tsnctrld_app
+    tsnctrld
     PUBLIC
     PkgConfig::SYSREPO_CPP
     PkgConfig::LIBYANG_CPP
@@ -97,7 +97,12 @@ target_link_libraries(
     PkgConfig::LIBSYSTEMD
     argparse
 )
-target_link_libraries(tsnctrld_app PRIVATE tsnctrld_lib)
+target_link_libraries(tsnctrld PRIVATE tsnctrld_lib)
+install(TARGETS tsnctrld DESTINATION sbin)
+
+set_target_properties(tsnctrld PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/tsnctrld"
+)
 
 add_executable(performance_testing tools/performance_testing.cpp)
 target_link_libraries(

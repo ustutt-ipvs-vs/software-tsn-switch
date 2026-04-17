@@ -2452,7 +2452,7 @@ std::unique_ptr<argparse::ArgumentParser> parseArguments(int argc, char *argv[])
     argParser->add_argument("-n", "--ntp").help("continuously discipline the grandmaster clock via NTP").flag();
     argParser->add_epilog(
         "For more information, please refer to the user documentation: "
-        "http://enpro-switch-64df46.gitlab-pages-vs.informatik.uni-stuttgart.de/docs-user/tsnctrld/cli.html");
+        "http://enpro-switch-64df46.gitlab-pages-vs.informatik.uni-stuttgart.de/docs-user/tsnctrld/clargs.html");
 
     try {
         argParser->parse_args(argc, argv);

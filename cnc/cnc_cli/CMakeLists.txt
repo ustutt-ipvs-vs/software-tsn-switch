@@ -24,3 +24,4 @@ target_link_libraries(cnc_cli
     protobuf::libprotobuf
     PkgConfig::SPDLOG
 )
+install(TARGETS cnc_cli DESTINATION bin)

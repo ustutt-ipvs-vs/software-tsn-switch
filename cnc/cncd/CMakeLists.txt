@@ -22,3 +22,4 @@ target_link_libraries(cncd
     protobuf::libprotobuf
     PkgConfig::SPDLOG
 )
+install(TARGETS cncd DESTINATION bin)

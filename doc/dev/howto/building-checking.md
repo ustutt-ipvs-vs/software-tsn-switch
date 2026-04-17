@@ -17,6 +17,12 @@ For a release build:
 cmake -S . -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=Release && make --directory=build
 ```
 
+To install the executables after building:
+
+```bash
+sudo make install --directory=build
+```
+
 ### Running tests
 To run all tests, only after you've built the project:
 
