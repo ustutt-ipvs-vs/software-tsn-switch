@@ -14,3 +14,19 @@ The scripts and log files used for the evaluation can be found [here](../../../.
 4. **Data Extraction and Parsing**: Once the load generator finished and the server processed the remaining queue, the ai_log_to_csv_converter.py script was executed. This parser scans the raw C++ logs, matches the start and end timestamps of individual threads, calculates the exact execution duration in milliseconds, and identifies hardware-level failures (e.g., ERROR_COMMIT_FAILED). The output is compiled into a structured CSV file.
 
 5. **Visualization**: Finally, the ai_performance_visualizer.py script was run to generate the graphical plots. Before execution, the script was configured to ensure only the plot_requests_per_second(df) function was uncommented (with all other plotting variations disabled). This function directly generates the throughput-latency characteristic graphs based on the parsed CSV metrics.
+
+## LLDP End-to-End Latency Measurement
+
+To evaluate the system's responsiveness to physical link changes (UP/DOWN), we conducted a distributed latency measurement using the following steps:
+
+The scripts and log files used for the evaluation can be found [here](../../../../tools/performance_analysis/end_to_end_lldp_latency)
+
+1. **System Synchronization**: The TSN switch and CNC server were clock-synchronized via gPTP to enable cross-device timestamp comparison.
+
+2. **Event Generation**: A Python script (lldp_toggler.py) on the server toggled the physical link state (ip link set dev <interface> down/up) and logged the exact ground-truth timestamp ($T_0$).
+
+3. **Distributed Tracing**: Custom C++ macros (PERFORMANCE_LOGGING) tracked the event's lifecycle across components, capturing timestamps for hardware detection (tsnctrld), NETCONF propagation, and data parsing (cncd).
+
+4. **Data Aggregation**: A custom parsing script (ai_lldp_log_to_csv_converter.py) merged the distributed logs and calculated the latency for three distinct phases: Hardware Detection (representing the internal LLDP daemon), Notification Propagation (representing the tsnctrld component), and CNC Processing (repsenting the cncd component).
+
+5. **Visualization**: Finally, the ai_performance_visualizer.py script was run to generate the graphical plots. Before execution, the script was configured to ensure only the plot_lldp_pipeline_anatomy(df) function was uncommented (with all other plotting variations disabled). This function directly generates the end-to-end lldp latency graphs based on the parsed CSV metrics.

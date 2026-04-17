@@ -34,6 +34,13 @@ This project also includes a Centralized Network Control (CNC) daemon for Debian
    CLI <cnc/cli>
 
 .. toctree::
+   :maxdepth: 2
+   :caption: Performance analysis
+
+   Methodology <performance/methodology>
+   Results <performance/results>
+
+.. toctree::
    :maxdepth: 1
    :caption: Developers
 
