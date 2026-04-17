@@ -483,14 +483,6 @@ grpc::Status CncServiceImpl::SetNodeSchedule(grpc::ServerContext* context,
     PERFORMANCE_LOGGING("[CncServiceImpl::SetNodeSchedule]",
                         "Start setting node schedule for node: " + request->host_name());
 
-    // --- DEBUG CHECK ---
-    spdlog::critical("!!! REQUEST RECEIVED !!! Total interfaces in payload: {}", request->interfaces_size());
-
-    for (const auto& protoIface : request->interfaces()) {
-        spdlog::critical("-> Found in payload: {}", protoIface.name());
-    }
-    // -------------------
-
     const std::string& hostName = request->host_name();
     spdlog::info("[gRPC] SetNodeSchedule called for node '{}'.", hostName);
 
