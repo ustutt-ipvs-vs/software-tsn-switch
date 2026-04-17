@@ -9,8 +9,8 @@ apt-get update && \
 apt install -y build-essential libpcre2-dev libssl-dev libssh-dev \
     libcurl4-openssl-dev systemd-dev libsystemd-dev liblldpctl-dev \
     libgrpc++-dev libprotobuf-dev protobuf-compiler-grpc \
-    libspdlog-dev chrony git curl cmake clang-format clang-tidy python3 \
-    python3-pip doxygen graphviz
+    libspdlog-dev chrony git curl cmake clang-format nodejs npm clang-tidy \
+    python3 python3-pip doxygen graphviz
 
 # Install from repositories
 cd $SCRIPT_DIR/..
