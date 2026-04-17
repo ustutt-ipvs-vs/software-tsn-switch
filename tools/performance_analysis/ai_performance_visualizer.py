@@ -8,7 +8,8 @@ from datetime import datetime
 # ==========================================
 # CONFIGURATION
 # ==========================================
-CSV_FILE = "performance_metrics5.csv"
+CSV_FILE = "lldp_performance_metrics.csv" # change this to your actual CSV file path
+# IMPORTANT note: not all csv files produced by the different performance test have the same structure, therefore not all functions for visualization work with all csv files.
 
 # Set a beautiful, modern theme for the plots
 sns.set_theme(style="whitegrid", palette="muted")
@@ -229,6 +230,75 @@ def plot_requests_per_second(df):
     plt.savefig("plot6_requests_per_second.png", dpi=300)
     print("Saved -> plot6_requests_per_second.png")
 
+def plot_lldp_pipeline_anatomy(df):
+    """Plot 7: Stacked bar chart showing the anatomy of LLDP detection (UP vs DOWN)."""
+    df_lldp = df[df['Operation'].str.contains('Hardware_Detection|Notification_Propagation|CNC_Processing')].copy()
+    
+    if df_lldp.empty:
+        return
+
+    df_lldp['Event_Type'] = df_lldp['Operation'].apply(lambda x: 'Link DOWN' if 'DOWN' in x else 'Link UP')
+    df_lldp['Phase'] = df_lldp['Operation'].str.replace('_DOWN', '').str.replace('_UP', '')
+
+    df_grouped = df_lldp.groupby(['Event_Type', 'Phase'])['Duration_ms'].mean().unstack()
+
+    ordered_cols = ['1_Hardware_Detection', '2_Notification_Propagation', '3_CNC_Processing']
+    ordered_cols = [col for col in ordered_cols if col in df_grouped.columns]
+    df_grouped = df_grouped[ordered_cols]
+
+    # Deine gewünschten, sauberen Bezeichnungen
+    rename_map = {
+        '1_Hardware_Detection': 'Hardware Detection (lldp daemon)',
+        '2_Notification_Propagation': 'Datastore & NETCONF Propagation (tsnctrld)',
+        '3_CNC_Processing': 'CNC Fetch & Parsing (cnc)'
+    }
+    df_grouped.rename(columns=rename_map, inplace=True)
+
+    # === PLOTTING ===
+    colors = ['#ff7f0e', '#1f77b4', '#2ca02c']
+    
+    # figsize höher gemacht (10, 8) für mehr vertikalen "Zoom"
+    fig, ax = plt.subplots(figsize=(10, 8))
+    df_grouped.plot(kind='bar', stacked=True, ax=ax, color=colors, edgecolor='white', linewidth=1.5)
+    
+    # Neuer, wissenschaftlicher Titel
+    plt.title("End-to-End LLDP Event Latency", fontsize=15, fontweight='bold', pad=20)
+    plt.ylabel("Average Response Time (ms)", fontsize=12, fontweight='bold')
+    plt.xlabel("Physical Link Event Type", fontsize=12, fontweight='bold')
+    
+    plt.xticks(rotation=0, fontsize=12)
+    
+    # Legenden-Titel angepasst
+    plt.legend(title="Latency Component", bbox_to_anchor=(1.05, 1), loc='upper left', framealpha=0.9, fontsize=10)
+    
+    # 1. GESAMTZEIT OBEN DRAUF SCHREIBEN
+    totals = df_grouped.sum(axis=1)
+    for i, total in enumerate(totals):
+        ax.text(i, total + (totals.max() * 0.02), f"Total: {total:.1f} ms", 
+                ha='center', va='bottom', fontweight='bold', fontsize=11, color='black')
+
+    # 2. KLEINE ZAHLEN VERSTECKEN, GROßE ZEIGEN
+    for c in ax.containers:
+        # Wir extrahieren die Höhen der aktuellen Segmente
+        labels = []
+        for v in c:
+            height = v.get_height()
+            # Nur Zahlen reinschreiben, wenn das Segment hoch genug ist (verhindert Text-Salat)
+            if height > 150: 
+                labels.append(f"{height:.1f}")
+            else:
+                labels.append("") 
+                
+        ax.bar_label(c, labels=labels, label_type='center', color='white', fontweight='bold', fontsize=10)
+
+    # Die Y-Achse nach oben hin ein Stück verlängern, damit die "Total"-Texte nicht abgeschnitten werden
+    ax.set_ylim(0, totals.max() * 1.1)
+
+    plt.grid(axis='y', linestyle='--', alpha=0.6)
+    plt.tight_layout()
+    
+    plt.savefig("plot7_lldp_anatomy.png", dpi=300)
+    print("Saved -> plot7_lldp_anatomy.png")
 
 def main():
     print("Loading data...")
@@ -243,8 +313,8 @@ def main():
     #plot_degradation_over_time(df)
     #plot_parallelism_gantt(df)
     #plot_ramp_up_performance(df)
-    plot_requests_per_second(df)
-
+    #plot_requests_per_second(df)
+    plot_lldp_pipeline_anatomy(df)
     print("\n All visualizations generated successfully!")
 
 if __name__ == "__main__":
