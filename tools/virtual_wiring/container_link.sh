@@ -38,32 +38,32 @@ echo "Container '$1' has PID $PID" >&2
 mkdir -p /var/run/netns
 ln -sf /proc/$PID/ns/net /var/run/netns/ns-$1
 
-echo "Setting up veth chain 'veth-$1.100' <-> 'veth-$1' <-> 'veth-$1-b'" >&2
-ip link add veth-$1 numtxqueues 8 numrxqueues 8 type veth peer name veth-$1-b numtxqueues 8 numrxqueues 8
-ip link add link veth-$1 name veth-$1.100 type vlan id 100 \
+echo "Setting up veth chain 'v-$1.100' <-> 'v-$1' <-> 'v-$1-b'" >&2
+ip link add v-$1 numtxqueues 8 numrxqueues 8 type veth peer name v-$1-b numtxqueues 8 numrxqueues 8
+ip link add link v-$1 name v-$1.100 type vlan id 100 \
     egress 0:0 1:1 2:2 3:3 4:4 5:5 6:6 7:7
 
-echo "Connecting end 'veth-$1-b' to vbridge '$BRIDGE'" >&2
-ip link set veth-$1-b master $BRIDGE
-ip link set veth-$1-b up
+echo "Connecting end 'v-$1-b' to vbridge '$BRIDGE'" >&2
+ip link set v-$1-b master $BRIDGE
+ip link set v-$1-b up
 
-echo "Moving 'veth-$1' and 'veth-$1.100' into namespace 'ns-$1'" >&2
-ip link set veth-$1.100 netns ns-$1
-ip link set veth-$1 netns ns-$1
+echo "Moving 'v-$1' and 'v-$1.100' into namespace 'ns-$1'" >&2
+ip link set v-$1.100 netns ns-$1
+ip link set v-$1 netns ns-$1
 ip netns exec ns-$1 ip link set lo up
-ip netns exec ns-$1 ip link set veth-$1 up
-ip netns exec ns-$1 ip link set veth-$1.100 up
+ip netns exec ns-$1 ip link set v-$1 up
+ip netns exec ns-$1 ip link set v-$1.100 up
 
-echo "Assigning CIDR $2 to interface 'veth-$1.100'" >&2
-ip netns exec ns-$1 ip address add $2 dev veth-$1.100
+echo "Assigning CIDR $2 to interface 'v-$1.100'" >&2
+ip netns exec ns-$1 ip address add $2 dev v-$1.100
 # Make ARP traffic highest priority, otherwise it will be treated as best effor traffic
-ip netns exec ns-$1 arptables -A OUTPUT -o veth-$1.100 -j CLASSIFY --set-class 0:7
+ip netns exec ns-$1 arptables -A OUTPUT -o v-$1.100 -j CLASSIFY --set-class 0:7
 
-echo "Setting up PCP -> SKB priority mapping in 'veth-$1-b' ingress"
-tc qdisc add dev veth-$1-b ingress
+echo "Setting up PCP -> SKB priority mapping in 'v-$1-b' ingress"
+tc qdisc add dev v-$1-b ingress
 for i in {0..7}
 do
-   tc filter add dev veth-$1-b ingress prio 1 protocol 802.1Q flower vlan_prio $i action skbedit priority $i
+   tc filter add dev v-$1-b ingress prio 1 protocol 802.1Q flower vlan_prio $i action skbedit priority $i
 done
 
 echo "Done."
