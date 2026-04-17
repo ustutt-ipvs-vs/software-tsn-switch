@@ -88,7 +88,9 @@ sysrepoctl -i ieee802-dot1as-gptp.yang  -o root -g netconf-api -p 660 && \
 # Netconf configuration
 cd $SCRIPT_DIR/.. && \
 echo '<nacm xmlns="urn:ietf:params:xml:ns:yang:ietf-netconf-acm"><enable-nacm>true</enable-nacm><read-default>permit</read-default><write-default>deny</write-default><groups><group><name>admin</name><user-name>root</user-name><user-name>netconf-api</user-name></group></groups><rule-list><name>admin-full-access</name><group>admin</group><rule><name>permit-all</name><module-name>*</module-name><access-operations>*</access-operations><action>permit</action></rule></rule-list></nacm>' > nacm_init.xml && \
+echo '<netconf-server xmlns="urn:ietf:params:xml:ns:yang:ietf-netconf-server"><listen><idle-timeout>3600</idle-timeout></listen></netconf-server>' > timeout_init.xml && \
 sysrepocfg --import=nacm_init.xml --module ietf-netconf-acm --datastore running && \
+sysrepocfg --edit=timeout_init.xml --module ietf-netconf-server --datastore running && \
 sysrepocfg --copy-from running --datastore startup
 
 ## Build project

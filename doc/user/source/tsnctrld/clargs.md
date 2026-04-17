@@ -36,6 +36,12 @@ With this flag provided, instead of running `chronyd` in one-time sync mode, it 
 Also, instead of the PHCs disciplining `CLOCK_REALTIME`, `CLOCK_REALTIME` now disciplines the PHCs.
 This is why it's important that the device running `tsnctrld` this mode becomes the gPTP grandmaster, since its PHCs will not respect the timestamps of any other device's clock.
 
+### `-m / --monitor-external-ptp`
+
+Can only be used when using the `--disable-clock-sync` flag.
+This is useful if you want to set up your own clock synchronization with `ptp4l`, but still want to let `tsnctrld`
+collect the performance monitoring metrics into the NETCONF datastore.
+
 ## Further reading
 
 Read the [page about clock synchronization](clock_sync.md) to learn more about the general concepts of how these command line arguments are supposed to be used.

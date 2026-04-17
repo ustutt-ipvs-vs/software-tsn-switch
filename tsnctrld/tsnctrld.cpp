@@ -2442,7 +2442,7 @@ std::unique_ptr<argparse::ArgumentParser> parseArguments(int argc, char *argv[])
     argParser->add_argument("-d", "--disable-clock-sync")
         .help("do not set up clock synchronization, so that you can use your own sync method")
         .flag();
-    argParser->add_argument("-r", "--reenable-ptp")
+    argParser->add_argument("-m", "--monitor-external-ptp")
         .help("provide PTP information to the datastore even if PTP is externally managed")
         .flag();
     argParser->add_argument("-i", "--nic")
@@ -2511,16 +2511,17 @@ std::unique_ptr<argparse::ArgumentParser> parseArguments(int argc, char *argv[])
             << "\n";
         exit(1);
     }
-    if (!argParser->is_used("--disable-clock-sync") && argParser->is_used("--reenable-ptp")) {
-        std::cerr << "Error, you provided the '--reenable-ptp' or '-r' flag without also providing the "
-                     "'--disable-clock-sync' flag"
-                  << "\n"
-                  << "Reason: The behavior enabled by the '--reenable-ptp' flag is already enabled and cannot be "
-                     "disabled if this daemon is responsible for gPTP"
-                  << "\n"
-                  << "Hint: Read the user documentation for '--reenable-ptp' and '--disable-clock-sync' and decide "
-                     "whether to include them the next time you run the command."
-                  << "\n";
+    if (!argParser->is_used("--disable-clock-sync") && argParser->is_used("--monitor-external-ptp")) {
+        std::cerr
+            << "Error, you provided the '--monitor-external-ptp' or '-m' flag without also providing the "
+               "'--disable-clock-sync' flag"
+            << "\n"
+            << "Reason: The behavior enabled by the '--monitor-external-ptp' flag is already enabled and cannot be "
+               "disabled if this daemon is responsible for gPTP"
+            << "\n"
+            << "Hint: Read the user documentation for '--monitor-external-ptp' and '--disable-clock-sync' and decide "
+               "whether to include them the next time you run the command."
+            << "\n";
         exit(1);
     }
     return argParser;
@@ -2551,7 +2552,7 @@ int main(int argc, char *argv[]) {
         auto nicVec = argParser->get<std::vector<std::string>>("--nic");
         auto asGrandmaster = argParser->get<bool>("--grandmaster");
         auto disciplineWithNtp = argParser->get<bool>("--ntp");
-        auto enablePtpMonitoring = clockSyncEnabled || argParser->get<bool>("--reenable-ptp");
+        auto enablePtpMonitoring = clockSyncEnabled || argParser->get<bool>("--monitor-external-ptp");
 
         ensureSingleInstanceOnly();
 

@@ -24,6 +24,7 @@ This project also includes a Centralized Network Control (CNC) daemon for Debian
    Quickstart <tsnctrld/quickstart>
    Clock synchronization <tsnctrld/clock_sync>
    Command line arguments <tsnctrld/clargs>
+   Technical details <tsnctrld/details>
 
 .. toctree::
    :maxdepth: 2
