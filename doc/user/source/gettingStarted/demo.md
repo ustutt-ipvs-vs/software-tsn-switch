@@ -108,88 +108,76 @@ Afterwards we will solve this problem with our `tsnctrld` and CNC software compo
 11. B2 and B3 combined now send more traffic than the link can support.
     You should observe that both B2 and B3 receive about the same amount of traffic, even though B2 should have priority!
 
-------
+## Schedule modification
 
-- Terminals A1, A2, A3 are on vstsn01
-- Terminals B1, B2, B3 are on vstsn02. 
-- Both are on the project-demo branch with the repo's root as context
-- You can switch to other branches after setup but need to switch back for teardown
-- The order of executing commands is often important!
+We will now use `tmux` to launch our software components in separate sessions.
+Remember:
 
-### Setup:
+To create a new session: `tmux new -s <SESSION-NAME>`  
+To exit from a session without terminating: `Ctr+B` then `D`  
+To reattach to a running session: `tmux attach -t <SESSION-NAME>`  
+To list all running sessions: `tmux ls`
 
-```sh
-# A1:
-sudo docker build -t tsnctrld-demo tools/project_demo/
-sudo ./tools/virtual_wiring/vbridge_create.sh enp2s0f2
-# A2:
-sudo docker run --rm -it --network=none --name demo1 tsnctrld-demo
-# A3:
-sudo docker run --rm -it --network=none --name demo2 tsnctrld-demo
-# A1:
-sudo ./tools/virtual_wiring/container_link.sh demo1 172.29.253.1/24
-sudo ./tools/virtual_wiring/container_link.sh demo2 172.29.253.2/24
-# B1:
-sudo docker build -t tsnctrld-demo tools/project_demo/
-sudo ./tools/virtual_wiring/vbridge_create.sh enp2s0f2
-# B2:
-sudo docker run --rm -it --network=none --name demo1 tsnctrld-demo
-# B3:
-sudo docker run --rm -it --network=none --name demo2 tsnctrld-demo
-# B1:
-sudo ./tools/virtual_wiring/container_link.sh demo1 172.29.253.3/24
-sudo ./tools/virtual_wiring/container_link.sh demo2 172.29.253.4/24
-```
 
-### Run test:
-
-```sh
-# B2:
-./traffic_sink.sh
-# B3:
-./traffic_sink.sh
-# A2:
-./traffic_source 172.29.253.3 1400 50000 3
-# A2:
-./traffic_source 172.29.253.4 1400 50000 2
-```
-
-### Traffic shaping:
-
-Now make sure that B2 gets all its 50.000 datagrams per sec!
-Use the CNC's CLI or webinterface!
-Manually you can do it this way:
-
-```sh
-# A1:
-sudo tc qdisc replace dev enp2s0f2 parent root handle 100 taprio num_tc 8 map 1 0 2 3 4 5 6 7 0 0 0 0 0 0 0 0 queues 1@0 1@1 1@2 1@3 1@4 1@5 1@6 1@7 base-time 0 sched-entry S 82 100000 sched-entry S 08 1000000 sched-entry S 04 100000 clockid CLOCK_TAI
-```
-
-To remove:
-
-```sh
-# A1:
-sudo tc qdisc delete dev enp2s0f2 root
-```
-
-### Teardown & Cleanup:
-```sh
-# A2: (stop container)
-^C
-exit
-# A3: (stop container)
-^C
-exit
-# B2: (stop container)
-^C
-exit
-# B3: (stop container)
-^C
-exit
-# A1:
-sudo ./tools/virtual_wiring/container_cleanup.sh
-sudo ./tools/virtual_wiring/vbridge_remove.sh
-# B1:
-sudo ./tools/virtual_wiring/container_cleanup.sh
-sudo ./tools/virtual_wiring/vbridge_remove.sh
-```
+1. Launch the TSN control daemon on both switches, but make switch A the gPTP grandmaster of your TSN network.
+    There should be only one grandmaster per network!
+    ```sh
+    # A1 (separate tmux session):
+    sudo tsnctrld --nic <SWITCH-A-DATAPLANE-NIC> --grandmaster --ntp
+    # B1 (separate tmux session):
+    sudo tsnctrld --nic <SWITCH-B-DATAPLANE-NIC>
+    ```
+    Then on both exit with out terminating with `Ctr+B` then `D`.
+    Both switches are now able to receive instructions via NETCONF!
+2. Launch the CNC on switch B, use a separate tmux session again:
+    ```sh
+    # B1 (separate tmux session):
+    sudo cncd
+    ```
+3. Create a file `schedule.json` on switch B (terminal B1), leaving more time for SKB priority 3 to send in the gate control list:
+    ```json
+    {
+      "host_name": "vstsn01",
+      "interfaces": [{
+          "name": "enp2s0f2",
+          "bridge_port": {
+            "gate_parameter_table": {
+              "gate_enabled": true,
+              "admin_gate_states": 255,
+              "admin_cycle_time_extension_ns": 500,
+              "admin_cycle_time": {
+                "numerator": 1200000,
+                "denominator": 1000000000
+              },
+              "admin_base_time": {
+                "seconds": "0",
+                "nanoseconds": 0
+              },
+              "admin_control_list": [{
+                  "index": 0,
+                  "operation_name": "sched:set-gate-states",
+                  "gate_states_value": 65,
+                  "time_interval_value": 100000
+                }, {
+                  "index": 1,
+                  "operation_name": "sched:set-gate-states",
+                  "gate_states_value": 16,
+                  "time_interval_value": 1000000
+                }, {
+                  "index": 2,
+                  "operation_name": "sched:set-gate-states",
+                  "gate_states_value": 32,
+                  "time_interval_value": 100000
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+    ```
+4. And feed that schedule into the CNC interface:
+    ```sh
+    sudo cnc_cli set-schedule --gap=hold schedule.json
+    ```
+5. You should now observe that the more important traffic gets more bandwith (terminal B2), while the less important traffic gets restricted (terminal B3)!
