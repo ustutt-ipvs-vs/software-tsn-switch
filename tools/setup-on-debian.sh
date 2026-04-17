@@ -70,7 +70,7 @@ cd .. && \
 rm -rf libyang libnetconf2 netopeer2 libyang-cpp libnetconf2-cpp sysrepo-cpp
 
 # Yang models
-useradd --system --shell /usr/sbin/nologin netconf-api -p 'private' && \ TODO: Reinstantiate
+useradd --system --shell /usr/sbin/nologin netconf-api -p 'private' && \
 cd $SCRIPT_DIR/../yang && \
 sysrepoctl -i example-demo.yang -o root -g netconf-api -p 660 && \
 sysrepoctl -c ietf-interfaces -o root -g netconf-api -p 660 && \
