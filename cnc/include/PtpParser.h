@@ -4,6 +4,12 @@
 #include "libyang/libyang.h"
 
 namespace cnc {
+/**
+ * @brief Parses PTP data from libyang XML nodes and populates CncNode_t structures.
+ * This parser is responsible for extracting PTP-related data from the XML data provided 
+ * by the NETCONF/YANG models. It maps the relevant XML nodes to the corresponding fields 
+ * in the CncNode_t structure defined in CncTypes.h.
+ */
 class PtpParser {
    public:
     /**

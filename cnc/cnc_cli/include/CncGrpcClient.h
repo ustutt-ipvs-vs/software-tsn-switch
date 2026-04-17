@@ -9,6 +9,11 @@
 
 #include "cnc.grpc.pb.h"
 
+/**
+ * @brief CncGrpcClient is a gRPC client for communicating with the CNC gRPC server (cncd).
+ * It provides methods to fetch topology, LLDP, PTP, and schedule data from the server, as well as to set interface and node schedules. 
+ * The client is used by the CNC CLI application to interact with the server and retrieve or update network information in various formats (JSON or human-readable).
+ */
 class CncGrpcClient {
    public:
     CncGrpcClient(const std::string& target_address);

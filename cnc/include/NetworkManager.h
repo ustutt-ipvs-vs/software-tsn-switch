@@ -19,6 +19,9 @@
 
 namespace cnc {
 
+/**
+ * @brief Worker structure for managing NETCONF sessions and job queues for individual nodes.
+ */
 struct NodeWorker {
     std::shared_ptr<common::NetconfSession> opsSession;
     std::shared_ptr<common::NetconfSession> notifSession;
