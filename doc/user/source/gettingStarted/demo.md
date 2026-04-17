@@ -178,6 +178,7 @@ To list all running sessions: `tmux ls`
     ```
 4. And feed that schedule into the CNC interface:
     ```sh
+    # B1
     sudo cnc_cli set-schedule --gap=hold schedule.json
     ```
 5. You should now observe that the more important traffic gets more bandwith (terminal B2), while the less important traffic gets restricted (terminal B3)!

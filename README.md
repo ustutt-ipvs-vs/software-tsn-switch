@@ -11,9 +11,6 @@ Our two primary software components are:
   It makes the device's forwarding schedules configurable from afar via NETCONF and ensures precise clock synchronization with neighboring devices.
 - A Centralized Network Control (CNC) unit that accepts full-network schedules as an input and distributes & applies them to all the TSN switches in your network using NETCONF.
 
-## Features
-TODO
-
 ## Getting started
 For end-users: [User Documentation](http://enpro-switch-64df46.gitlab-pages-vs.informatik.uni-stuttgart.de/docs-user)  
 For developers: [Developer Documentation](http://enpro-switch-64df46.gitlab-pages-vs.informatik.uni-stuttgart.de/docs-dev)
