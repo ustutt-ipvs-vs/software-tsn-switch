@@ -34,3 +34,13 @@ Failed Commits: The number of requests that were rejected or failed to apply on 
 
 ### Throughput 20 RPS with verification
 ![throughput_set_schedule_no_verify_max_20rps](../../../../tools/performance_analysis/throughput_rps_analysis/throughput_set_schedule_with_verify_max20rps.png)
+
+## End-to-End LLDP Latency
+To evaluate the system's responsiveness to physical network modifications, we conducted an end-to-end latency analysis of topology change events (LLDP Link UP and DOWN). A custom load-generation script was used to toggle a physical network interface, establishing an absolute ground-truth timestamp ($T_0$). Utilizing gPTP-synchronized logs across the distributed architecture, we traced the exact lifecycle of these events through three distinct operational phases:
+1. **Hardware Detection**: The time required for the local lldp daemon within the tsnctrld to recognize the physical link state change.
+2. **Notification Propagation**: The duration for the internal Datastore (Sysrepo) to process the event and push a NETCONF notification to the centralized server.
+3. **CNC Processing**: The time the CNC server requires to successfully fetch and parse the updated LLDP topology tree upon receiving the alert.The following decomposition illustrates the average latency anatomy for both connection establishments (UP) and disconnections (DOWN).
+
+The DOWN commands where executed 16 times, whereas the UP commands where executed 15 times.
+
+![end_to_end_lldp_latency](../../../../tools/performance_analysis/end_to_end_lldp_latency/end_to_end_lldp_latency.png)
