@@ -331,7 +331,7 @@ bool NetworkManager::deployInterfaceConfig(const std::string& nodeName, const st
     std::string configXml = GclXmlBuilder::buildXmlForInterface(*it);
     bool success = false;
 
-    spdlog::critical("!!! GENERATED CONFIG XML FOR INTERFACE {} !!!\n{}", ifaceName, configXml);
+    //spdlog::critical("!!! GENERATED CONFIG XML FOR INTERFACE {} !!!\n{}", ifaceName, configXml);
 
     // WICHTIG: Hier workerSession statt opsSession, wie in deiner Execute-Logik
     bool executed = executeOnNodeWorker(
@@ -372,7 +372,7 @@ bool NetworkManager::deployConfigToNode(const std::string& nodeName) {
     std::string configXml = buildGclXml(filteredNode);
 
     // Output for debugging
-    spdlog::critical("!!! GENERATED CONFIG XML FOR NODE {} !!!\n{}", nodeName, configXml);
+    //spdlog::critical("!!! GENERATED CONFIG XML FOR NODE {} !!!\n{}", nodeName, configXml);
 
     bool success = false;
 
