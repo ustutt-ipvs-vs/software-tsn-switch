@@ -1,5 +1,6 @@
 #include "include/tsnctrld.hpp"
 
+#include <fcntl.h>
 #include <ifaddrs.h>
 #include <spdlog/fmt/ostr.h>
 #include <spdlog/spdlog.h>
