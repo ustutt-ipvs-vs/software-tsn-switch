@@ -50,6 +50,8 @@ static void init_logger() {
 
     // 5. Register it globally
     spdlog::register_logger(g_perf_logger);
+
+    g_perf_logger->info("Executable={}", app_name);
 }
 
 // Lazy initialization accessor

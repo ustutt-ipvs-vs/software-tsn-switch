@@ -238,7 +238,7 @@ void QdiscManager::getInterfacesInResponse(const NetlinkSocket& sock, std::map<i
 
         auto* tcm = (tcmsg*)NLMSG_DATA(nlh);
         int ifindex = tcm->tcm_ifindex;
-        PERFORMANCE_LOGGING("[QDISC] [RESP] [PER_IF]", "Start req={} ifindex={} handle={} parent={}", currentReqId,
+        PERFORMANCE_LOGGING("[QDISC] [RESP] [PER_IF]", "Start req={} ifindex={} handle:{} parent:{}", currentReqId,
                             ifindex, tcm->tcm_handle, tcm->tcm_parent);
         SPDLOG_TRACE("[QM] [Parse Full Response] Current interface: index={}, handle={}, parent={}", ifindex,
                      tcm->tcm_handle, tcm->tcm_parent);
@@ -268,7 +268,7 @@ void QdiscManager::getInterfacesInResponse(const NetlinkSocket& sock, std::map<i
                     break;
             }
         }
-        PERFORMANCE_LOGGING("[QDISC] [RESP] [PER_IF]", "End req={} ifindex={} handle={} parent={}", currentReqId,
+        PERFORMANCE_LOGGING("[QDISC] [RESP] [PER_IF]", "End req={} ifindex={} handle:{} parent:{}", currentReqId,
                             ifindex, tcm->tcm_handle, tcm->tcm_parent);
     }
     PERFORMANCE_LOGGING("[QDISC] [RESP]", "End req={}", currentReqId);
@@ -283,8 +283,9 @@ void QdiscManager::getInterfacesInResponse(const NetlinkSocket& sock, std::map<i
  */
 void QdiscManager::fillTaprioOptions(const rtattr* rta, int len, ietfInterface_t& ifToFill) {
     uint32_t clockId;
-    uint64_t baseTime;
-    uint64_t cycleTime;
+    int64_t baseTime;
+    int64_t cycleTime;
+    int64_t cycleTimeExtension;
     SPDLOG_TRACE("[QM] [Parse Taprio] Parsing taprio options");
     BridgePort_t& bpToFill = ifToFill.bridgePort;
     GclConfig_t& gptToFill = bpToFill.gateParameterTable;
@@ -300,14 +301,19 @@ void QdiscManager::fillTaprioOptions(const rtattr* rta, int len, ietfInterface_t
                 gptToFill.clockId = static_cast<int32_t>(clockId);
                 break;
             case TCA_TAPRIO_ATTR_SCHED_BASE_TIME:
-                baseTime = *(uint64_t*)RTA_DATA(rta);
+                baseTime = *(int64_t*)RTA_DATA(rta);
                 SPDLOG_TRACE("[QM] [Parse Taprio]  base_time: {}", baseTime);
                 gptToFill.operBaseTime = NetconfNetlinkMapper::fromNsToPtp(baseTime);
                 break;
             case TCA_TAPRIO_ATTR_SCHED_CYCLE_TIME:
-                cycleTime = *(uint64_t*)RTA_DATA(rta);
+                cycleTime = *(int64_t*)RTA_DATA(rta);
                 SPDLOG_TRACE("[QM] [Parse Taprio]  cycle_time: {}", cycleTime);
                 gptToFill.operCycleTime = NetconfNetlinkMapper::fromNsToRational(cycleTime);
+                break;
+            case TCA_TAPRIO_ATTR_SCHED_CYCLE_TIME_EXTENSION:
+                cycleTimeExtension = *(int64_t*)RTA_DATA(rta);
+                SPDLOG_TRACE("[QM] [Parse Taprio]  cycle_time_extension: {}", cycleTimeExtension);
+                gptToFill.operCycleTimeExtensionNs = static_cast<uint32_t>(cycleTimeExtension);
                 break;
             case TCA_TAPRIO_ATTR_SCHED_ENTRY_LIST: {
                 gptToFill.operControlList.clear();
@@ -349,15 +355,21 @@ void QdiscManager::fillTaprioAdminSched(const rtattr* rta, int len, ietfInterfac
     for (; RTA_OK(rta, len); rta = RTA_NEXT(rta, len)) {
         switch (rta->rta_type) {
             case TCA_TAPRIO_ATTR_SCHED_BASE_TIME: {
-                uint64_t baseTime = *(uint64_t*)RTA_DATA(rta);
+                int64_t baseTime = *(int64_t*)RTA_DATA(rta);
                 SPDLOG_TRACE("[QM] [Parse Admin]    admin_base_time: {}ns", baseTime);
                 gptToFill.adminBaseTime = NetconfNetlinkMapper::fromNsToPtp(baseTime);
                 break;
             }
             case TCA_TAPRIO_ATTR_SCHED_CYCLE_TIME: {
-                uint64_t cycleTime = *(uint64_t*)RTA_DATA(rta);
+                int64_t cycleTime = *(int64_t*)RTA_DATA(rta);
                 SPDLOG_TRACE("[QM] [Parse Admin]    admin_cycle_time: {}ns", cycleTime);
                 gptToFill.adminCycleTime = NetconfNetlinkMapper::fromNsToRational(cycleTime);
+                break;
+            }
+            case TCA_TAPRIO_ATTR_SCHED_CYCLE_TIME_EXTENSION: {
+                int64_t cycleTimeExtension = *(int64_t*)RTA_DATA(rta);
+                SPDLOG_TRACE("[QM] [Parse Admin]    cycle_time_extension: {}", cycleTimeExtension);
+                gptToFill.adminCycleTimeExtensionNs = static_cast<uint32_t>(cycleTimeExtension);
                 break;
             }
             case TCA_TAPRIO_ATTR_SCHED_ENTRY_LIST: {

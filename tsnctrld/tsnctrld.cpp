@@ -24,16 +24,16 @@
 /// @brief Location of the lock file for ensuring only one instance can run at a time
 static const char *LOCK_FILE_PATH = "/tmp/tsnctrld.lock";
 
-static constexpr std::array IEEE8021Q_DEFAULT_TC_MAP = {
+static constexpr std::array IEEE8021Q_INVERSE_TC_MAP = {
     // TC count:                    1  2  3  4  5  6  7  8
-    /* P0 */ std::array<uint8_t, 8>{0, 0, 0, 0, 0, 1, 1, 1},
-    /* P1 */ std::array<uint8_t, 8>{0, 0, 0, 0, 0, 0, 0, 0},
-    /* P2 */ std::array<uint8_t, 8>{0, 0, 0, 1, 1, 2, 2, 2},
-    /* P3 */ std::array<uint8_t, 8>{0, 0, 0, 1, 1, 2, 3, 3},
-    /* P4 */ std::array<uint8_t, 8>{0, 1, 1, 2, 2, 3, 4, 4},
-    /* P5 */ std::array<uint8_t, 8>{0, 1, 1, 2, 2, 3, 4, 5},
-    /* P6 */ std::array<uint8_t, 8>{0, 1, 2, 3, 3, 4, 5, 6},
-    /* P7 */ std::array<uint8_t, 8>{0, 1, 2, 3, 4, 5, 6, 7}};
+    /* P0 */ std::array<uint8_t, 8>{0, 1, 2, 3, 4, 4, 5, 6},
+    /* P1 */ std::array<uint8_t, 8>{0, 1, 2, 3, 4, 5, 6, 7},
+    /* P2 */ std::array<uint8_t, 8>{0, 1, 2, 2, 3, 3, 4, 5},
+    /* P3 */ std::array<uint8_t, 8>{0, 1, 2, 2, 3, 3, 3, 4},
+    /* P4 */ std::array<uint8_t, 8>{0, 0, 1, 1, 2, 2, 2, 3},
+    /* P5 */ std::array<uint8_t, 8>{0, 0, 1, 1, 2, 2, 2, 2},
+    /* P6 */ std::array<uint8_t, 8>{0, 0, 0, 0, 1, 1, 1, 1},
+    /* P7 */ std::array<uint8_t, 8>{0, 0, 0, 0, 0, 0, 0, 0}};
 
 // Utils
 
@@ -427,6 +427,7 @@ void fillGptNode(const GclConfig_t &hw_cfg, libyang::DataNode &toFill,
             SPDLOG_DEBUG("[FILL DATANODE] Using operCycleTime for mandatory adminCycleTime...");
             toFill.newPath2("admin-cycle-time/numerator", std::to_string(hw_cfg.operCycleTime.numerator));
             toFill.newPath2("admin-cycle-time/denominator", std::to_string(hw_cfg.operCycleTime.denominator));
+            toFill.newPath2("admin-cycle-time-extension", std::to_string(hw_cfg.operCycleTimeExtensionNs));
         } else if (hw_cfg.adminDataSet) {
             SPDLOG_DEBUG("[FILL DATANODE] Admin data is set, using that...");
 
@@ -439,6 +440,8 @@ void fillGptNode(const GclConfig_t &hw_cfg, libyang::DataNode &toFill,
             SPDLOG_DEBUG("[FILL DATANODE] Using set adminCycleTime for mandatory element...");
             toFill.newPath2("admin-cycle-time/numerator", std::to_string(hw_cfg.adminCycleTime.numerator));
             toFill.newPath2("admin-cycle-time/denominator", std::to_string(hw_cfg.adminCycleTime.denominator));
+
+            toFill.newPath2("admin-cycle-time-extension", std::to_string(hw_cfg.adminCycleTimeExtensionNs));
         } else {
             SPDLOG_DEBUG("[FILL DATANODE] Neither admin nor oper is set, assume nothing TSN is configured...");
             SPDLOG_DEBUG("[FILL DATANODE] Using default adminCycleTime for mandatory adminCycleTime...");
@@ -453,6 +456,9 @@ void fillGptNode(const GclConfig_t &hw_cfg, libyang::DataNode &toFill,
             SPDLOG_DEBUG("[FILL DATANODE] Oper data is set, using that...");
             toFill.newPath2("oper-base-time/seconds", std::to_string(hw_cfg.operBaseTime.seconds));
             toFill.newPath2("oper-base-time/nanoseconds", std::to_string(hw_cfg.operBaseTime.nanoseconds));
+            toFill.newPath2("oper-cycle-time/numerator", std::to_string(hw_cfg.operCycleTime.numerator));
+            toFill.newPath2("oper-cycle-time/denominator", std::to_string(hw_cfg.operCycleTime.denominator));
+            toFill.newPath2("oper-cycle-time-extension", std::to_string(hw_cfg.operCycleTimeExtensionNs));
             auto oper_res = toFill.newPath2("oper-control-list", std::nullopt);
             auto oper_node = oper_res.createdNode;
             fillControlList(hw_cfg.operControlList, oper_node);
@@ -480,9 +486,9 @@ void fillGptNode(const GclConfig_t &hw_cfg, libyang::DataNode &toFill,
 ietfInterface_t *tsnctrld::syncInterfaceFromSysrepo(sysrepo::Session &sess, const std::string &ifname,
                                                     uint32_t requestId) {
     PERFORMANCE_LOGGING("[SYNC_SYS_TO_IF]", "Start req={} ifname={}", requestId, ifname);
-    m_ifcache.setCurrentRequestId(requestId);
+    auto requestContext = m_ifcache.getRequestContext(requestId);
 
-    ietfInterface_t *iface_ptr = m_ifcache.getEmptyInterface(ifname);
+    ietfInterface_t *iface_ptr = requestContext->ensureLinkData(m_sock, m_ifcache.getEthtoolSock(), ifname);
     if (iface_ptr == nullptr) {
         spdlog::warn("[SYSREPO->STRUCT] [DEBUG] no interface found with name {}", ifname);
         PERFORMANCE_LOGGING("[SYNC_SYS_TO_IF]", "End req={} ifname={} Interface not in kernel", requestId, ifname);
@@ -891,7 +897,7 @@ void tsnctrld::populateAsTsnCapableInterface(ietfInterface_t &current, libyang::
             uint8_t colIndex = current.bridgePort.trafficClassData.numTrafficClasses - 1;
             for (int priority = 0; priority < 8; ++priority) {
                 current.bridgePort.trafficClassData.priorityMap[priority] =
-                    IEEE8021Q_DEFAULT_TC_MAP[priority][colIndex];
+                    IEEE8021Q_INVERSE_TC_MAP[priority][colIndex];
             }
         }
         tc_node->newPath2("number-of-traffic-classes",
@@ -1065,21 +1071,21 @@ void tsnctrld::syncHardwareToRunning() {
     std::optional<libyang::DataNode> forest_lldp;
     std::optional<libyang::DataNode> forest_ptp;
 
-    m_ifcache.setCurrentRequestId(0);
-    m_ifcache.ensureFullLinkData(m_sock);
-    m_ifcache.ensureFullQdiscData(m_sock);
+    auto requestContext = m_ifcache.getRequestContext(0);
+    requestContext->ensureFullLinkData(m_sock, m_ifcache.getEthtoolSock());
+    requestContext->ensureFullQdiscData(m_sock);
 
     SPDLOG_DEBUG("[SYNC] Iterating over interfaces...");
 
 #if SPDLOG_ACTIVE_LEVEL <= SPDLOG_LEVEL_DEBUG
-    const auto &allIfaces = m_ifcache.getAllInterfaces();
+    const auto &allIfaces = requestContext->getAllInterfaces();
     for (const auto &[idx, iface] : allIfaces) {
         printSingleInterface(iface);
     }
     SPDLOG_DEBUG("[SYNC] Print done...");
 #endif
 
-    for (auto &[idx, current] : m_ifcache.getAllInterfaces()) {
+    for (auto &[idx, current] : requestContext->getAllInterfaces()) {
         std::string &name = current.name;
 
         SPDLOG_DEBUG("[SYNC] Current interface: {}...", name);
@@ -1168,8 +1174,6 @@ sysrepo::ErrorCode tsnctrld::defaultOperCallback(const sysrepo::Session &sess, u
                                                  const std::optional<std::string> &subXPath,
                                                  const std::optional<std::string> &requestXPath, uint32_t requestId,
                                                  std::optional<libyang::DataNode> &parent) {
-    // m_ifcache.setCurrentRequestId(requestId);
-
     SPDLOG_DEBUG("[CB_OPER] [DEFAULT] Received oper callback for module \"{}\"...", moduleName);
     SPDLOG_DEBUG("[CB_OPER] [DEFAULT] subXPath \"{}\"...", subXPath.value_or("MISSING"));
     SPDLOG_DEBUG("[CB_OPER] [DEFAULT] requestXPath \"{}\"...", requestXPath.value_or("MISSING"));
@@ -1210,7 +1214,7 @@ sysrepo::ErrorCode tsnctrld::operInterfaceCallback(const sysrepo::Session &sess,
                                                    const std::optional<std::string> &requestXPath, uint32_t requestId,
                                                    std::optional<libyang::DataNode> &parent) {
     PERFORMANCE_LOGGING("[CB_OPER] [IF]", "Start req={}", requestId);
-    m_ifcache.setCurrentRequestId(requestId);
+    auto requestContext = m_ifcache.getRequestContext(requestId);
 
     SPDLOG_DEBUG("[CB_OPER] [IF] Received oper callback for module \"{}\"...", moduleName);
     SPDLOG_DEBUG("[CB_OPER] [IF] subXPath \"{}\"...", subXPath.value_or("MISSING"));
@@ -1222,18 +1226,18 @@ sysrepo::ErrorCode tsnctrld::operInterfaceCallback(const sysrepo::Session &sess,
     SPDLOG_DEBUG("[CB_OPER] [IF] Refreshing interface status...");
 
     PERFORMANCE_LOGGING("[CB_OPER] [IF] [DUMP]", "Start req={}", requestId);
-    m_ifcache.ensureFullLinkData(m_sock);
-    m_ifcache.ensureFullQdiscData(m_sock);
+    requestContext->ensureFullLinkData(m_sock, m_ifcache.getEthtoolSock());
+    requestContext->ensureFullQdiscData(m_sock);
     PERFORMANCE_LOGGING("[CB_OPER] [IF] [DUMP]", "End req={}", requestId);
 
     auto ctx = sess.getContext();
     SPDLOG_DEBUG("[CB_OPER] [IF] Refreshing caches refreshed, start iterating...");
-    for (auto &[idx, current] : m_ifcache.getAllInterfaces()) {
+    for (auto &[idx, current] : requestContext->getAllInterfaces()) {
 #if SPDLOG_ACTIVE_LEVEL <= SPDLOG_LEVEL_DEBUG
         printSingleInterface(current);
 #endif
         std::string &name = current.name;
-        PERFORMANCE_LOGGING("[CB_OPER] [IF]", "Start req={} iface={} done ", requestId, name);
+        PERFORMANCE_LOGGING("[CB_OPER] [IF] [SINGLE_IF]", "Start req={} iface={} done ", requestId, name);
         SPDLOG_DEBUG("[CB_OPER] [IF] Current: {}", name);
 
         std::string if_path = fmt::format("/ietf-interfaces:interfaces/interface[name='{}']", name);
@@ -1275,7 +1279,7 @@ sysrepo::ErrorCode tsnctrld::operInterfaceCallback(const sysrepo::Session &sess,
             fillGptNode(hw_cfg, gpt_node.value(), GclFillOptions::FillOper);
             PERFORMANCE_LOGGING("[CB_OPER] [IF] [FILL_GPT]", "End req={} iface={}", requestId, name);
         }
-        PERFORMANCE_LOGGING("[CB_OPER] [IF]", "End req={} iface={} done ", requestId, name);
+        PERFORMANCE_LOGGING("[CB_OPER] [IF] [SINGLE_IF]", "End req={} iface={} done ", requestId, name);
     }
     PERFORMANCE_LOGGING("[CB_OPER] [IF]", "End req={}", requestId);
     return sysrepo::ErrorCode::Ok;
@@ -1302,8 +1306,7 @@ sysrepo::ErrorCode tsnctrld::operBridgeCallback(const sysrepo::Session &sess, ui
                                                 const std::optional<std::string> &requestXPath, uint32_t requestId,
                                                 std::optional<libyang::DataNode> &parent) {
     PERFORMANCE_LOGGING("[CB_OPER] [BR]", "Start req={}", requestId);
-    m_ifcache.setCurrentRequestId(requestId);
-
+    auto requestContext = m_ifcache.getRequestContext(requestId);
     SPDLOG_DEBUG("[CB_OPER] [BR] Received oper callback for module \"{}\"...", moduleName);
     SPDLOG_DEBUG("[CB_OPER] [BR] subXPath \"{}\"...", subXPath.value_or("MISSING"));
     SPDLOG_DEBUG("[CB_OPER] [BR] requestXPath \"{}\"...", requestXPath.value_or("MISSING"));
@@ -1314,9 +1317,9 @@ sysrepo::ErrorCode tsnctrld::operBridgeCallback(const sysrepo::Session &sess, ui
     SPDLOG_DEBUG("[CB_OPER] [BR] Scanning interfaces for bridge members...");
 
     PERFORMANCE_LOGGING("[CB_OPER] [BR] [DUMP]", "Start req={}", requestId);
-    m_ifcache.ensureFullLinkData(m_sock);
+    requestContext->ensureFullLinkData(m_sock, m_ifcache.getEthtoolSock());
     PERFORMANCE_LOGGING("[CB_OPER] [BR] [DUMP]", "End req={}", requestId);
-    const auto &allIfaces = m_ifcache.getAllInterfaces();
+    const auto &allIfaces = requestContext->getAllInterfaces();
 
     auto ctx = sess.getContext();
 
@@ -1330,7 +1333,7 @@ sysrepo::ErrorCode tsnctrld::operBridgeCallback(const sysrepo::Session &sess, ui
 
     // 2. Iterate through bridges
     for (const auto &[bridgeIdx, slaveNamePtrs] : masterToSlaves) {
-        auto *bridgeIface = m_ifcache.getInterface(bridgeIdx);
+        auto *bridgeIface = requestContext->getInterface(bridgeIdx);
         if (bridgeIface == nullptr) {
             continue;
         }
@@ -1380,7 +1383,6 @@ sysrepo::ErrorCode tsnctrld::operBridgePortCallback(const sysrepo::Session &sess
                                                     const std::optional<std::string> &requestXPath, uint32_t requestId,
                                                     std::optional<libyang::DataNode> &parent) {
     PERFORMANCE_LOGGING("[CB_OPER] [BP]", "Start req={}", requestId);
-    // m_ifcache.setCurrentRequestId(requestId);
 
     SPDLOG_DEBUG("[CB_OPER] [BP] Received oper callback for module \"{}\"...", moduleName);
     SPDLOG_DEBUG("[CB_OPER] [BP] subXPath \"{}\"...", subXPath.value_or("MISSING"));
@@ -1418,7 +1420,6 @@ sysrepo::ErrorCode tsnctrld::operLldpLocalSystemCallback(const sysrepo::Session 
                                                          const std::optional<std::string> &requestXPath,
                                                          uint32_t requestId, std::optional<libyang::DataNode> &parent) {
     PERFORMANCE_LOGGING("[CB_OPER] [LLDP]", "Start req={}", requestId);
-    // m_ifcache.setCurrentRequestId(requestId);
 
     SPDLOG_DEBUG("[CB_OPER] [LLDP] Received oper callback for module \"{}\"...", moduleName);
     SPDLOG_DEBUG("[CB_OPER] [LLDP] subXPath \"{}\"...", subXPath.value_or("MISSING"));
@@ -1474,7 +1475,6 @@ sysrepo::ErrorCode tsnctrld::operPtpCallback(const sysrepo::Session &sess, uint3
                                              const std::optional<std::string> &requestXPath, uint32_t requestId,
                                              std::optional<libyang::DataNode> &parent) {
     PERFORMANCE_LOGGING("[CB_OPER] [PTP]", "Start req={}", requestId);
-    // m_ifcache.setCurrentRequestId(requestId);
 
     SPDLOG_DEBUG("[CB_OPER] [PTP] Received oper callback for module \"{}\"...", moduleName);
     SPDLOG_DEBUG("[CB_OPER] [PTP] subXPath \"{}\"...", subXPath.value_or("MISSING"));
@@ -1575,7 +1575,6 @@ sysrepo::ErrorCode tsnctrld::operPtpPerformanceCallback(const sysrepo::Session &
                                                         const std::optional<std::string> &requestXPath,
                                                         uint32_t requestId, std::optional<libyang::DataNode> &parent) {
     PERFORMANCE_LOGGING("[CB_OPER] [PTP_PERF]", "Start req={}", requestId);
-    // m_ifcache.setCurrentRequestId(requestId);
 
     SPDLOG_DEBUG("[CB_OPER] [PTP_PERF] Received oper callback for module \"{}\"...", moduleName);
     SPDLOG_DEBUG("[CB_OPER] [PTP_PERF] subXPath \"{}\"...", subXPath.value_or("MISSING"));
@@ -1695,7 +1694,6 @@ sysrepo::ErrorCode tsnctrld::operPtpPortPerformanceCallback(const sysrepo::Sessi
                                                             uint32_t requestId,
                                                             std::optional<libyang::DataNode> &parent) {
     PERFORMANCE_LOGGING("[CB_OPER] [PTP_PORT_PERF]", "Start req={}", requestId);
-    // m_ifcache.setCurrentRequestId(requestId);
 
     SPDLOG_DEBUG("[CB_OPER] [PTP_PORT_PERF] Received oper callback for module \"{}\"...", moduleName);
     SPDLOG_DEBUG("[CB_OPER] [PTP_PORT_PERF] subXPath \"{}\"...", subXPath.value_or("MISSING"));
@@ -1800,8 +1798,6 @@ sysrepo::ErrorCode tsnctrld::operPtpPortPerformanceCallback(const sysrepo::Sessi
 sysrepo::ErrorCode tsnctrld::defaultChangeCallback(sysrepo::Session sess, uint32_t subId, const std::string &moduleName,
                                                    const std::optional<std::string> &subXPath, sysrepo::Event event,
                                                    uint32_t requestId) {
-    // m_ifcache.setCurrentRequestId(requestId);
-
     SPDLOG_DEBUG("[CB_CHANGE] [DEFAULT] Received change callback for module \"{}\"...", moduleName);
     SPDLOG_DEBUG("[CB_CHANGE] [DEFAULT] subXPath \"{}\"...", subXPath.value_or("MISSING"));
     SPDLOG_DEBUG("[CB_CHANGE] [DEFAULT] event \"{}\"...", event);
@@ -1837,7 +1833,6 @@ sysrepo::ErrorCode tsnctrld::changeInterfaceCallback(sysrepo::Session sess, uint
                                                      const std::optional<std::string> &subXPath, sysrepo::Event event,
                                                      uint32_t requestId) {
     PERFORMANCE_LOGGING("[CB_CHANGE] [IF]", "Start req={}", requestId);
-    // m_ifcache.setCurrentRequestId(requestId);
 
     static const std::string handledModuleName = "ietf-interfaces";
     SPDLOG_DEBUG("[CB_CHANGE] [IF] Received change callback for module \"{}\"...", moduleName);
@@ -1907,7 +1902,6 @@ sysrepo::ErrorCode tsnctrld::changeBridgeCallback(sysrepo::Session sess, uint32_
                                                   const std::optional<std::string> &subXPath, sysrepo::Event event,
                                                   uint32_t requestId) {
     PERFORMANCE_LOGGING("[CB_CHANGE] [BR]", "Start req={}", requestId);
-    // m_ifcache.setCurrentRequestId(requestId);
 
     static const std::string handledModuleName = "ieee802-dot1q-bridge";
     SPDLOG_DEBUG("[CB_CHANGE] [BR] Received change callback for module \"{}\"...", moduleName);
@@ -1979,7 +1973,6 @@ sysrepo::ErrorCode tsnctrld::changeBridgePortCallback(sysrepo::Session sess, uin
                                                       const std::optional<std::string> &subXPath, sysrepo::Event event,
                                                       uint32_t requestId) {
     PERFORMANCE_LOGGING("[CB_CHANGE] [BP]", "Start req={}", requestId);
-    // m_ifcache.setCurrentRequestId(requestId);
 
     static const std::string handledModuleName = "ieee802-dot1q-bridge";
     SPDLOG_DEBUG("[CB_CHANGE] [BP] Received change callback for module \"{}\"...", moduleName);
@@ -2052,7 +2045,6 @@ sysrepo::ErrorCode tsnctrld::changeGptCallback(sysrepo::Session sess, uint32_t s
                                                const std::optional<std::string> &subXPath, sysrepo::Event event,
                                                uint32_t requestId) {
     PERFORMANCE_LOGGING("[CB_CHANGE] [GPT]", "Start req={}", requestId);
-    // m_ifcache.setCurrentRequestId(requestId);
 
     static const std::string handledModuleName = "ieee802-dot1q-sched-bridge";
     SPDLOG_DEBUG("[CB_CHANGE] [GPT] Received change callback for module \"{}\"...", moduleName);
@@ -2207,7 +2199,6 @@ sysrepo::ErrorCode tsnctrld::changeLldpCallback(sysrepo::Session sess, uint32_t 
                                                 const std::optional<std::string> &subXPath, sysrepo::Event event,
                                                 uint32_t requestId) {
     PERFORMANCE_LOGGING("[CB_CHANGE] [LLDP]", "Start req={}", requestId);
-    // m_ifcache.setCurrentRequestId(requestId);
 
     static const std::string handledModuleName = "ieee802-dot1ab-lldp";
     SPDLOG_DEBUG("[CB_CHANGE] [LLDP] Received change callback for module \"{}\"...", moduleName);
@@ -2257,7 +2248,6 @@ sysrepo::ErrorCode tsnctrld::changePtpCallback(sysrepo::Session sess, uint32_t s
                                                const std::optional<std::string> &subXPath, sysrepo::Event event,
                                                uint32_t requestId) {
     PERFORMANCE_LOGGING("[CB_CHANGE] [PTP]", "Start req={}", requestId);
-    // m_ifcache.setCurrentRequestId(requestId);
 
     static const std::string handledModuleName = "ieee1588-ptp-tt";
     SPDLOG_DEBUG("[CB_CHANGE] [PTP] Received change callback for module \"{}\"...", moduleName);

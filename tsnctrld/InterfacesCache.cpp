@@ -29,27 +29,12 @@ InterfacesCache::~InterfacesCache() {
 }
 
 /**
- * @brief Must be called before trying to ensure freshness of the cache or accessing any interface.
- *
- * Does nothing if the requestID is the same as the cached one, but invalidates the cache if the requestID is different.
- *
- * @param reqId The requestID as received from the sysrepo callback
- */
-void InterfacesCache::setCurrentRequestId(uint32_t reqId) {
-    if (reqId != m_currentRequestId) {
-        m_currentRequestId = reqId;
-        m_fullLinkDumpDone = false;
-        m_fullQdiscDumpDone = false;
-    }
-}
-
-/**
  * @brief Get a pointer to the @ref ietfInterface_t with a given ifindex present in the cache. nullptr if not found.
  *
  * @param ifindex The index of the interface which is to be retrieved from the cache.
  * @return A pointer to the interface with the given name. Returns a nullptr if the index was not found.
  */
-ietfInterface_t* InterfacesCache::getInterface(int ifindex) {
+ietfInterface_t* RequestContext::getInterface(int ifindex) {
     auto it = m_interfaces.find(ifindex);
     return (it != m_interfaces.end()) ? &it->second : nullptr;
 }
@@ -59,7 +44,7 @@ ietfInterface_t* InterfacesCache::getInterface(int ifindex) {
  * @param name The name of the interface which is to be retrieved from the cache.
  * @return A pointer to the interface with the given name. Returns a nullptr if the name was not found.
  */
-ietfInterface_t* InterfacesCache::getInterface(const std::string& name) {
+ietfInterface_t* RequestContext::getInterface(const std::string& name) {
     for (auto& [idx, iface] : m_interfaces) {
         if (iface.name == name) {
             return &iface;
@@ -71,8 +56,8 @@ ietfInterface_t* InterfacesCache::getInterface(const std::string& name) {
  * @brief Returns all interfaces currently in the cache.
  * @return A reference to the entire cached map of interface-index to @ref ietfInterface_t struct
  */
-std::map<int, ietfInterface_t>& InterfacesCache::getAllInterfaces() {
-    SPDLOG_DEBUG("[IFCACHE] [GET_IF] cached_req={}", m_currentRequestId);
+std::map<int, ietfInterface_t>& RequestContext::getAllInterfaces() {
+    SPDLOG_DEBUG("[IFCACHE] [GET_IF] cached_req={}", m_reqId);
     return m_interfaces;
 }
 
@@ -84,13 +69,14 @@ std::map<int, ietfInterface_t>& InterfacesCache::getAllInterfaces() {
  * @param ifindex The index of the interface to return
  * @return Returns a pointer to the cached struct, or nullptr if the ifindex is unknown.
  */
-ietfInterface_t* InterfacesCache::ensureLinkData(NetlinkSocket& sock, int ifindex) {
-    PERFORMANCE_LOGGING("[IFCACHE] [LINK_SINGLE_IDX]", "Start req={} ifindex={}", m_currentRequestId, ifindex);
+ietfInterface_t* RequestContext::ensureLinkData(NetlinkSocket& sock, int ethtool_sock, int ifindex) {
+    PERFORMANCE_LOGGING("[IFCACHE] [LINK_SINGLE_IDX]", "Start req={} ifindex={}", m_reqId, ifindex);
+    std::lock_guard<std::mutex> lock(m_mutex);
     ietfInterface_t* iface = getInterface(ifindex);
 
     // 1. Freshness Check
-    if ((iface != nullptr) && iface->lastLinkUpdateId == m_currentRequestId) {
-        PERFORMANCE_LOGGING("[IFCACHE] [LINK_SINGLE_IDX]", "End req={} ifindex={} Cached", m_currentRequestId, ifindex);
+    if ((iface != nullptr) && iface->lastLinkUpdateId == m_reqId) {
+        PERFORMANCE_LOGGING("[IFCACHE] [LINK_SINGLE_IDX]", "End req={} ifindex={} Cached", m_reqId, ifindex);
         return iface;  // Cache Hit
     }
 
@@ -100,15 +86,21 @@ ietfInterface_t* InterfacesCache::ensureLinkData(NetlinkSocket& sock, int ifinde
     try {
         LinkManager::getInterface(sock, ifindex);
     } catch (...) {
-        PERFORMANCE_LOGGING("[IFCACHE] [LINK_SINGLE_IDX]", "End req={} ifindex={} Error", m_currentRequestId, ifindex);
+        PERFORMANCE_LOGGING("[IFCACHE] [LINK_SINGLE_IDX]", "End req={} ifindex={} Error", m_reqId, ifindex);
         return nullptr;  // Interface likely doesn't exist
     }
 
     // 3. Parse & Upsert
-    LinkManager::getInterfacesInResponse(sock, m_interfaces, m_currentRequestId);
-
-    PERFORMANCE_LOGGING("[IFCACHE] [LINK_SINGLE_IDX]", "End req={} ifindex={}", m_currentRequestId, ifindex);
-    return getInterface(ifindex);
+    LinkManager::getInterfacesInResponse(sock, m_interfaces, m_reqId);
+    ietfInterface_t* iface2 = getInterface(ifindex);
+    if (iface2 != nullptr) {
+        PERFORMANCE_LOGGING("[IFCACHE] [LINK_SINGLE_IDX] [QS+SPEED]", "Start req={} ifindex={}", m_reqId, ifindex);
+        LinkManager::getActiveQueues(ethtool_sock, *iface2);
+        LinkManager::getLinkSpeed(ethtool_sock, *iface2);
+        PERFORMANCE_LOGGING("[IFCACHE] [LINK_SINGLE_IDX] [QS+SPEED]", "End req={} ifindex={}", m_reqId, ifindex);
+    }
+    PERFORMANCE_LOGGING("[IFCACHE] [LINK_SINGLE_IDX]", "End req={} ifindex={}", m_reqId, ifindex);
+    return iface2;
 }
 
 /**
@@ -119,41 +111,15 @@ ietfInterface_t* InterfacesCache::ensureLinkData(NetlinkSocket& sock, int ifinde
  * @param name The name of the interface to return
  * @return Returns a pointer to the cached struct, or nullptr if the name is unknown.
  */
-ietfInterface_t* InterfacesCache::ensureLinkData(NetlinkSocket& sock, const std::string& name) {
-    PERFORMANCE_LOGGING("[IFCACHE] [LINK_SINGLE_NAME]", "Start req={} ifname={}", m_currentRequestId, name);
+ietfInterface_t* RequestContext::ensureLinkData(NetlinkSocket& sock, int ethtool_sock, const std::string& name) {
+    PERFORMANCE_LOGGING("[IFCACHE] [LINK_SINGLE_NAME]", "Start req={} ifname={}", m_reqId, name);
     unsigned int idx = if_nametoindex(name.c_str());
     if (idx == 0) {
-        PERFORMANCE_LOGGING("[IFCACHE] [LINK_SINGLE_NAME]", "End req={} ifname={} Unknown ifname", m_currentRequestId,
-                            name);
+        PERFORMANCE_LOGGING("[IFCACHE] [LINK_SINGLE_NAME]", "End req={} ifname={} Unknown ifname", m_reqId, name);
         return nullptr;  // OS doesn't know this name
     }
-    PERFORMANCE_LOGGING("[IFCACHE] [LINK_SINGLE_NAME]", "End req={} ifname={}", m_currentRequestId, name);
-    return ensureLinkData(sock, static_cast<int>(idx));
-}
-
-/**
- * @brief For a given, valid name, returns the existing @ref IetfInterface_t for this index, or creates an empty @ref
- * IetfInterface_t in the cache for this request, with only index and name set. Used when you do not care about the
- * values in the kernel, but rather want to fill it with the configuration data.
- *
- * @param name Name of the interface to return.
- * @return Returns nullptr if no interface known to the kernel has the given name, an @ref IetfInterface_t otherwise. If
- * the cache for the current request already contains an entry for this name, that entry is returned. If not, a new
- * entry with only the name and index set is created and returned.
- */
-ietfInterface_t* InterfacesCache::getEmptyInterface(const std::string& name) {
-    PERFORMANCE_LOGGING("[IFCACHE] [LINK_EMPTY]", "Start req={} ifname={}", m_currentRequestId, name);
-    unsigned int idx = if_nametoindex(name.c_str());
-    if (idx == 0) {
-        PERFORMANCE_LOGGING("[IFCACHE] [LINK_EMPTY]", "End req={} Unknown ifname", m_currentRequestId, name);
-        return nullptr;  // OS doesn't know this name
-    }
-
-    const int key = static_cast<int>(idx);
-    auto [it, _] = m_interfaces.try_emplace(
-        key, ietfInterface_t{.ifindex = key, .name = name, .lastLinkUpdateId = m_currentRequestId});
-    PERFORMANCE_LOGGING("[IFCACHE] [LINK_EMPTY]", "End req={} ifname={}", m_currentRequestId, name);
-    return &it->second;
+    PERFORMANCE_LOGGING("[IFCACHE] [LINK_SINGLE_NAME]", "End req={} ifname={}", m_reqId, name);
+    return ensureLinkData(sock, ethtool_sock, static_cast<int>(idx));
 }
 
 /**
@@ -164,10 +130,11 @@ ietfInterface_t* InterfacesCache::getEmptyInterface(const std::string& name) {
  *
  * @param sock An instance of a @ref NetlinkSocket which is used to send the message and retrieve the response.
  */
-void InterfacesCache::ensureFullLinkData(NetlinkSocket& sock) {
-    PERFORMANCE_LOGGING("[IFCACHE] [LINK]", "Start req={}", m_currentRequestId);
+void RequestContext::ensureFullLinkData(NetlinkSocket& sock, int ethtool_sock) {
+    std::lock_guard<std::mutex> lock(m_mutex);
+    PERFORMANCE_LOGGING("[IFCACHE] [LINK]", "Start req={}", m_reqId);
     if (m_fullLinkDumpDone) {
-        PERFORMANCE_LOGGING("[IFCACHE] [LINK]", "End req={} Already fresh", m_currentRequestId);
+        PERFORMANCE_LOGGING("[IFCACHE] [LINK]", "End req={} Already fresh", m_reqId);
         return;
     }
 
@@ -182,29 +149,29 @@ void InterfacesCache::ensureFullLinkData(NetlinkSocket& sock) {
     LinkManager::getAllInterfaces(sock);  // Sends RTM_GETLINK with NLM_F_DUMP
 
     // 3. Parse Response
-    LinkManager::getInterfacesInResponse(sock, m_interfaces, m_currentRequestId);
+    LinkManager::getInterfacesInResponse(sock, m_interfaces, m_reqId);
 
     // 4. Prune Dead Interfaces
     // If lastLinkUpdateId wasn't updated to currentReqId, the kernel didn't report it.
     for (auto it = m_interfaces.begin(); it != m_interfaces.end();) {
-        if (it->second.lastLinkUpdateId != m_currentRequestId) {
+        if (it->second.lastLinkUpdateId != m_reqId) {
             it = m_interfaces.erase(it);  // Erase invalidates only this iterator
         } else {
             ++it;
         }
     }
 
-    PERFORMANCE_LOGGING("[IFCACHE] [LINK] [QS+SPEED]", "Start req={}", m_currentRequestId);
+    PERFORMANCE_LOGGING("[IFCACHE] [LINK] [QS+SPEED]", "Start req={}", m_reqId);
     for (auto& [id, iface] : m_interfaces) {
-        PERFORMANCE_LOGGING("[IFCACHE] [LINK] [QS+SPEED]", "Start req={} ifname={}", m_currentRequestId, iface.name);
-        LinkManager::getActiveQueues(m_ethtool_sock, iface);
-        LinkManager::getLinkSpeed(m_ethtool_sock, iface);
-        PERFORMANCE_LOGGING("[IFCACHE] [LINK] [QS+SPEED]", "End req={} ifname={}", m_currentRequestId, iface.name);
+        PERFORMANCE_LOGGING("[IFCACHE] [LINK] [QS+SPEED]", "Start req={} ifname={}", m_reqId, iface.name);
+        LinkManager::getActiveQueues(ethtool_sock, iface);
+        LinkManager::getLinkSpeed(ethtool_sock, iface);
+        PERFORMANCE_LOGGING("[IFCACHE] [LINK] [QS+SPEED]", "End req={} ifname={}", m_reqId, iface.name);
     }
-    PERFORMANCE_LOGGING("[IFCACHE] [LINK] [QS+SPEED]", "End req={}", m_currentRequestId);
+    PERFORMANCE_LOGGING("[IFCACHE] [LINK] [QS+SPEED]", "End req={}", m_reqId);
 
     m_fullLinkDumpDone = true;
-    PERFORMANCE_LOGGING("[IFCACHE] [LINK]", "End req={}", m_currentRequestId);
+    PERFORMANCE_LOGGING("[IFCACHE] [LINK]", "End req={}", m_reqId);
 }
 
 /**
@@ -214,8 +181,9 @@ void InterfacesCache::ensureFullLinkData(NetlinkSocket& sock) {
  *
  * @param sock An instance of a @ref NetlinkSocket which is used to send the message and retrieve the response.
  */
-void InterfacesCache::ensureFullQdiscData(NetlinkSocket& sock) {
-    PERFORMANCE_LOGGING("[IFCACHE] [QDISC]", "Start req={}", m_currentRequestId);
+void RequestContext::ensureFullQdiscData(NetlinkSocket& sock) {
+    std::lock_guard<std::mutex> lock(m_mutex);
+    PERFORMANCE_LOGGING("[IFCACHE] [QDISC]", "Start req={}", m_reqId);
     if (m_fullQdiscDumpDone) {
         return;
     }
@@ -224,17 +192,53 @@ void InterfacesCache::ensureFullQdiscData(NetlinkSocket& sock) {
     QdiscManager::getAllQdiscInfo(sock);
 
     // 2. Parse Response (No filter)
-    QdiscManager::getInterfacesInResponse(sock, m_interfaces, m_currentRequestId);
+    QdiscManager::getInterfacesInResponse(sock, m_interfaces, m_reqId);
 
     // Unlike in ensureFullLinkData(), no entries from the list are deleted, only the GPTs for which no schedules are
     // set are invalidated.
     for (auto& [index, currentInterface] : m_interfaces) {
-        if (currentInterface.lastQdiscUpdateId != m_currentRequestId) {
+        if (currentInterface.lastQdiscUpdateId != m_reqId) {
             currentInterface.bridgePort.gateParameterTable.operDataSet = false;
             currentInterface.bridgePort.gateParameterTable.adminDataSet = false;
         }
     }
 
     m_fullQdiscDumpDone = true;
-    PERFORMANCE_LOGGING("[IFCACHE] [QDISC]", "End req={}", m_currentRequestId);
+    PERFORMANCE_LOGGING("[IFCACHE] [QDISC]", "End req={}", m_reqId);
+}
+
+std::shared_ptr<RequestContext> InterfacesCache::getRequestContext(uint32_t reqId) {
+    std::lock_guard<std::mutex> lock(m_cache_mutex);
+    auto now = std::chrono::steady_clock::now();
+
+    // 1. O(1) Garbage Collection: Clean up entries older than CACHE_TTL (5 seconds)
+    // Because m_insertion_order tracks exactly when things were added,
+    // we only ever need to check the front of the queue.
+    while (!m_insertion_order.empty()) {
+        uint32_t oldest_reqId = m_insertion_order.front();
+        auto it = m_cache.find(oldest_reqId);
+
+        if (it != m_cache.end() && (now - it->second.createdAt > CACHE_TTL)) {
+            // It has been 5 seconds. It is 100% safe to delete.
+            m_cache.erase(it);
+            m_insertion_order.pop();
+        } else {
+            // If the oldest item in the queue isn't 5 seconds old yet,
+            // nothing else behind it is either. We can stop checking instantly.
+            break;
+        }
+    }
+
+    // 2. Check if the current request is already in the cache
+    auto it = m_cache.find(reqId);
+    if (it != m_cache.end()) {
+        return it->second.context;  // Cache Hit
+    }
+
+    // 3. Cache Miss: Create new context and record its creation time
+    auto new_context = std::make_shared<RequestContext>(reqId);
+    m_cache[reqId] = {.context = new_context, .createdAt = now};
+    m_insertion_order.push(reqId);
+
+    return new_context;
 }
