@@ -16,14 +16,6 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(json)
 
-# Fetch pugixml library
-FetchContent_Declare(
-    pugixml
-    URL https://github.com/zeux/pugixml/releases/download/v1.14/pugixml-1.14.tar.gz
-    DOWNLOAD_EXTRACT_TIMESTAMP TRUE
-)
-FetchContent_MakeAvailable(pugixml)
-
 # Only add common if not already added (by parent CMakeLists.txt)
 if(NOT TARGET common_lib)
     add_subdirectory(../common common_build)
@@ -39,6 +31,8 @@ add_library(cnc_lib STATIC
     src/GclXmlBuilder.cpp
     src/LldpParser.cpp
     src/GclParser.cpp
+    src/InterfaceParser.cpp
+    src/PtpParser.cpp
     src/Topology.cpp
 )
 
@@ -61,27 +55,19 @@ target_link_libraries(cnc_lib PUBLIC
     yang
     ssh
     common_lib
+    argparse
     nlohmann_json::nlohmann_json
-    pugixml::pugixml
     PkgConfig::SPDLOG
 )
 
+find_package(Protobuf REQUIRED)
+find_package(PkgConfig REQUIRED)
+
+pkg_check_modules(GRPC REQUIRED grpc++ IMPORTED_TARGET)
+
+include_directories(${Protobuf_INCLUDE_DIRS} ${CMAKE_CURRENT_BINARY_DIR})
+
 # 3. Executables (Apps & Tests)
 # ---------------------------------------------------------
-
-# A. The main application
-add_executable(cnc_app src/main.cpp)
-target_link_libraries(cnc_app PRIVATE cnc_lib)
-
-# B. The Netconf Wrapper Test (Old Demo)
-add_executable(wrapper_test_run src/netconfWrapperDemo.cpp)
-target_link_libraries(wrapper_test_run PRIVATE cnc_lib)
-
-# C. The XML Builder Test (New Demo)
-# We only link the lib because the builder code is now inside it.
-add_executable(xml_builder_test src/XmlBuilderDemo.cpp)
-target_link_libraries(xml_builder_test PRIVATE cnc_lib)
-
-# D. The JSON Importer Test (New Demo)
-add_executable(json_test src/JsonImporterDemo.cpp)
-target_link_libraries(json_test PRIVATE cnc_lib)
+add_subdirectory(cnc_cli)
+add_subdirectory(cncd)

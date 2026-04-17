@@ -20,15 +20,18 @@ class Timesync {
     static void runPtp4l(const std::vector<std::string>& nicVec, bool asGrandmaster);
     static void configurePtp4l();
     static void runPhc2sys(const std::vector<std::string>& nicVec, bool disciplineWithNtp);
+    static void repeatedlyLogClockDiffs(const std::vector<std::string>& nicVec);
     static void setTaiUtcOffset(int offset);
     static void warnAboutActiveNtp();
     static void warnAboutInterferingProcesses(const std::unordered_set<std::string>& badProcessNames);
+    static std::string phcFromNic(const std::string& nic);
     static void executableExistsOrErr(const std::string& exec);
     static bool executableExistsThere(const std::string& path);
     static void logCommandOutput(const std::string& commandName, const std::string& commandOutput,
                                  spdlog::level::level_enum loggingLevel);
     static void logCommandAndExit(const std::string& commandName, const std::vector<std::string>& command);
-    static bool isAlphanumeric(const std::string& s);
+    static bool isValidNicName(const std::string& s);
+    static long long nanosecsFromTimespec(struct timespec ts);
 };
 
 #endif  // ENPRO_TIMESYNC

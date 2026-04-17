@@ -1,0 +1,386 @@
+syntax = "proto3";
+
+// will be a c++ namespace: cnc::rpc
+package cnc.rpc;
+
+// Enums
+enum OperStatus {
+    OPER_STATUS_UNSPECIFIED = 0; 
+    OPER_STATUS_UP = 1;
+    OPER_STATUS_DOWN = 2;
+    OPER_STATUS_TESTING = 3;
+    OPER_STATUS_UNKNOWN = 4;
+    OPER_STATUS_DORMANT = 5;
+    OPER_STATUS_NOT_PRESENT = 6;
+    OPER_STATUS_LOWER_LAYER_DOWN = 7;
+}
+
+enum IfType {
+    IF_TYPE_ETHERNET = 0;
+    IF_TYPE_BRIDGE = 1;
+    IF_TYPE_LAG = 2;
+    IF_TYPE_LOOPBACK = 3;
+}
+
+enum PtpInstanceType {
+    PTP_INSTANCE_TYPE_UNSPECIFIED = 0;
+    PTP_INSTANCE_OC = 1;
+    PTP_INSTANCE_BC = 2;
+    PTP_INSTANCE_P2P_TC = 3;
+    PTP_INSTANCE_E2E_TC = 4;
+    PTP_INSTANCE_INVALID = 5;
+}
+
+enum PtpPortState {
+    PTP_PORT_STATE_UNSPECIFIED = 0;
+    PTP_PORT_STATE_INITIALIZING = 1;
+    PTP_PORT_STATE_FAULTY = 2;
+    PTP_PORT_STATE_DISABLED = 3;
+    PTP_PORT_STATE_LISTENING = 4;
+    PTP_PORT_STATE_PRE_TIME_TRANSMITTER = 5;
+    PTP_PORT_STATE_TIME_TRANSMITTER = 6;
+    PTP_PORT_STATE_PASSIVE = 7;
+    PTP_PORT_STATE_UNCALIBRATED = 8;
+    PTP_PORT_STATE_TIME_RECEIVER = 9;
+}
+
+enum ScheduleUpdateMode {
+    HOLD = 0;
+    ZERO = 1;
+    DENY = 2;
+}
+
+// Base Structures
+
+message RationalTime {
+    uint32 numerator = 1;
+    uint32 denominator = 2;
+}
+
+message PtpTime {
+    uint64 seconds = 1;
+    uint32 nanoseconds = 2;
+}
+
+// GCL / Schedule Structures
+message GclEntry {
+    uint32 index = 1;
+    uint32 gate_states_value = 2;
+    uint32 time_interval_value = 3;
+    string operation_name = 4;
+}
+
+message QueueMaxSduEntry {
+    uint32 traffic_class = 1;
+    uint32 queue_max_sdu = 2;
+    uint64 transmission_overrun = 3;
+}
+
+message GclConfig {
+    // Metadata
+    bool oper_data_set = 1;
+    bool admin_data_set = 2;
+
+    repeated QueueMaxSduEntry queue_max_sdu_table = 3;
+
+    // Admin data
+    bool gate_enabled = 4;
+    uint32 admin_gate_states = 5;
+    RationalTime admin_cycle_time = 6;
+    uint32 admin_cycle_time_extension_ns = 7;
+    PtpTime admin_base_time = 8;
+    repeated GclEntry admin_control_list = 9;
+
+    // Oper data
+    uint32 oper_gate_states = 10;
+    RationalTime oper_cycle_time = 11;
+    uint32 oper_cycle_time_extension_ns = 12;
+    PtpTime oper_base_time = 13;
+    repeated GclEntry oper_control_list = 14;
+
+    // Status & Logic
+    bool config_change = 15;
+    uint64 config_change_time_seconds = 16;
+    uint32 config_change_time_nanoseconds = 17;
+    bool config_pending = 18;
+    uint64 config_change_error = 19;
+    uint32 tick_granularity = 20;
+    uint64 current_time_seconds = 21;
+    uint32 current_time_nanoseconds = 22;
+    int32 clock_id = 23;
+
+    // Limits
+    uint32 supported_list_max = 24;
+    uint32 supported_interval_max = 25;
+    uint32 supported_cycle_max_numerator = 26;
+    uint32 supported_cycle_max_denominator = 27;
+}
+
+message TrafficClassData {
+    bool map_data_set = 1;
+    uint32 num_traffic_classes = 2;
+    bytes priority_map = 3;
+}
+
+message BridgePort {
+    string bridge_name = 1;
+    int32 master_index = 2;
+    TrafficClassData traffic_class_data = 3;
+    GclConfig gate_parameter_table = 4;
+}
+
+// Interface Structures
+message IetfInterface {
+    int32 ifindex = 1;
+    string name = 2;
+    uint32 last_link_update_id = 3;
+    uint32 last_qdisc_update_id = 4;
+
+    IfType type = 5;
+    bool admin_enabled = 6;
+    OperStatus oper_status = 7;
+    
+    bool has_phys_addr = 8;
+    bytes phys_address = 9;
+    
+    uint32 mtu = 10;
+    uint32 num_tx_queues = 11;
+    uint32 num_active_tx_queues = 12;
+    uint64 speed = 13;
+
+    BridgePort bridge_port = 14;
+}
+
+// PTP Structures
+message PtpPerformanceParameters {
+    int64 avg = 1;
+    int64 min = 2;
+    int64 max = 3;
+    int64 stddev = 4;
+}
+
+message PtpPerformanceRecord {
+    bool period_complete = 1;
+    uint32 pm_time = 2;
+    bool measurement_valid = 3;
+    PtpPerformanceParameters offset_from_time_transmitter = 4;
+    PtpPerformanceParameters mean_path_delay = 5;
+}
+
+message PtpPortPerformanceRecord {
+    uint32 pm_time = 1;
+    PtpPerformanceParameters mean_link_delay = 2;
+}
+
+message DefaultDs {
+    uint32 num_ports = 1;
+    uint32 priority1 = 2;
+    string clock_identity = 3;
+    PtpTime current_time = 4;
+    PtpInstanceType instance_type = 5;
+}
+
+message CurrentDs {
+    uint32 steps_removed = 1;
+    int64 offset_from_time_transmitter = 2;
+    int64 mean_delay = 3;
+}
+
+message ParentDs {
+    string parent_clock_identity = 1;
+    uint32 parent_port_number = 2;
+    string grand_parent_clock_identity = 3;
+}
+
+message PortDs {
+    string port_clock_identity = 1;
+    uint32 port_port_number = 2;
+    PtpPortState port_state = 3;
+    int64 mean_link_delay = 4;
+}
+
+message PtpPort {
+    uint32 port_index = 1;
+    string underlying_interface = 2;
+    PortDs port_ds = 3;
+    repeated PtpPortPerformanceRecord port_performance_records_15m = 4;
+    repeated PtpPortPerformanceRecord port_performance_records_24h = 5;
+}
+
+message PtpNode {
+    DefaultDs default_ds = 1;
+    CurrentDs current_ds = 2;
+    ParentDs parent_ds = 3;
+    repeated PtpPerformanceRecord performance_records_15m = 4;
+    repeated PtpPerformanceRecord performance_records_24h = 5;
+    repeated PtpPort ports = 6;
+}
+
+// Lldp Structures
+message LldpNeighbor {
+    bool has_neighbor = 1;
+    string chassis_id = 2;
+    string port_id = 3;
+    string system_name = 4;
+    uint32 ttl = 5;
+    string management_ip = 6;
+}
+
+message LldpLocalSystemData {
+    string chassis_id_subtype = 1;
+    string chassis_id = 2;
+    string system_name = 3;
+    string system_description = 4;
+    string system_capabilities_supported = 5;
+    string system_capabilities_enabled = 6;
+}
+
+message LldpPort {
+    string name = 1;
+    string dest_mac_address = 2;
+    string admin_status = 3;
+    repeated LldpNeighbor neighbors = 4;
+}
+
+message LldpNode {
+    uint32 message_tx_interval = 1;
+    uint32 message_tx_hold_multiplier = 2;
+    uint32 message_fast_tx = 3;
+    LldpLocalSystemData local_system_data = 4;
+    repeated LldpPort ports = 5;
+}
+
+// Topology and Node Structures
+message CncNode {
+    uint32 id = 1;
+    string host_name = 2;
+    string ip_address = 3;
+    
+    repeated IetfInterface interfaces = 4;
+    PtpNode ptp_all_data = 5;
+    LldpNode lldp_all_data = 6;
+}
+
+message Topology {
+    repeated CncNode nodes = 1;
+}
+
+// Request Messages
+message EmptyRequest {}
+
+message NodeRequest {
+    string host_name = 1;
+}
+
+message InterfaceRequest {
+    string host_name = 1;
+    string interface_name = 2;
+}
+
+message SetNodeScheduleRequest {
+    string host_name = 1;
+    repeated IetfInterface interfaces = 2;
+    ScheduleUpdateMode mode = 3;
+}
+
+message SetInterfaceScheduleRequest {
+  string host_name = 1;
+  string interface_name = 2;
+  GclConfig new_admin_gcl = 3;
+}
+
+// Response Messages (Global)
+message NodePtpData {
+    string host_name = 1;
+    PtpNode ptp_data = 2;
+}
+
+message AllPtpDataResponse {
+    repeated NodePtpData nodes = 1;
+}
+
+message NodeLldpData {
+    string host_name = 1;
+    LldpNode lldp_data = 2;
+}
+
+message AllLldpDataResponse {
+    repeated NodeLldpData nodes = 1;
+}
+
+// Reponse Messages (Gcl)
+message AdminGclResponse {
+    bool gate_enabled = 1;
+    uint32 admin_gate_states = 2;
+    RationalTime admin_cycle_time = 3;
+    uint32 admin_cycle_time_extension_ns = 4;
+    PtpTime admin_base_time = 5;
+    repeated GclEntry admin_control_list = 6;
+}
+
+message OperGclResponse {
+    uint32 oper_gate_states = 1;
+    RationalTime oper_cycle_time = 2;
+    uint32 oper_cycle_time_extension_ns = 3;
+    PtpTime oper_base_time = 4;
+    repeated GclEntry oper_control_list = 5;
+}
+
+message SetNodeScheduleResponse {
+    bool overall_success = 1;
+    repeated CncNode node_results = 2;
+}
+
+message TopologyNode {
+    string host_name   = 1;
+    string ip_address  = 2;
+    string chassis_id  = 3;
+    bool   is_foreign  = 4;
+}
+
+message TopologyEdge {
+    string local_host_name   = 1;
+    string local_port        = 2;
+    string remote_host_name  = 3;
+    string remote_port       = 4;
+    string remote_chassis_id = 5;
+}
+
+message TopologyGraph {
+    repeated TopologyNode nodes = 1;
+    repeated TopologyEdge edges = 2;
+}
+
+// CncService Definition
+service CncService {
+    // 1. Return everything
+    // Returns the complete Topology with all Nodes, Interfaces, PTP and LLDP data.
+    rpc GetNetworkState (EmptyRequest) returns (Topology);
+
+    // 2. Global feature data (PTP / LLDP)
+    rpc GetAllPtpData (EmptyRequest) returns (AllPtpDataResponse);
+    rpc GetAllLldpData (EmptyRequest) returns (AllLldpDataResponse);
+
+    // 3. node-specific data (PTP / LLDP)
+    rpc GetNodePtpData (NodeRequest) returns (PtpNode);
+    rpc GetNodeLldpData (NodeRequest) returns (LldpNode);
+
+    // 4. interface-specific data (PTP / LLDP)
+    rpc GetInterfacePtpData (InterfaceRequest) returns (PtpPort);
+    rpc GetInterfaceLldpData (InterfaceRequest) returns (LldpPort);
+
+    // 5. gcl/schedule data 
+    // Complete GCL-Config (Admin and Oper)
+    rpc GetInterfaceGcl (InterfaceRequest) returns (GclConfig);
+    // Only plannend config (Admin)
+    rpc GetInterfaceAdminGcl (InterfaceRequest) returns (AdminGclResponse);
+    // Only current config (Oper)
+    rpc GetInterfaceOperGcl (InterfaceRequest) returns (OperGclResponse);
+
+    // 6. deploy new schedule to interfaces
+    rpc SetNodeSchedule (SetNodeScheduleRequest) returns (SetNodeScheduleResponse);
+
+    rpc SetInterfaceSchedule(SetInterfaceScheduleRequest) returns (IetfInterface);
+
+    rpc GetTopologyGraph(EmptyRequest) returns (TopologyGraph);
+}

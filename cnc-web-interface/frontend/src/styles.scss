@@ -1,0 +1,28 @@
+@use '@angular/material' as mat;
+
+@import "@angular/material/prebuilt-themes/indigo-pink.css";
+
+@include mat.core();
+
+$my-theme: mat.define-theme((
+        color: (
+                theme-type: light,
+                primary: mat.$azure-palette,
+                tertiary: mat.$blue-palette,
+        ),
+        typography: (
+                brand-family: 'Roboto, sans-serif',
+                plain-family: 'Roboto, sans-serif',
+        ),
+        density: (scale: 0)
+));
+
+html {
+  @include mat.all-component-themes($my-theme);
+}
+
+body {
+  background-color: rgb(246, 246, 246);
+  margin: 0;
+  height: 100hv;
+}

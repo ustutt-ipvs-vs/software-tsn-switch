@@ -1,5 +1,6 @@
 #pragma once
-
+#ifndef CNC_TYPES_H
+#define CNC_TYPES_H
 #include <array>
 #include <cstdint>
 #include <limits>
@@ -226,6 +227,12 @@ struct LldpNeighbor_t {
     std::string systemName;
     uint32_t ttl;
     std::string managementIp;
+    std::string chassisIdIdSubtype;
+    std::string systemDescription;
+    std::string systemCapabilitiesSupported;
+    std::string systemCapabilitiesEnabled;
+    std::string addressSubtype;
+    std::string address;
 };
 
 /**
@@ -510,3 +517,4 @@ struct CncNode_t {
     PtpNode_t ptpAllData;
     LldpNode_t lldpAllData;
 };
+#endif

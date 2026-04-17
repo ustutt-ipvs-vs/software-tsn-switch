@@ -1,13 +1,17 @@
 #include "Timesync.h"
 
 #include <dirent.h>
+#include <fcntl.h>
 #include <fmt/ranges.h>
+#include <spdlog/spdlog.h>
 #include <sys/stat.h>
 #include <sys/timex.h>
 
 #include <algorithm>
+#include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <thread>
 
 #include "SubprocessManager.h"
 
@@ -40,9 +44,9 @@ void Timesync::launch(const std::vector<std::string>& nicVec, bool asGrandmaster
         spdlog::critical("[TIMESYNC] Internal error: asGrandmaster is false and disciplineWithNtp is true");
         exit(1);
     }
-    // Check the NIC names for non-alphanumeric characters to prevent command injection attacks
+    // Check the NIC names for unusual characters to prevent command injection attacks
     for (const std::string& nic : nicVec) {
-        if (!isAlphanumeric(nic)) {
+        if (!isValidNicName(nic)) {
             spdlog::critical("[TIMESYNC] A provided NIC contains illegal characters: {}", nic);
             exit(1);
         }
@@ -57,6 +61,8 @@ void Timesync::launch(const std::vector<std::string>& nicVec, bool asGrandmaster
     configurePtp4l();
     runPhc2sys(nicVec, disciplineWithNtp);
     setTaiUtcOffset(CURRENT_UTC_OFFSET);
+    auto clockDiffThread = std::thread([nicVec]() { repeatedlyLogClockDiffs(nicVec); });
+    clockDiffThread.detach();
     spdlog::info("[TIMESYNC] All clock synchronization daemons have been launched on this device!");
 }
 
@@ -277,6 +283,54 @@ void Timesync::runPhc2sys(const std::vector<std::string>& nicVec, bool disciplin
 }
 
 /**
+ * @brief Repeatedly print clock differences to log
+ *
+ * Repeatedly logs CLOCK_REALTIME <-> CLOCK_TAI difference and CLOCK_TAI <-> PHC for each NIC provided.
+ *
+ * @param nicVec The NICs whose PHCs should be compared to CLOCK_TAI
+ */
+void Timesync::repeatedlyLogClockDiffs(const std::vector<std::string>& nicVec) {
+    std::vector<std::string> phcVec;
+    phcVec.reserve(nicVec.size());
+    std::ranges::transform(nicVec, std::back_inserter(phcVec), phcFromNic);
+    // for (std::string phc : phcVec) {spdlog::critical("PHC: {}", phc);}
+    std::vector<int> clockFdVec;
+    clockFdVec.reserve(phcVec.size());
+    std::ranges::transform(phcVec, std::back_inserter(clockFdVec), [](std::string phc) {
+        int phcFile = open(phc.c_str(), O_RDONLY);
+        if (phcFile < 0) {
+            spdlog::critical("Unable to access PHC clock {}", phc);
+            exit(1);
+        }
+        return phcFile;
+    });
+    std::vector<clockid_t> clockIdVec;
+    clockIdVec.reserve(clockFdVec.size());
+    std::ranges::transform(clockFdVec, std::back_inserter(clockIdVec),
+                           [](int clockFd) { return (((unsigned int)~clockFd) << 3) | 3; });
+    sleep(10);
+    while (true) {
+        struct timespec tsTai, tsReal;
+        clock_gettime(CLOCK_TAI, &tsTai);
+        clock_gettime(CLOCK_REALTIME, &tsReal);
+        long long diffTaiReal = (nanosecsFromTimespec(tsTai) - nanosecsFromTimespec(tsReal));
+        SPDLOG_DEBUG("[TIMESYNC] CLOCK_TAI is {:+L} nanoseconds ahead of CLOCK_REALTIME", diffTaiReal);
+
+        // for (clockid_t clockId : clockIdVec) {
+        for (size_t i = 0; i < nicVec.size(); ++i) {
+            std::string nicName = nicVec[i];
+            clockid_t clockId = clockIdVec[i];
+            struct timespec tsPhc, tsTaiPhc;
+            clock_gettime(clockId, &tsPhc);
+            clock_gettime(CLOCK_TAI, &tsTaiPhc);
+            long long diffPhcTai = (nanosecsFromTimespec(tsPhc) - nanosecsFromTimespec(tsTaiPhc));
+            SPDLOG_DEBUG("[TIMESYNC] {0}'s PHC is {1:+L} nanoseconds ahead of CLOCK_TAI", nicName, diffPhcTai);
+        }
+        sleep(60);
+    }
+}
+
+/**
  * @brief Set the device's TAI - UTC offset
  *
  * @param offset How many seconds TAI should be ahead of UTC (can also be negative)
@@ -344,6 +398,29 @@ void Timesync::warnAboutInterferingProcesses(const std::unordered_set<std::strin
             }
         }
     }
+}
+
+/**
+ * @brief Get the provided NIC's PHC
+ *
+ * @param nic A network interface card name
+ * @return The physical hardware clock id, often `/dev/ptp*`
+ */
+std::string Timesync::phcFromNic(const std::string& nic) {
+    std::string devicePath = "/sys/class/net/" + nic + "/device/ptp";  // Shouldn't this be .../device/ ?
+    try {
+        if (std::filesystem::exists(devicePath)) {
+            for (const auto& phc : std::filesystem::directory_iterator(devicePath)) {
+                // Return first phc
+                std::string phcPath = "/dev/" + phc.path().filename().string();
+                SPDLOG_DEBUG("[TIMESYNC] NIC '{0}' has PHC '{1}'", nic, phcPath);
+                return phcPath;
+            }
+        }
+    } catch (...) {
+    }
+    spdlog::critical("[TIMESYNC] Unable to locate PHC for NIC '{}'", nic);
+    exit(1);
 }
 
 /**
@@ -424,11 +501,22 @@ void Timesync::logCommandAndExit(const std::string& commandName, const std::vect
 }
 
 /**
- * @brief Whether the string contains only alphanumeric characters
+ * @brief Whether the string contains only alphanumeric characters, with `_.-` being allowed
  *
  * @param str The string to test
- * @return Whether @p str contains only alphanumeric characters, the empty string returns @a true
+ * @return Whether @p str contains only `[A-Za-z0-9_.-]` characters, the empty string returns @a true
  */
-bool Timesync::isAlphanumeric(const std::string& str) {
-    return std::ranges::all_of(str, [](unsigned char ch) { return std::isalnum(ch); });
+bool Timesync::isValidNicName(const std::string& str) {
+    return !std::ranges::any_of(
+        str, [](unsigned char ch) { return !std::isalnum(ch) && ch != '_' && ch != '.' && ch != '-'; });
+}
+
+/**
+ * @brief Calculate nanosecond value from timespec struct
+ *
+ * @param ts Timespec struct
+ * @return Total combined nanoseconds that the timespec struct represents
+ */
+long long Timesync::nanosecsFromTimespec(struct timespec ts) {
+    return (long long)ts.tv_sec * 1000000000LL + ts.tv_nsec;
 }

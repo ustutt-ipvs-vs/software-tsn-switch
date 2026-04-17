@@ -21,12 +21,24 @@ std::string GclXmlBuilder::buildXmlForNode(const CncNode_t& node) {
 
     // Iterate over interfaces and append GCL XML
     for (const auto& iface : node.interfaces) {
+        // Ignore loopback interfaces
+        if (iface.type == IfType::LOOPBACK) continue;
         // Assume GCL data is present if gateParameterTable has entries
         // TODO: Add hasGcl flag to check for GCL presence
-        appendInterfaceXml(ss, iface);
+        if (iface.bridgePort.gateParameterTable.configChange == true) {
+            appendInterfaceXml(ss, iface);
+        }
     }
 
     // End interfaces element
+    ss << "</interfaces>";
+    return ss.str();
+}
+
+std::string GclXmlBuilder::buildXmlForInterface(const ietfInterface_t& iface) {
+    std::stringstream ss;
+    ss << "<interfaces xmlns=\"" << NS_IETF_IF << "\">";
+    appendInterfaceXml(ss, iface);
     ss << "</interfaces>";
     return ss.str();
 }

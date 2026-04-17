@@ -1,0 +1,151 @@
+<div class="tab-content">
+    <div class="tc-metadata-grid">
+        <div class="meta-item">
+            <span class="label">Cycle Extension</span>
+            <span class="value">{{ intf.bridgePort?.gateParameterTable?.operCycleTimeExtensionNs ?? 0 }} ns</span>
+        </div>
+        <div class="meta-item">
+            <span class="label">Max SDU (TC0)</span>
+            <span class="value">{{ intf.bridgePort?.gateParameterTable?.queueMaxSduTable?.[0]?.queueMaxSdu ?? 0 }}</span>
+        </div>
+        <div class="meta-item">
+            <span class="label">Config Pending</span>
+            <span class="value">{{ intf.bridgePort?.gateParameterTable?.configPending }}</span>
+        </div>
+    </div>
+
+    @if (!isLoopbackInterface(intf.name)) {
+        <div class="gcl-summary">
+        <span>
+            <strong class="parameter-table-name">Cycle Time Numerator:</strong>
+            @if (editMode) {
+                <mat-form-field appearance="outline" class="time-input">
+                    <input matInput type="number"
+                           [(ngModel)]="intf.bridgePort!.gateParameterTable!.operCycleTime!.numerator"/>
+                </mat-form-field>
+                ns
+            } @else {
+                {{ intf.bridgePort?.gateParameterTable?.operCycleTime?.numerator ?? 0 }} ns
+            }
+        </span>
+            <span>
+            <strong class="parameter-table-name">Cycle Time Denominator:</strong>
+                @if (editMode) {
+                    <mat-form-field appearance="outline" class="time-input">
+                    <input matInput type="number"
+                           [(ngModel)]="intf.bridgePort!.gateParameterTable!.operCycleTime!.denominator"/>
+                </mat-form-field>
+                    ns
+                } @else {
+                    {{ intf.bridgePort?.gateParameterTable?.operCycleTime?.denominator ?? 0 }} ns
+                }
+        </span>
+            <span>
+            <strong class="parameter-table-name">Base Time:</strong>
+                @if (editMode) {
+                    <mat-form-field appearance="outline" class="time-input">
+                    <input matInput type="number"
+                           [(ngModel)]="intf.bridgePort!.gateParameterTable!.operBaseTime!.seconds"/>
+                </mat-form-field>
+                    s
+                } @else {
+                    {{ intf.bridgePort?.gateParameterTable?.operBaseTime?.seconds ?? 0 }}s
+                }
+        </span>
+        </div>
+
+        @if (intf.bridgePort?.gateParameterTable?.operControlList?.length) {
+            <table mat-table [dataSource]="intf.bridgePort!.gateParameterTable!.operControlList"
+                   class="mat-elevation-z0">
+
+                <ng-container matColumnDef="index">
+                    <th mat-header-cell *matHeaderCellDef>Index</th>
+                    <td mat-cell *matCellDef="let entry">{{ entry.index }}</td>
+                </ng-container>
+
+                <ng-container matColumnDef="cmd">
+                    <th mat-header-cell *matHeaderCellDef>Cmd</th>
+                    <td mat-cell *matCellDef="let entry"><code>S</code></td>
+                </ng-container>
+
+                <ng-container matColumnDef="operation">
+                    <th mat-header-cell *matHeaderCellDef>Operation</th>
+                    <td mat-cell *matCellDef="let entry">{{ entry.operationName }}</td>
+                </ng-container>
+
+                <ng-container matColumnDef="gates">
+                    <th mat-header-cell *matHeaderCellDef>Gatemask</th>
+                    <td mat-cell *matCellDef="let entry">
+                        @if (editMode) {
+                            <div class="gate-toggle-row">
+                                @for (bit of [7, 6, 5, 4, 3, 2, 1, 0]; track bit) {
+                                    <div class="gate-bit">
+                                        <span class="bit-label">TC{{ bit }}</span>
+                                        <button class="bit-btn"
+                                                [class.open]="isBitSet(entry.gateStatesValue, bit)"
+                                                (click)="toggleBit(entry, bit)">
+                                            {{ isBitSet(entry.gateStatesValue, bit) ? '1' : '0' }}
+                                        </button>
+                                    </div>
+                                }
+                            </div>
+                        } @else {
+                            <code>{{ entry?.gateStatesValue?.toString(2).padStart(8, '0') }}</code>
+                            <small style="margin-left: 8px; color: #666; font-weight: 500;">
+                                (0x{{ entry?.gateStatesValue?.toString(16).toUpperCase() }})
+                            </small>
+                        }
+                    </td>
+                </ng-container>
+
+                <ng-container matColumnDef="interval">
+                    <th mat-header-cell *matHeaderCellDef>Interval (ns)</th>
+                    <td mat-cell *matCellDef="let entry; let i = index">
+                        @if (editMode) {
+                            <mat-form-field appearance="outline" class="interval-input">
+                                <input matInput type="number" [(ngModel)]="entry.timeIntervalValue"/>
+                            </mat-form-field>
+                        } @else {
+                            {{ entry.timeIntervalValue }}
+                        }
+                    </td>
+                </ng-container>
+
+                @if (editMode) {
+                    <ng-container matColumnDef="actions">
+                        <th mat-header-cell *matHeaderCellDef></th>
+                        <td mat-cell *matCellDef="let entry; let i = index">
+                            <button mat-icon-button color="warn" (click)="removeEntry(i)">
+                                <mat-icon>delete</mat-icon>
+                            </button>
+                        </td>
+                    </ng-container>
+                }
+
+                <tr mat-header-row
+                    *matHeaderRowDef="editMode ? ['index', 'cmd', 'operation', 'gates', 'interval', 'actions'] : ['index', 'cmd', 'operation', 'gates', 'interval']"></tr>
+                <tr mat-row
+                    *matRowDef="let row; columns: editMode ? ['index', 'cmd', 'operation', 'gates', 'interval', 'actions'] : ['index', 'cmd', 'operation', 'gates', 'interval']"></tr>
+            </table>
+
+            @if (editMode) {
+                <div class="cycle-time-validation" [class.valid]="isCycleTimeValid()"
+                     [class.invalid]="!isCycleTimeValid()">
+                    <mat-icon>{{ isCycleTimeValid() ? 'check_circle' : 'warning' }}</mat-icon>
+                    <span>
+                    Interval sum: {{ getIntervalSum() }} ns |
+                    Cycle time: {{ getCycleTimeNs() }} ns |
+                    Difference: {{ getCycleTimeNs() - getIntervalSum() }} ns
+                </span>
+                </div>
+            }
+        }
+    } @else {<strong class="parameter-table-name">Loopback Interface</strong>}
+    @if (editMode) {
+        <button mat-stroked-button class="add-btn" (click)="addEntry()">
+            <mat-icon>add</mat-icon>
+            Add Entry
+        </button>
+    }
+
+</div>

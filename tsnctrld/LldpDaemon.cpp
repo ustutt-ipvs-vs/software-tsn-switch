@@ -11,6 +11,8 @@
 #include <iostream>
 #include <stdexcept>
 
+#include "PerformanceLogger.h"
+
 /**
  * @brief Convert a C string to std::string safely.
  *
@@ -30,8 +32,10 @@ static std::string convertCString(const char* cstr) {
  * @param data Pointer to the LldpDaemon object.
  */
 static void lldp_change_callback(lldpctl_change_t type, lldpctl_atom_t* iface, lldpctl_atom_t* neigh, void* data) {
+    PERFORMANCE_LOGGING("[LLDP] [CHANGE_EVENT]", "Start");
     auto* self = static_cast<LldpDaemon*>(data);
     self->processEvent(type, iface, neigh);
+    PERFORMANCE_LOGGING("[LLDP] [CHANGE_EVENT]", "End");
 }
 
 /**

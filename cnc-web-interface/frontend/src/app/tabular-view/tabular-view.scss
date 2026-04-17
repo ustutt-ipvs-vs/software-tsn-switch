@@ -1,0 +1,113 @@
+.mat-card-title {
+  text-align: center;
+  margin-top: 5px;
+}
+
+.interface-card {
+  width: 700px;
+  min-height: 400px;
+  margin: 20px auto;
+  font-size: 14px;
+  font-family: Roboto, "Helvetica Neue", sans-serif;
+  font-style: normal;
+}
+
+.tabular-view-parent-container {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 30px;
+  padding: 20px;
+}
+
+.status-icon {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: inline-block;
+  background-color: #f44336;
+  border: 2px solid #fff;
+  box-shadow: 0 0 2px rgba(0,0,0,0.2);
+  margin-right: 8px;
+}
+
+.status-icon.online {
+  background-color: #4caf50;
+  box-shadow: 0 0 5px rgba(76, 175, 80, 0.5);
+}
+
+.status-icon.unknown {
+  background-color: #94a3b8;
+  box-shadow: 0 0 5px rgba(148, 163, 184, 0.49);
+}
+
+.host-name {
+  font-size: 20px;
+  font-family: Roboto, "Helvetica Neue", sans-serif;
+  font-style: normal;
+  background-color: #83c5ff;
+  padding: 10px 50px 10px 50px;
+  border-radius: 5px;
+  box-shadow: 0 4px 10px 1px #888888;
+}
+
+.divider-box {
+  height: 50px;
+}
+
+.edit-btn {
+  border-radius: 8px;
+  border-color: #e0e0e0;
+  background-color: white;
+  transition: background-color 0.2s ease;
+  margin-left: 10px;
+}
+
+.edit-btn:hover {
+  background-color: #e8f0fe;
+  border-color: #90b4f7;
+}
+
+.cancel-btn {
+  border-radius: 8px;
+  border-color: #e0e0e0;
+  background-color: white;
+  transition: background-color 0.2s ease;
+  margin-left: 10px;
+}
+
+.cancel-btn:hover {
+  background-color: #fee8e8;
+  border-color: #f79090;
+}
+
+.save-btn {
+  border-radius: 8px;
+  border-color: #e0e0e0;
+  background-color: white;
+  transition: background-color 0.2s ease;
+  margin-left: 10px;
+}
+
+.save-btn:hover {
+  background-color: #ecfee8;
+  border-color: #a6f790;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between
+}
+
+.node-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+
+  div {
+    position: absolute;
+    right: 16px;
+  }
+}

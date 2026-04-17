@@ -1,0 +1,177 @@
+[2026-04-17 15:48:09.044368] | Thread:91481 | [NetworkManager::discoverNetwork] | Start network discovery
+[2026-04-17 15:48:09.044400] | Thread:91481 | [NetworkManager::fetchInterfaces] | Start interface discovery
+[2026-04-17 15:48:09.044527] | Thread:91482 | [NetconfSession::getData] | Start data fetch with XPath: /ietf-interfaces:interfaces/interface
+[2026-04-17 15:48:09.082855] | Thread:91482 | [NetconfSession::getData] | Got return for path: /ietf-interfaces:interfaces/interface
+[2026-04-17 15:48:09.083374] | Thread:91482 | [InterfaceParser::parseInterface] | Start interface parsing
+[2026-04-17 15:48:09.083587] | Thread:91482 | [InterfaceParser::parseInterface] | Finished interface parsing
+[2026-04-17 15:48:09.083838] | Thread:91481 | [NetworkManager::fetchInterfaces] | Stop interface discovery
+[2026-04-17 15:48:09.083844] | Thread:91481 | [NetworkManager::fetchLldpData] | Start LLDP data fetch
+[2026-04-17 15:48:09.083855] | Thread:91481 | [NetworkManager::fetchLldpDataForNode] | Start LLDP data fetch for node: vstsn01
+[2026-04-17 15:48:09.083904] | Thread:91482 | [NetconfSession::getData] | Start data fetch with XPath: /ieee802-dot1ab-lldp:lldp
+[2026-04-17 15:48:09.097785] | Thread:91482 | [NetconfSession::getData] | Got return for path: /ieee802-dot1ab-lldp:lldp
+[2026-04-17 15:48:09.098095] | Thread:91482 | [LLDP Parser::parseLldpData] | Start LLDP data parsing
+[2026-04-17 15:48:09.098404] | Thread:91482 | [LLDP Parser::parseLldpData] | Finished LLDP data parsing
+[2026-04-17 15:48:09.098580] | Thread:91481 | [NetworkManager::fetchLldpData] | Stop LLDP data fetch
+[2026-04-17 15:48:09.098590] | Thread:91481 | [NetworkManager::fetchOperationGcl] | Start operational GCL fetch
+[2026-04-17 15:48:09.098594] | Thread:91481 | [NetworkManager::fetchOperationGclForNode] | Start operational GCL fetch for node: vstsn01
+[2026-04-17 15:48:09.098689] | Thread:91482 | [NetconfSession::getData] | Start data fetch with XPath: /ietf-interfaces:interfaces/interface/ieee802-dot1q-bridge:bridge-port/ieee802-dot1q-sched-bridge:gate-parameter-table
+[2026-04-17 15:48:09.120846] | Thread:91482 | [NetconfSession::getData] | Got return for path: /ietf-interfaces:interfaces/interface/ieee802-dot1q-bridge:bridge-port/ieee802-dot1q-sched-bridge:gate-parameter-table
+[2026-04-17 15:48:09.121166] | Thread:91482 | [GclParser::parseOperationalGclData] | Start operational GCL data parsing
+[2026-04-17 15:48:09.122007] | Thread:91482 | [GclParser::parseOperationalGclData] | Finished operational GCL data parsing
+[2026-04-17 15:48:09.122173] | Thread:91481 | [NetworkManager::fetchOperationGcl] | Stop operational GCL fetch
+[2026-04-17 15:48:09.122206] | Thread:91481 | [NetworkManager::discoverNetwork] | Stop network discovery
+[2026-04-17 15:48:21.507380] | Thread:91483 | [NetworkManager::fetchLldpDataForNode] | Start LLDP data fetch for node: vstsn01
+[2026-04-17 15:48:21.507430] | Thread:91482 | [NetconfSession::getData] | Start data fetch with XPath: /ieee802-dot1ab-lldp:lldp
+[2026-04-17 15:48:21.525551] | Thread:91482 | [NetconfSession::getData] | Got return for path: /ieee802-dot1ab-lldp:lldp
+[2026-04-17 15:48:21.525777] | Thread:91482 | [LLDP Parser::parseLldpData] | Start LLDP data parsing
+[2026-04-17 15:48:21.526026] | Thread:91482 | [LLDP Parser::parseLldpData] | Finished LLDP data parsing
+[2026-04-17 15:48:35.302828] | Thread:91483 | [NetworkManager::fetchLldpDataForNode] | Start LLDP data fetch for node: vstsn01
+[2026-04-17 15:48:35.302902] | Thread:91482 | [NetconfSession::getData] | Start data fetch with XPath: /ieee802-dot1ab-lldp:lldp
+[2026-04-17 15:48:35.332633] | Thread:91482 | [NetconfSession::getData] | Got return for path: /ieee802-dot1ab-lldp:lldp
+[2026-04-17 15:48:35.332893] | Thread:91482 | [LLDP Parser::parseLldpData] | Start LLDP data parsing
+[2026-04-17 15:48:35.333164] | Thread:91482 | [LLDP Parser::parseLldpData] | Finished LLDP data parsing
+[2026-04-17 15:48:41.797770] | Thread:91483 | [NetworkManager::fetchLldpDataForNode] | Start LLDP data fetch for node: vstsn01
+[2026-04-17 15:48:41.797836] | Thread:91482 | [NetconfSession::getData] | Start data fetch with XPath: /ieee802-dot1ab-lldp:lldp
+[2026-04-17 15:48:41.822741] | Thread:91482 | [NetconfSession::getData] | Got return for path: /ieee802-dot1ab-lldp:lldp
+[2026-04-17 15:48:41.822984] | Thread:91482 | [LLDP Parser::parseLldpData] | Start LLDP data parsing
+[2026-04-17 15:48:41.823222] | Thread:91482 | [LLDP Parser::parseLldpData] | Finished LLDP data parsing
+[2026-04-17 15:48:51.685577] | Thread:91483 | [NetworkManager::fetchLldpDataForNode] | Start LLDP data fetch for node: vstsn01
+[2026-04-17 15:48:51.685644] | Thread:91482 | [NetconfSession::getData] | Start data fetch with XPath: /ieee802-dot1ab-lldp:lldp
+[2026-04-17 15:48:51.711997] | Thread:91482 | [NetconfSession::getData] | Got return for path: /ieee802-dot1ab-lldp:lldp
+[2026-04-17 15:48:51.712252] | Thread:91482 | [LLDP Parser::parseLldpData] | Start LLDP data parsing
+[2026-04-17 15:48:51.712514] | Thread:91482 | [LLDP Parser::parseLldpData] | Finished LLDP data parsing
+[2026-04-17 15:48:55.598705] | Thread:91483 | [NetworkManager::fetchLldpDataForNode] | Start LLDP data fetch for node: vstsn01
+[2026-04-17 15:48:55.598769] | Thread:91482 | [NetconfSession::getData] | Start data fetch with XPath: /ieee802-dot1ab-lldp:lldp
+[2026-04-17 15:48:55.624179] | Thread:91482 | [NetconfSession::getData] | Got return for path: /ieee802-dot1ab-lldp:lldp
+[2026-04-17 15:48:55.624400] | Thread:91482 | [LLDP Parser::parseLldpData] | Start LLDP data parsing
+[2026-04-17 15:48:55.624638] | Thread:91482 | [LLDP Parser::parseLldpData] | Finished LLDP data parsing
+[2026-04-17 15:49:11.141051] | Thread:91483 | [NetworkManager::fetchLldpDataForNode] | Start LLDP data fetch for node: vstsn01
+[2026-04-17 15:49:11.141093] | Thread:91482 | [NetconfSession::getData] | Start data fetch with XPath: /ieee802-dot1ab-lldp:lldp
+[2026-04-17 15:49:11.166835] | Thread:91482 | [NetconfSession::getData] | Got return for path: /ieee802-dot1ab-lldp:lldp
+[2026-04-17 15:49:11.167111] | Thread:91482 | [LLDP Parser::parseLldpData] | Start LLDP data parsing
+[2026-04-17 15:49:11.167377] | Thread:91482 | [LLDP Parser::parseLldpData] | Finished LLDP data parsing
+[2026-04-17 15:49:17.835526] | Thread:91483 | [NetworkManager::fetchLldpDataForNode] | Start LLDP data fetch for node: vstsn01
+[2026-04-17 15:49:17.835569] | Thread:91482 | [NetconfSession::getData] | Start data fetch with XPath: /ieee802-dot1ab-lldp:lldp
+[2026-04-17 15:49:17.852501] | Thread:91482 | [NetconfSession::getData] | Got return for path: /ieee802-dot1ab-lldp:lldp
+[2026-04-17 15:49:17.852724] | Thread:91482 | [LLDP Parser::parseLldpData] | Start LLDP data parsing
+[2026-04-17 15:49:17.852961] | Thread:91482 | [LLDP Parser::parseLldpData] | Finished LLDP data parsing
+[2026-04-17 15:49:25.472010] | Thread:91483 | [NetworkManager::fetchLldpDataForNode] | Start LLDP data fetch for node: vstsn01
+[2026-04-17 15:49:25.472057] | Thread:91482 | [NetconfSession::getData] | Start data fetch with XPath: /ieee802-dot1ab-lldp:lldp
+[2026-04-17 15:49:25.486563] | Thread:91482 | [NetconfSession::getData] | Got return for path: /ieee802-dot1ab-lldp:lldp
+[2026-04-17 15:49:25.486815] | Thread:91482 | [LLDP Parser::parseLldpData] | Start LLDP data parsing
+[2026-04-17 15:49:25.487099] | Thread:91482 | [LLDP Parser::parseLldpData] | Finished LLDP data parsing
+[2026-04-17 15:49:31.767600] | Thread:91483 | [NetworkManager::fetchLldpDataForNode] | Start LLDP data fetch for node: vstsn01
+[2026-04-17 15:49:31.767642] | Thread:91482 | [NetconfSession::getData] | Start data fetch with XPath: /ieee802-dot1ab-lldp:lldp
+[2026-04-17 15:49:31.780918] | Thread:91482 | [NetconfSession::getData] | Got return for path: /ieee802-dot1ab-lldp:lldp
+[2026-04-17 15:49:31.781138] | Thread:91482 | [LLDP Parser::parseLldpData] | Start LLDP data parsing
+[2026-04-17 15:49:31.781376] | Thread:91482 | [LLDP Parser::parseLldpData] | Finished LLDP data parsing
+[2026-04-17 15:49:38.789890] | Thread:91483 | [NetworkManager::fetchLldpDataForNode] | Start LLDP data fetch for node: vstsn01
+[2026-04-17 15:49:38.789934] | Thread:91482 | [NetconfSession::getData] | Start data fetch with XPath: /ieee802-dot1ab-lldp:lldp
+[2026-04-17 15:49:38.815008] | Thread:91482 | [NetconfSession::getData] | Got return for path: /ieee802-dot1ab-lldp:lldp
+[2026-04-17 15:49:38.815262] | Thread:91482 | [LLDP Parser::parseLldpData] | Start LLDP data parsing
+[2026-04-17 15:49:38.815525] | Thread:91482 | [LLDP Parser::parseLldpData] | Finished LLDP data parsing
+[2026-04-17 15:49:42.103716] | Thread:91483 | [NetworkManager::fetchLldpDataForNode] | Start LLDP data fetch for node: vstsn01
+[2026-04-17 15:49:42.103759] | Thread:91482 | [NetconfSession::getData] | Start data fetch with XPath: /ieee802-dot1ab-lldp:lldp
+[2026-04-17 15:49:42.128863] | Thread:91482 | [NetconfSession::getData] | Got return for path: /ieee802-dot1ab-lldp:lldp
+[2026-04-17 15:49:42.129083] | Thread:91482 | [LLDP Parser::parseLldpData] | Start LLDP data parsing
+[2026-04-17 15:49:42.129321] | Thread:91482 | [LLDP Parser::parseLldpData] | Finished LLDP data parsing
+[2026-04-17 15:49:50.058267] | Thread:91483 | [NetworkManager::fetchLldpDataForNode] | Start LLDP data fetch for node: vstsn01
+[2026-04-17 15:49:50.058312] | Thread:91482 | [NetconfSession::getData] | Start data fetch with XPath: /ieee802-dot1ab-lldp:lldp
+[2026-04-17 15:49:50.083558] | Thread:91482 | [NetconfSession::getData] | Got return for path: /ieee802-dot1ab-lldp:lldp
+[2026-04-17 15:49:50.083813] | Thread:91482 | [LLDP Parser::parseLldpData] | Start LLDP data parsing
+[2026-04-17 15:49:50.084076] | Thread:91482 | [LLDP Parser::parseLldpData] | Finished LLDP data parsing
+[2026-04-17 15:49:55.244596] | Thread:91483 | [NetworkManager::fetchLldpDataForNode] | Start LLDP data fetch for node: vstsn01
+[2026-04-17 15:49:55.244641] | Thread:91482 | [NetconfSession::getData] | Start data fetch with XPath: /ieee802-dot1ab-lldp:lldp
+[2026-04-17 15:49:55.269429] | Thread:91482 | [NetconfSession::getData] | Got return for path: /ieee802-dot1ab-lldp:lldp
+[2026-04-17 15:49:55.269649] | Thread:91482 | [LLDP Parser::parseLldpData] | Start LLDP data parsing
+[2026-04-17 15:49:55.269885] | Thread:91482 | [LLDP Parser::parseLldpData] | Finished LLDP data parsing
+[2026-04-17 15:50:03.367658] | Thread:91483 | [NetworkManager::fetchLldpDataForNode] | Start LLDP data fetch for node: vstsn01
+[2026-04-17 15:50:03.367699] | Thread:91482 | [NetconfSession::getData] | Start data fetch with XPath: /ieee802-dot1ab-lldp:lldp
+[2026-04-17 15:50:03.393602] | Thread:91482 | [NetconfSession::getData] | Got return for path: /ieee802-dot1ab-lldp:lldp
+[2026-04-17 15:50:03.393853] | Thread:91482 | [LLDP Parser::parseLldpData] | Start LLDP data parsing
+[2026-04-17 15:50:03.394118] | Thread:91482 | [LLDP Parser::parseLldpData] | Finished LLDP data parsing
+[2026-04-17 15:50:27.223152] | Thread:91483 | [NetworkManager::fetchLldpDataForNode] | Start LLDP data fetch for node: vstsn01
+[2026-04-17 15:50:27.223220] | Thread:91482 | [NetconfSession::getData] | Start data fetch with XPath: /ieee802-dot1ab-lldp:lldp
+[2026-04-17 15:50:27.256780] | Thread:91482 | [NetconfSession::getData] | Got return for path: /ieee802-dot1ab-lldp:lldp
+[2026-04-17 15:50:27.256996] | Thread:91482 | [LLDP Parser::parseLldpData] | Start LLDP data parsing
+[2026-04-17 15:50:27.257235] | Thread:91482 | [LLDP Parser::parseLldpData] | Finished LLDP data parsing
+[2026-04-17 15:50:34.090738] | Thread:91483 | [NetworkManager::fetchLldpDataForNode] | Start LLDP data fetch for node: vstsn01
+[2026-04-17 15:50:34.090780] | Thread:91482 | [NetconfSession::getData] | Start data fetch with XPath: /ieee802-dot1ab-lldp:lldp
+[2026-04-17 15:50:34.122785] | Thread:91482 | [NetconfSession::getData] | Got return for path: /ieee802-dot1ab-lldp:lldp
+[2026-04-17 15:50:34.123056] | Thread:91482 | [LLDP Parser::parseLldpData] | Start LLDP data parsing
+[2026-04-17 15:50:34.123318] | Thread:91482 | [LLDP Parser::parseLldpData] | Finished LLDP data parsing
+[2026-04-17 15:50:39.306885] | Thread:91483 | [NetworkManager::fetchLldpDataForNode] | Start LLDP data fetch for node: vstsn01
+[2026-04-17 15:50:39.306950] | Thread:91482 | [NetconfSession::getData] | Start data fetch with XPath: /ieee802-dot1ab-lldp:lldp
+[2026-04-17 15:50:39.340657] | Thread:91482 | [NetconfSession::getData] | Got return for path: /ieee802-dot1ab-lldp:lldp
+[2026-04-17 15:50:39.340875] | Thread:91482 | [LLDP Parser::parseLldpData] | Start LLDP data parsing
+[2026-04-17 15:50:39.341114] | Thread:91482 | [LLDP Parser::parseLldpData] | Finished LLDP data parsing
+[2026-04-17 15:50:46.375241] | Thread:91483 | [NetworkManager::fetchLldpDataForNode] | Start LLDP data fetch for node: vstsn01
+[2026-04-17 15:50:46.375287] | Thread:91482 | [NetconfSession::getData] | Start data fetch with XPath: /ieee802-dot1ab-lldp:lldp
+[2026-04-17 15:50:46.402851] | Thread:91482 | [NetconfSession::getData] | Got return for path: /ieee802-dot1ab-lldp:lldp
+[2026-04-17 15:50:46.403124] | Thread:91482 | [LLDP Parser::parseLldpData] | Start LLDP data parsing
+[2026-04-17 15:50:46.403388] | Thread:91482 | [LLDP Parser::parseLldpData] | Finished LLDP data parsing
+[2026-04-17 15:50:55.346913] | Thread:91483 | [NetworkManager::fetchLldpDataForNode] | Start LLDP data fetch for node: vstsn01
+[2026-04-17 15:50:55.346979] | Thread:91482 | [NetconfSession::getData] | Start data fetch with XPath: /ieee802-dot1ab-lldp:lldp
+[2026-04-17 15:50:55.365099] | Thread:91482 | [NetconfSession::getData] | Got return for path: /ieee802-dot1ab-lldp:lldp
+[2026-04-17 15:50:55.365317] | Thread:91482 | [LLDP Parser::parseLldpData] | Start LLDP data parsing
+[2026-04-17 15:50:55.365554] | Thread:91482 | [LLDP Parser::parseLldpData] | Finished LLDP data parsing
+[2026-04-17 15:51:02.759212] | Thread:91483 | [NetworkManager::fetchLldpDataForNode] | Start LLDP data fetch for node: vstsn01
+[2026-04-17 15:51:02.759258] | Thread:91482 | [NetconfSession::getData] | Start data fetch with XPath: /ieee802-dot1ab-lldp:lldp
+[2026-04-17 15:51:02.788619] | Thread:91482 | [NetconfSession::getData] | Got return for path: /ieee802-dot1ab-lldp:lldp
+[2026-04-17 15:51:02.788872] | Thread:91482 | [LLDP Parser::parseLldpData] | Start LLDP data parsing
+[2026-04-17 15:51:02.789135] | Thread:91482 | [LLDP Parser::parseLldpData] | Finished LLDP data parsing
+[2026-04-17 15:51:05.437709] | Thread:91483 | [NetworkManager::fetchLldpDataForNode] | Start LLDP data fetch for node: vstsn01
+[2026-04-17 15:51:05.437754] | Thread:91482 | [NetconfSession::getData] | Start data fetch with XPath: /ieee802-dot1ab-lldp:lldp
+[2026-04-17 15:51:05.463101] | Thread:91482 | [NetconfSession::getData] | Got return for path: /ieee802-dot1ab-lldp:lldp
+[2026-04-17 15:51:05.463322] | Thread:91482 | [LLDP Parser::parseLldpData] | Start LLDP data parsing
+[2026-04-17 15:51:05.463562] | Thread:91482 | [LLDP Parser::parseLldpData] | Finished LLDP data parsing
+[2026-04-17 15:51:21.190784] | Thread:91483 | [NetworkManager::fetchLldpDataForNode] | Start LLDP data fetch for node: vstsn01
+[2026-04-17 15:51:21.190847] | Thread:91482 | [NetconfSession::getData] | Start data fetch with XPath: /ieee802-dot1ab-lldp:lldp
+[2026-04-17 15:51:21.222637] | Thread:91482 | [NetconfSession::getData] | Got return for path: /ieee802-dot1ab-lldp:lldp
+[2026-04-17 15:51:21.222888] | Thread:91482 | [LLDP Parser::parseLldpData] | Start LLDP data parsing
+[2026-04-17 15:51:21.223170] | Thread:91482 | [LLDP Parser::parseLldpData] | Finished LLDP data parsing
+[2026-04-17 15:51:23.996956] | Thread:91483 | [NetworkManager::fetchLldpDataForNode] | Start LLDP data fetch for node: vstsn01
+[2026-04-17 15:51:23.997022] | Thread:91482 | [NetconfSession::getData] | Start data fetch with XPath: /ieee802-dot1ab-lldp:lldp
+[2026-04-17 15:51:24.012658] | Thread:91482 | [NetconfSession::getData] | Got return for path: /ieee802-dot1ab-lldp:lldp
+[2026-04-17 15:51:24.012878] | Thread:91482 | [LLDP Parser::parseLldpData] | Start LLDP data parsing
+[2026-04-17 15:51:24.013115] | Thread:91482 | [LLDP Parser::parseLldpData] | Finished LLDP data parsing
+[2026-04-17 15:51:31.424513] | Thread:91483 | [NetworkManager::fetchLldpDataForNode] | Start LLDP data fetch for node: vstsn01
+[2026-04-17 15:51:31.424579] | Thread:91482 | [NetconfSession::getData] | Start data fetch with XPath: /ieee802-dot1ab-lldp:lldp
+[2026-04-17 15:51:31.441188] | Thread:91482 | [NetconfSession::getData] | Got return for path: /ieee802-dot1ab-lldp:lldp
+[2026-04-17 15:51:31.441440] | Thread:91482 | [LLDP Parser::parseLldpData] | Start LLDP data parsing
+[2026-04-17 15:51:31.441702] | Thread:91482 | [LLDP Parser::parseLldpData] | Finished LLDP data parsing
+[2026-04-17 15:51:33.793624] | Thread:91483 | [NetworkManager::fetchLldpDataForNode] | Start LLDP data fetch for node: vstsn01
+[2026-04-17 15:51:33.793690] | Thread:91482 | [NetconfSession::getData] | Start data fetch with XPath: /ieee802-dot1ab-lldp:lldp
+[2026-04-17 15:51:33.815847] | Thread:91482 | [NetconfSession::getData] | Got return for path: /ieee802-dot1ab-lldp:lldp
+[2026-04-17 15:51:33.816064] | Thread:91482 | [LLDP Parser::parseLldpData] | Start LLDP data parsing
+[2026-04-17 15:51:33.816304] | Thread:91482 | [LLDP Parser::parseLldpData] | Finished LLDP data parsing
+[2026-04-17 15:51:40.650345] | Thread:91483 | [NetworkManager::fetchLldpDataForNode] | Start LLDP data fetch for node: vstsn01
+[2026-04-17 15:51:40.650415] | Thread:91482 | [NetconfSession::getData] | Start data fetch with XPath: /ieee802-dot1ab-lldp:lldp
+[2026-04-17 15:51:40.686417] | Thread:91482 | [NetconfSession::getData] | Got return for path: /ieee802-dot1ab-lldp:lldp
+[2026-04-17 15:51:40.686668] | Thread:91482 | [LLDP Parser::parseLldpData] | Start LLDP data parsing
+[2026-04-17 15:51:40.686951] | Thread:91482 | [LLDP Parser::parseLldpData] | Finished LLDP data parsing
+[2026-04-17 15:51:42.742072] | Thread:91483 | [NetworkManager::fetchLldpDataForNode] | Start LLDP data fetch for node: vstsn01
+[2026-04-17 15:51:42.742143] | Thread:91482 | [NetconfSession::getData] | Start data fetch with XPath: /ieee802-dot1ab-lldp:lldp
+[2026-04-17 15:51:42.761230] | Thread:91482 | [NetconfSession::getData] | Got return for path: /ieee802-dot1ab-lldp:lldp
+[2026-04-17 15:51:42.761447] | Thread:91482 | [LLDP Parser::parseLldpData] | Start LLDP data parsing
+[2026-04-17 15:51:42.761683] | Thread:91482 | [LLDP Parser::parseLldpData] | Finished LLDP data parsing
+[2026-04-17 15:51:53.961356] | Thread:91483 | [NetworkManager::fetchLldpDataForNode] | Start LLDP data fetch for node: vstsn01
+[2026-04-17 15:51:53.961429] | Thread:91482 | [NetconfSession::getData] | Start data fetch with XPath: /ieee802-dot1ab-lldp:lldp
+[2026-04-17 15:51:53.987644] | Thread:91482 | [NetconfSession::getData] | Got return for path: /ieee802-dot1ab-lldp:lldp
+[2026-04-17 15:51:53.987920] | Thread:91482 | [LLDP Parser::parseLldpData] | Start LLDP data parsing
+[2026-04-17 15:51:53.988200] | Thread:91482 | [LLDP Parser::parseLldpData] | Finished LLDP data parsing
+[2026-04-17 15:51:56.552151] | Thread:91483 | [NetworkManager::fetchLldpDataForNode] | Start LLDP data fetch for node: vstsn01
+[2026-04-17 15:51:56.552223] | Thread:91482 | [NetconfSession::getData] | Start data fetch with XPath: /ieee802-dot1ab-lldp:lldp
+[2026-04-17 15:51:56.576733] | Thread:91482 | [NetconfSession::getData] | Got return for path: /ieee802-dot1ab-lldp:lldp
+[2026-04-17 15:51:56.576972] | Thread:91482 | [LLDP Parser::parseLldpData] | Start LLDP data parsing
+[2026-04-17 15:51:56.577229] | Thread:91482 | [LLDP Parser::parseLldpData] | Finished LLDP data parsing
+[2026-04-17 15:52:04.202367] | Thread:91483 | [NetworkManager::fetchLldpDataForNode] | Start LLDP data fetch for node: vstsn01
+[2026-04-17 15:52:04.202440] | Thread:91482 | [NetconfSession::getData] | Start data fetch with XPath: /ieee802-dot1ab-lldp:lldp
+[2026-04-17 15:52:04.231124] | Thread:91482 | [NetconfSession::getData] | Got return for path: /ieee802-dot1ab-lldp:lldp
+[2026-04-17 15:52:04.231401] | Thread:91482 | [LLDP Parser::parseLldpData] | Start LLDP data parsing
+[2026-04-17 15:52:04.231680] | Thread:91482 | [LLDP Parser::parseLldpData] | Finished LLDP data parsing
+[2026-04-17 15:52:06.778622] | Thread:91483 | [NetworkManager::fetchLldpDataForNode] | Start LLDP data fetch for node: vstsn01
+[2026-04-17 15:52:06.778694] | Thread:91482 | [NetconfSession::getData] | Start data fetch with XPath: /ieee802-dot1ab-lldp:lldp
+[2026-04-17 15:52:06.803604] | Thread:91482 | [NetconfSession::getData] | Got return for path: /ieee802-dot1ab-lldp:lldp
+[2026-04-17 15:52:06.803846] | Thread:91482 | [LLDP Parser::parseLldpData] | Start LLDP data parsing
+[2026-04-17 15:52:06.804103] | Thread:91482 | [LLDP Parser::parseLldpData] | Finished LLDP data parsing

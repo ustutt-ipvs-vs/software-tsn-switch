@@ -1,0 +1,39 @@
+<div class="tab-content">
+    @if (lldpNode?.localSystemData) {
+        <div class="lldp-grid-container">
+
+            <div class="lldp-section">
+                <span class="section-title">System</span>
+                <div class="lldp-grid">
+                    <span class="lldp-label">System Name</span>
+                    <span>{{ lldpNode?.localSystemData?.systemName || '-' }}</span>
+
+                    <span class="lldp-label">System Description</span>
+                    <span>{{ lldpNode?.localSystemData?.systemDescription || '-' }}</span>
+
+                    <span class="lldp-label">Capabilities Supported</span>
+                    <span>{{ lldpNode?.localSystemData?.systemCapabilitiesSupported || '-' }}</span>
+
+                    <span class="lldp-label">Capabilities Enabled</span>
+                    <span>{{ lldpNode?.localSystemData?.systemCapabilitiesEnabled || '-' }}</span>
+                </div>
+            </div>
+
+            <div class="lldp-section">
+                <span class="section-title">Chassis & Port</span>
+                <div class="lldp-grid">
+                    <span class="lldp-label">Chassis ID</span>
+                    <span>{{ lldpNode?.localSystemData?.chassisId || '-' }}</span>
+
+                    <span class="lldp-label">Chassis ID Subtype</span>
+                    <span>{{ lldpNode?.localSystemData?.chassisIdSubtype || '-' }}</span>
+
+                    <span class="lldp-label">Neighbor Port</span>
+                </div>
+            </div>
+
+        </div>
+    } @else {
+        <p>No LLDP information detected.</p>
+    }
+</div>

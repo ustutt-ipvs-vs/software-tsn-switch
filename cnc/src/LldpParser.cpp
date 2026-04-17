@@ -1,151 +1,143 @@
 #include "LldpParser.h"
 
+#include <libyang/libyang.h>
 #include <spdlog/spdlog.h>
 
 #include <cstring>
 #include <iostream>
-#include <pugixml.hpp>
+
+#include "PerformanceLogger.h"
+#include "spdlog/spdlog.h"
 
 namespace cnc {
-static bool isNodeNameMatch(const pugi::xml_node& node, const std::string& targetName) {
-    std::string name = node.name();
-    // 1. Exact Match
-    if (name == targetName) {
-        return true;
-    }
-
-    // 2. Suffix Match (e.g., "ieee802...:lldp")
-    if (name.length() > targetName.length()) {
-        if (name.compare(name.length() - targetName.length(), targetName.length(), targetName) == 0) {
-            if (name[name.length() - targetName.length() - 1] == ':') {
-                return true;
-            }
-        }
-    }
-    return false;
-}
-
-// Recursive function to find a node by name, considering namespaces
-static pugi::xml_node findNodeDeep(const pugi::xml_node& parent, const std::string& targetName) {
-    if (isNodeNameMatch(parent, targetName)) {
-        return parent;
-    }
-
-    for (pugi::xml_node child : parent.children()) {
-        pugi::xml_node found = findNodeDeep(child, targetName);
-        if (found != nullptr) {
-            return found;
-        }
-    }
-    return {};
-}
-
-// Helper function to extract tag value considering possible namespaces
-static std::string getChildValue(const pugi::xml_node& parent, const std::string& name) {
-    // Direct child lookup
-    for (pugi::xml_node child : parent.children()) {
-        if (isNodeNameMatch(child, name)) {
-            return child.child_value();
+static std::string getXPathValue(const struct lyd_node* contextNode, const char* xpath) {
+    struct lyd_node* foundNode = nullptr;
+    if (lyd_find_path(contextNode, xpath, 0, &foundNode) == LY_SUCCESS && foundNode != nullptr) {
+        const char* val = lyd_get_value(foundNode);
+        if (val != nullptr) {
+            return std::string(val);
         }
     }
     return "";
 }
 
-bool LldpParser::parseLldpData(const std::string& xmlData, CncNode_t& node) {
-    // Check for empty input
-    if (xmlData.empty()) {
-        spdlog::error("[Error] Empty XML data provided for LLDP parsing.");
+static uint32_t getXpathValueUint32(const struct lyd_node* contextNode, const char* xpath, uint32_t defaultValue = 0) {
+    std::string valStr = getXPathValue(contextNode, xpath);
+    if (!valStr.empty()) {
+        try {
+            return static_cast<uint32_t>(std::stoul(valStr));
+        } catch (const std::exception& e) {
+            spdlog::error("[LLDP Parser] Error converting value '{}' to uint32: {}", valStr, e.what());
+        }
+    }
+    return defaultValue;  // Default value if not found or conversion fails
+}
+
+bool LldpParser::parseLldpData(const struct lyd_node* rootNode, CncNode_t& node) {
+    PERFORMANCE_LOGGING("[LLDP Parser::parseLldpData]", "Start LLDP data parsing");
+    if (rootNode == nullptr) {
+        spdlog::error("[LLDP Parser] Root node is null.");
         return false;
     }
 
-    // Load XML data using pugixml
-    pugi::xml_document doc;
-    pugi::xml_parse_result result = doc.load_string(xmlData.c_str());
+    const struct lyd_node* actualData = rootNode;
 
-    if (!result) {
-        spdlog::error("[Error] Failed to parse LLDP XML data: {}", result.description());
+    if (actualData != nullptr && actualData->schema != nullptr && std::string(actualData->schema->name) == "get") {
+        actualData = lyd_child(actualData);
+    }
+
+    if (actualData != nullptr && actualData->schema != nullptr && std::string(actualData->schema->name) == "data") {
+        struct lyd_node_any* anyNode = (struct lyd_node_any*)actualData;
+        actualData = anyNode->value.tree;
+    }
+
+    if (actualData == nullptr) {
+        spdlog::error("[LLDP Parser] datatree is empty!");
         return false;
     }
 
-    // 1. Locate the LLDP root element
-    pugi::xml_node lldpRoot = findNodeDeep(doc, "lldp");
+    // Find all LLDP port nodes using XPath
+    struct ly_set* lldpSet = nullptr;
 
-    // If no namespaces are used, try to find any element with "lldp" in its name
-    if (!lldpRoot) {
-        for (pugi::xml_node child : doc.children()) {
-            std::string childName = child.name();
-            if (childName.find("lldp") != std::string::npos) {
-                lldpRoot = child;
-                break;
-            }
+    if (lyd_find_xpath(actualData, "//ieee802-dot1ab-lldp:lldp", &lldpSet) == LY_SUCCESS && lldpSet->count > 0) {
+        struct lyd_node* lldpNode = lldpSet->dnodes[0];  // Assuming only one LLDP node per device
+
+        node.lldpAllData.messageTxInterval = getXpathValueUint32(lldpNode, "message-tx-interval", 0);
+        node.lldpAllData.messageTxHoldMultiplier = getXpathValueUint32(lldpNode, "message-tx-hold-multiplier", 0);
+        node.lldpAllData.messageFastTx = getXpathValueUint32(lldpNode, "message-fast-tx", 0);
+        // Local system data
+        struct lyd_node* localSysNode = nullptr;
+        if (lyd_find_path(lldpNode, "local-system-data", 0, &localSysNode) == LY_SUCCESS && localSysNode != nullptr) {
+            node.lldpAllData.localSystemData.chassisIdSubtype = getXPathValue(localSysNode, "chassis-id-subtype");
+            node.lldpAllData.localSystemData.chassisId = getXPathValue(localSysNode, "chassis-id");
+            node.lldpAllData.localSystemData.systemName = getXPathValue(localSysNode, "system-name");
+            node.lldpAllData.localSystemData.systemDescription = getXPathValue(localSysNode, "system-description");
+            node.lldpAllData.localSystemData.systemCapabilitiesSupported =
+                getXPathValue(localSysNode, "system-capabilities-supported");
+            node.lldpAllData.localSystemData.systemCapabilitiesEnabled =
+                getXPathValue(localSysNode, "system-capabilities-enabled");
         }
     }
 
-    // No LLDP root found
-    if (!lldpRoot) {
-        spdlog::error("[Error] No <lldp> root element found in XML data.");
+    if (lldpSet != nullptr) {
+        ly_set_free(lldpSet, nullptr);
+    }
+
+    node.lldpAllData.ports.clear();
+
+    struct ly_set* portSet = nullptr;
+    if (lyd_find_xpath(actualData, "//ieee802-dot1ab-lldp:port", &portSet) != LY_SUCCESS || portSet->count == 0) {
+        spdlog::error("[LLDP Parser] No LLDP port data found for node '{}'.", node.hostName);
+        ly_set_free(portSet, nullptr);
         return false;
     }
 
-    // 2. Iterate over all <port> elements
-    for (pugi::xml_node port : lldpRoot.children()) {
-        // Use helper function to check for "port" node
-        if (!isNodeNameMatch(port, "port")) {
-            continue;
+    for (uint32_t i = 0; i < portSet->count; ++i) {
+        struct lyd_node* portNode = portSet->dnodes[i];
+
+        LldpPort_t currentPort;
+
+        currentPort.name = getXPathValue(portNode, "name");
+        if (currentPort.name.empty()) {
+            spdlog::warn("[LLDP Parser] Warning: LLDP port with empty name found, skipping.");
+            continue;  // Skip ports without a valid name
         }
 
-        // Get Name wih helper function
-        std::string interfaceName = getChildValue(port, "name");
-        if (interfaceName.empty()) {
-            continue;
-        }
+        currentPort.destMacAddress = getXPathValue(portNode, "dest-mac-address");
+        currentPort.adminStatus = getXPathValue(portNode, "admin-status");
 
-        // Security check
-        if (node.interfaces.empty()) {
-            spdlog::error("[FATAL] Node interface list is empty! Check CncNode initialization.");
-            return false;
-        }
+        struct ly_set* remoteDataSet = nullptr;
+        lyd_find_xpath(portNode, "remote-systems-data", &remoteDataSet);
 
-        // 3. Check if interface already exists in node
-        ietfInterface_t* targetInterface = nullptr;
-        for (auto& iface : node.interfaces) {
-            if (iface.name == interfaceName) {
-                targetInterface = &iface;
-                break;
+        if (remoteDataSet != nullptr && remoteDataSet->count > 0) {
+            for (uint32_t j = 0; j < remoteDataSet->count; ++j) {
+                struct lyd_node* remoteDataNode = remoteDataSet->dnodes[j];
+
+                LldpNeighbor_t neighbor;
+                neighbor.hasNeighbor = true;
+
+                neighbor.chassisId = getXPathValue(remoteDataNode, "chassis-id");
+                neighbor.portId = getXPathValue(remoteDataNode, "port-id");
+                neighbor.systemName = getXPathValue(remoteDataNode, "system-name");
+                neighbor.ttl = 0;  // NO SUCH VALUE IN YANG, todo what is this?
+
+                struct ly_set* mgmtAddrSet = nullptr;
+                if (lyd_find_xpath(remoteDataNode, "management-address", &mgmtAddrSet) == LY_SUCCESS &&
+                    mgmtAddrSet->count > 0) {
+                    neighbor.managementIp = getXPathValue(mgmtAddrSet->dnodes[0], "address");
+                    ly_set_free(mgmtAddrSet, nullptr);
+                }
+
+                currentPort.neighbors.push_back(neighbor);
             }
+            ly_set_free(remoteDataSet, nullptr);
         }
-
-        // If port does not exist in config, ignore it
-        if (targetInterface == nullptr) {
-            continue;
-        }
-
-        // 4. Parse LLDP neighbor information
-        /*
-        pugi::xml_node remoteData = findNodeDeep(port, "remote-systems-data");
-        */
-
-        // 5. Write data into struct
-        /*
-        if (remoteData != nullptr) {
-            targetInterface->lldpNeighbor.hasNeighbor = true;
-
-            // Use helper function to get child values
-            targetInterface->lldpNeighbor.chassisId = getChildValue(remoteData, "chassis-id");
-            targetInterface->lldpNeighbor.portId = getChildValue(remoteData, "port-id");
-            targetInterface->lldpNeighbor.systemName = getChildValue(remoteData, "system-name");
-
-            // Look for ip address
-            pugi::xml_node mgmtIpNode = findNodeDeep(remoteData, "management-address");
-
-            if (mgmtIpNode != nullptr) {
-                targetInterface->lldpNeighbor.managementIp = getChildValue(mgmtIpNode, "address");
-            }
-        } else {
-            targetInterface->lldpNeighbor.hasNeighbor = false;
-        }
-        */
+        node.lldpAllData.ports.push_back(currentPort);
     }
+
+    ly_set_free(portSet, nullptr);
+
+    PERFORMANCE_LOGGING("[LLDP Parser::parseLldpData]", "Finished LLDP data parsing");
     return true;
 }
 }  // namespace cnc

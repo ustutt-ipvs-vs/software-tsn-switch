@@ -9,3 +9,5 @@ cmake-build-debug-vstsn01/
 cnc/config/inventory.json
 .venv/
 /third-party/
+performance_trace*.log
+loadtest/*

@@ -30,6 +30,14 @@ class GclXmlBuilder {
      */
     static std::string buildXmlForNode(const CncNode_t& node);
 
+    /**
+     * @brief Builds XML configuration for the given interface GCL.
+     * Function that builds the XML structure for the Gate Control List (GCL) for the given interface.
+     * @param iface The IetfInterface_t containing the GCL data.
+     * @return A string containing the XML configuration.
+     */
+    static std::string buildXmlForInterface(const ietfInterface_t& iface);
+
    private:
     /**
      * @brief Appends XML for a single interface's GCL configuration.

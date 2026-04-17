@@ -8,8 +8,9 @@ RUN apt-get update && \
     # APT dependencies
     apt install -y build-essential libpcre2-dev libssl-dev libssh-dev \
     libcurl4-openssl-dev systemd-dev libsystemd-dev liblldpctl-dev \
-    libspdlog-dev chrony git curl cmake clang-format clang-tidy python3 \
-    python3-pip doxygen graphviz
+    libgrpc++-dev libprotobuf-dev protobuf-compiler-grpc \
+    libspdlog-dev chrony git curl cmake \
+    clang-format clang-tidy python3 python3-pip doxygen graphviz
 
 # Install from repositories
 RUN mkdir gitrepos && cd gitrepos && \

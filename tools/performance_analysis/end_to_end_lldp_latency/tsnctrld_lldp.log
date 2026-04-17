@@ -1,0 +1,961 @@
+[2026-04-17 15:47:43.743057] | Thread:654197 | Executable=tsnctrld_app
+[2026-04-17 15:47:43.743072] | Thread:654197 | [MAIN] | Start
+[2026-04-17 15:47:44.970475] | Thread:654197 | [MAIN] [INIT] | Start
+[2026-04-17 15:47:44.970679] | Thread:654197 | [INIT] | Start
+[2026-04-17 15:47:46.325322] | Thread:654197 | [SYNC] | Start
+[2026-04-17 15:47:46.325408] | Thread:654197 | [IFCACHE] [LINK] | Start req=0
+[2026-04-17 15:47:46.325411] | Thread:654197 | [LINK] [GET_ALL] | Start
+[2026-04-17 15:47:46.325413] | Thread:654197 | [NL] [SEND_SNYC] | Start
+[2026-04-17 15:47:46.325542] | Thread:654197 | [NL] [RECV] | Start
+[2026-04-17 15:47:46.325798] | Thread:654197 | [NL] [RECV] | End
+[2026-04-17 15:47:46.325801] | Thread:654197 | [NL] [SEND_SNYC] | End
+[2026-04-17 15:47:46.325809] | Thread:654197 | [LINK] [GET_ALL] | End
+[2026-04-17 15:47:46.325809] | Thread:654197 | [LINK] [RESP] | Start req=0
+[2026-04-17 15:47:46.325813] | Thread:654197 | [LINK] [RESP] [PER_IF] | Start req=0 ifindex=1
+[2026-04-17 15:47:46.325815] | Thread:654197 | [LINK] [RESP] [PER_IF] | End req=0 ifindex=1
+[2026-04-17 15:47:46.325817] | Thread:654197 | [LINK] [RESP] [PER_IF] | Start req=0 ifindex=2
+[2026-04-17 15:47:46.325818] | Thread:654197 | [LINK] [RESP] [PER_IF] | End req=0 ifindex=2
+[2026-04-17 15:47:46.325820] | Thread:654197 | [LINK] [RESP] [PER_IF] | Start req=0 ifindex=3
+[2026-04-17 15:47:46.325821] | Thread:654197 | [LINK] [RESP] [PER_IF] | End req=0 ifindex=3
+[2026-04-17 15:47:46.325821] | Thread:654197 | [LINK] [RESP] [PER_IF] | Start req=0 ifindex=4
+[2026-04-17 15:47:46.325822] | Thread:654197 | [LINK] [RESP] [PER_IF] | End req=0 ifindex=4
+[2026-04-17 15:47:46.325828] | Thread:654197 | [LINK] [RESP] [PER_IF] | Start req=0 ifindex=5
+[2026-04-17 15:47:46.325829] | Thread:654197 | [LINK] [RESP] [PER_IF] | End req=0 ifindex=5
+[2026-04-17 15:47:46.325830] | Thread:654197 | [LINK] [RESP] [PER_IF] | Start req=0 ifindex=6
+[2026-04-17 15:47:46.325830] | Thread:654197 | [LINK] [RESP] [PER_IF] | End req=0 ifindex=6
+[2026-04-17 15:47:46.325831] | Thread:654197 | [LINK] [RESP] [PER_IF] | Start req=0 ifindex=7
+[2026-04-17 15:47:46.325832] | Thread:654197 | [LINK] [RESP] [PER_IF] | End req=0 ifindex=7
+[2026-04-17 15:47:46.325832] | Thread:654197 | [LINK] [RESP] [PER_IF] | Start req=0 ifindex=8
+[2026-04-17 15:47:46.325834] | Thread:654197 | [LINK] [RESP] [PER_IF] | End req=0 ifindex=8
+[2026-04-17 15:47:46.325835] | Thread:654197 | [LINK] [RESP] [PER_IF] | Start req=0 ifindex=140
+[2026-04-17 15:47:46.325836] | Thread:654197 | [LINK] [RESP] [PER_IF] | End req=0 ifindex=140
+[2026-04-17 15:47:46.325841] | Thread:654197 | [LINK] [RESP] [PER_IF] | Start req=0 ifindex=141
+[2026-04-17 15:47:46.325870] | Thread:654197 | [LINK] [RESP] [PER_IF] | End req=0 ifindex=141
+[2026-04-17 15:47:46.325872] | Thread:654197 | [LINK] [RESP] [PER_IF] | Start req=0 ifindex=143
+[2026-04-17 15:47:46.325878] | Thread:654197 | [LINK] [RESP] [PER_IF] | End req=0 ifindex=143
+[2026-04-17 15:47:46.325880] | Thread:654197 | [LINK] [RESP] | End req=0
+[2026-04-17 15:47:46.325881] | Thread:654197 | [IFCACHE] [LINK] [QS+SPEED] | Start req=0
+[2026-04-17 15:47:46.325881] | Thread:654197 | [IFCACHE] [LINK] [QS+SPEED] | Start req=0 ifname=lo
+[2026-04-17 15:47:46.325882] | Thread:654197 | [LINK] [QUEUE_COUNT] | Start iface=lo
+[2026-04-17 15:47:46.325888] | Thread:654197 | [LINK] [QUEUE_COUNT] | End iface=lo Single Queue
+[2026-04-17 15:47:46.325890] | Thread:654197 | [LINK] [LINK_SPEED] | Start iface=lo
+[2026-04-17 15:47:46.325900] | Thread:654197 | [LINK] [LINK_SPEED] | End iface=lo
+[2026-04-17 15:47:46.325901] | Thread:654197 | [IFCACHE] [LINK] [QS+SPEED] | End req=0 ifname=lo
+[2026-04-17 15:47:46.325902] | Thread:654197 | [IFCACHE] [LINK] [QS+SPEED] | Start req=0 ifname=enp2s0f0
+[2026-04-17 15:47:46.325903] | Thread:654197 | [LINK] [QUEUE_COUNT] | Start iface=enp2s0f0
+[2026-04-17 15:47:46.325906] | Thread:654197 | [LINK] [QUEUE_COUNT] | End iface=enp2s0f0
+[2026-04-17 15:47:46.325907] | Thread:654197 | [LINK] [LINK_SPEED] | Start iface=enp2s0f0
+[2026-04-17 15:47:46.325911] | Thread:654197 | [LINK] [LINK_SPEED] | End iface=enp2s0f0
+[2026-04-17 15:47:46.325912] | Thread:654197 | [IFCACHE] [LINK] [QS+SPEED] | End req=0 ifname=enp2s0f0
+[2026-04-17 15:47:46.325913] | Thread:654197 | [IFCACHE] [LINK] [QS+SPEED] | Start req=0 ifname=enp2s0f1
+[2026-04-17 15:47:46.325913] | Thread:654197 | [LINK] [QUEUE_COUNT] | Start iface=enp2s0f1
+[2026-04-17 15:47:46.325919] | Thread:654197 | [LINK] [QUEUE_COUNT] | End iface=enp2s0f1
+[2026-04-17 15:47:46.325920] | Thread:654197 | [LINK] [LINK_SPEED] | Start iface=enp2s0f1
+[2026-04-17 15:47:46.325923] | Thread:654197 | [LINK] [LINK_SPEED] | End iface=enp2s0f1
+[2026-04-17 15:47:46.325923] | Thread:654197 | [IFCACHE] [LINK] [QS+SPEED] | End req=0 ifname=enp2s0f1
+[2026-04-17 15:47:46.325924] | Thread:654197 | [IFCACHE] [LINK] [QS+SPEED] | Start req=0 ifname=enp2s0f2
+[2026-04-17 15:47:46.325924] | Thread:654197 | [LINK] [QUEUE_COUNT] | Start iface=enp2s0f2
+[2026-04-17 15:47:46.325926] | Thread:654197 | [LINK] [QUEUE_COUNT] | End iface=enp2s0f2
+[2026-04-17 15:47:46.325926] | Thread:654197 | [LINK] [LINK_SPEED] | Start iface=enp2s0f2
+[2026-04-17 15:47:46.325929] | Thread:654197 | [LINK] [LINK_SPEED] | End iface=enp2s0f2
+[2026-04-17 15:47:46.325929] | Thread:654197 | [IFCACHE] [LINK] [QS+SPEED] | End req=0 ifname=enp2s0f2
+[2026-04-17 15:47:46.325935] | Thread:654197 | [IFCACHE] [LINK] [QS+SPEED] | Start req=0 ifname=eno1
+[2026-04-17 15:47:46.325935] | Thread:654197 | [LINK] [QUEUE_COUNT] | Start iface=eno1
+[2026-04-17 15:47:46.325939] | Thread:654197 | [LINK] [QUEUE_COUNT] | End iface=eno1 Single Queue
+[2026-04-17 15:47:46.325940] | Thread:654197 | [LINK] [LINK_SPEED] | Start iface=eno1
+[2026-04-17 15:47:46.325944] | Thread:654197 | [LINK] [LINK_SPEED] | End iface=eno1
+[2026-04-17 15:47:46.325946] | Thread:654197 | [IFCACHE] [LINK] [QS+SPEED] | End req=0 ifname=eno1
+[2026-04-17 15:47:46.325947] | Thread:654197 | [IFCACHE] [LINK] [QS+SPEED] | Start req=0 ifname=enp2s0f3
+[2026-04-17 15:47:46.325947] | Thread:654197 | [LINK] [QUEUE_COUNT] | Start iface=enp2s0f3
+[2026-04-17 15:47:46.325950] | Thread:654197 | [LINK] [QUEUE_COUNT] | End iface=enp2s0f3
+[2026-04-17 15:47:46.325951] | Thread:654197 | [LINK] [LINK_SPEED] | Start iface=enp2s0f3
+[2026-04-17 15:47:46.325960] | Thread:654197 | [LINK] [LINK_SPEED] | End iface=enp2s0f3
+[2026-04-17 15:47:46.325961] | Thread:654197 | [IFCACHE] [LINK] [QS+SPEED] | End req=0 ifname=enp2s0f3
+[2026-04-17 15:47:46.325961] | Thread:654197 | [IFCACHE] [LINK] [QS+SPEED] | Start req=0 ifname=enp5s0
+[2026-04-17 15:47:46.325962] | Thread:654197 | [LINK] [QUEUE_COUNT] | Start iface=enp5s0
+[2026-04-17 15:47:46.325963] | Thread:654197 | [LINK] [QUEUE_COUNT] | End iface=enp5s0 Single Queue
+[2026-04-17 15:47:46.325964] | Thread:654197 | [LINK] [LINK_SPEED] | Start iface=enp5s0
+[2026-04-17 15:47:46.325966] | Thread:654197 | [LINK] [LINK_SPEED] | End iface=enp5s0
+[2026-04-17 15:47:46.325967] | Thread:654197 | [IFCACHE] [LINK] [QS+SPEED] | End req=0 ifname=enp5s0
+[2026-04-17 15:47:46.325968] | Thread:654197 | [IFCACHE] [LINK] [QS+SPEED] | Start req=0 ifname=docker0
+[2026-04-17 15:47:46.325969] | Thread:654197 | [LINK] [QUEUE_COUNT] | Start iface=docker0
+[2026-04-17 15:47:46.325977] | Thread:654197 | [LINK] [QUEUE_COUNT] | End iface=docker0 Single Queue
+[2026-04-17 15:47:46.325978] | Thread:654197 | [LINK] [LINK_SPEED] | Start iface=docker0
+[2026-04-17 15:47:46.325980] | Thread:654197 | [LINK] [LINK_SPEED] | End iface=docker0
+[2026-04-17 15:47:46.325981] | Thread:654197 | [IFCACHE] [LINK] [QS+SPEED] | End req=0 ifname=docker0
+[2026-04-17 15:47:46.325982] | Thread:654197 | [IFCACHE] [LINK] [QS+SPEED] | Start req=0 ifname=br-purple
+[2026-04-17 15:47:46.325982] | Thread:654197 | [LINK] [QUEUE_COUNT] | Start iface=br-purple
+[2026-04-17 15:47:46.325984] | Thread:654197 | [LINK] [QUEUE_COUNT] | End iface=br-purple Single Queue
+[2026-04-17 15:47:46.325994] | Thread:654197 | [LINK] [LINK_SPEED] | Start iface=br-purple
+[2026-04-17 15:47:46.325997] | Thread:654197 | [LINK] [LINK_SPEED] | End iface=br-purple
+[2026-04-17 15:47:46.325998] | Thread:654197 | [IFCACHE] [LINK] [QS+SPEED] | End req=0 ifname=br-purple
+[2026-04-17 15:47:46.326003] | Thread:654197 | [IFCACHE] [LINK] [QS+SPEED] | Start req=0 ifname=veth-red-host
+[2026-04-17 15:47:46.326004] | Thread:654197 | [LINK] [QUEUE_COUNT] | Start iface=veth-red-host
+[2026-04-17 15:47:46.326006] | Thread:654197 | [LINK] [QUEUE_COUNT] | End iface=veth-red-host
+[2026-04-17 15:47:46.326006] | Thread:654197 | [LINK] [LINK_SPEED] | Start iface=veth-red-host
+[2026-04-17 15:47:46.326009] | Thread:654197 | [LINK] [LINK_SPEED] | End iface=veth-red-host
+[2026-04-17 15:47:46.326009] | Thread:654197 | [IFCACHE] [LINK] [QS+SPEED] | End req=0 ifname=veth-red-host
+[2026-04-17 15:47:46.326010] | Thread:654197 | [IFCACHE] [LINK] [QS+SPEED] | Start req=0 ifname=veth-blue-host
+[2026-04-17 15:47:46.326010] | Thread:654197 | [LINK] [QUEUE_COUNT] | Start iface=veth-blue-host
+[2026-04-17 15:47:46.326012] | Thread:654197 | [LINK] [QUEUE_COUNT] | End iface=veth-blue-host
+[2026-04-17 15:47:46.326012] | Thread:654197 | [LINK] [LINK_SPEED] | Start iface=veth-blue-host
+[2026-04-17 15:47:46.326029] | Thread:654197 | [LINK] [LINK_SPEED] | End iface=veth-blue-host
+[2026-04-17 15:47:46.326029] | Thread:654197 | [IFCACHE] [LINK] [QS+SPEED] | End req=0 ifname=veth-blue-host
+[2026-04-17 15:47:46.326030] | Thread:654197 | [IFCACHE] [LINK] [QS+SPEED] | End req=0
+[2026-04-17 15:47:46.326031] | Thread:654197 | [IFCACHE] [LINK] | End req=0
+[2026-04-17 15:47:46.326031] | Thread:654197 | [IFCACHE] [QDISC] | Start req=0
+[2026-04-17 15:47:46.326032] | Thread:654197 | [QDISC] [GET_ALL] | Start
+[2026-04-17 15:47:46.326032] | Thread:654197 | [NL] [SEND_SNYC] | Start
+[2026-04-17 15:47:46.326060] | Thread:654197 | [NL] [RECV] | Start
+[2026-04-17 15:47:46.326096] | Thread:654197 | [NL] [RECV] | End
+[2026-04-17 15:47:46.326098] | Thread:654197 | [NL] [SEND_SNYC] | End
+[2026-04-17 15:47:46.326114] | Thread:654197 | [QDISC] [GET_ALL] | End
+[2026-04-17 15:47:46.326115] | Thread:654197 | [QDISC] [RESP] | Start req=0
+[2026-04-17 15:47:46.326118] | Thread:654197 | [QDISC] [RESP] [PER_IF] | Start req=0 ifindex=1 handle:0 parent:4294967295
+[2026-04-17 15:47:46.326121] | Thread:654197 | [QDISC] [RESP] [PER_IF] | End req=0 ifindex=1 handle:0 parent:4294967295
+[2026-04-17 15:47:46.326122] | Thread:654197 | [QDISC] [RESP] [PER_IF] | Start req=0 ifindex=2 handle:0 parent:4294967295
+[2026-04-17 15:47:46.326123] | Thread:654197 | [QDISC] [RESP] [PER_IF] | End req=0 ifindex=2 handle:0 parent:4294967295
+[2026-04-17 15:47:46.326123] | Thread:654197 | [QDISC] [RESP] [PER_IF] | Start req=0 ifindex=2 handle:0 parent:8
+[2026-04-17 15:47:46.326125] | Thread:654197 | [QDISC] [RESP] [PER_IF] | End req=0 ifindex=2 handle:0 parent:8
+[2026-04-17 15:47:46.326127] | Thread:654197 | [QDISC] [RESP] [PER_IF] | Start req=0 ifindex=2 handle:0 parent:7
+[2026-04-17 15:47:46.326128] | Thread:654197 | [QDISC] [RESP] [PER_IF] | End req=0 ifindex=2 handle:0 parent:7
+[2026-04-17 15:47:46.326134] | Thread:654197 | [QDISC] [RESP] [PER_IF] | Start req=0 ifindex=2 handle:0 parent:6
+[2026-04-17 15:47:46.326135] | Thread:654197 | [QDISC] [RESP] [PER_IF] | End req=0 ifindex=2 handle:0 parent:6
+[2026-04-17 15:47:46.326135] | Thread:654197 | [QDISC] [RESP] [PER_IF] | Start req=0 ifindex=2 handle:0 parent:5
+[2026-04-17 15:47:46.326137] | Thread:654197 | [QDISC] [RESP] [PER_IF] | End req=0 ifindex=2 handle:0 parent:5
+[2026-04-17 15:47:46.326137] | Thread:654197 | [QDISC] [RESP] [PER_IF] | Start req=0 ifindex=2 handle:0 parent:4
+[2026-04-17 15:47:46.326138] | Thread:654197 | [QDISC] [RESP] [PER_IF] | End req=0 ifindex=2 handle:0 parent:4
+[2026-04-17 15:47:46.326139] | Thread:654197 | [QDISC] [RESP] [PER_IF] | Start req=0 ifindex=2 handle:0 parent:3
+[2026-04-17 15:47:46.326140] | Thread:654197 | [QDISC] [RESP] [PER_IF] | End req=0 ifindex=2 handle:0 parent:3
+[2026-04-17 15:47:46.326142] | Thread:654197 | [QDISC] [RESP] [PER_IF] | Start req=0 ifindex=2 handle:0 parent:2
+[2026-04-17 15:47:46.326142] | Thread:654197 | [QDISC] [RESP] [PER_IF] | End req=0 ifindex=2 handle:0 parent:2
+[2026-04-17 15:47:46.326147] | Thread:654197 | [QDISC] [RESP] [PER_IF] | Start req=0 ifindex=2 handle:0 parent:1
+[2026-04-17 15:47:46.326148] | Thread:654197 | [QDISC] [RESP] [PER_IF] | End req=0 ifindex=2 handle:0 parent:1
+[2026-04-17 15:47:46.326148] | Thread:654197 | [QDISC] [RESP] [PER_IF] | Start req=0 ifindex=2 handle:4294901760 parent:4294967281
+[2026-04-17 15:47:46.326149] | Thread:654197 | [QDISC] [RESP] [PER_IF] | End req=0 ifindex=2 handle:4294901760 parent:4294967281
+[2026-04-17 15:47:46.326149] | Thread:654197 | [QDISC] [RESP] [PER_IF] | Start req=0 ifindex=3 handle:0 parent:4294967295
+[2026-04-17 15:47:46.326150] | Thread:654197 | [QDISC] [RESP] [PER_IF] | End req=0 ifindex=3 handle:0 parent:4294967295
+[2026-04-17 15:47:46.326151] | Thread:654197 | [QDISC] [RESP] [PER_IF] | Start req=0 ifindex=3 handle:0 parent:8
+[2026-04-17 15:47:46.326151] | Thread:654197 | [QDISC] [RESP] [PER_IF] | End req=0 ifindex=3 handle:0 parent:8
+[2026-04-17 15:47:46.326152] | Thread:654197 | [QDISC] [RESP] [PER_IF] | Start req=0 ifindex=3 handle:0 parent:7
+[2026-04-17 15:47:46.326161] | Thread:654197 | [QDISC] [RESP] [PER_IF] | End req=0 ifindex=3 handle:0 parent:7
+[2026-04-17 15:47:46.326166] | Thread:654197 | [QDISC] [RESP] [PER_IF] | Start req=0 ifindex=3 handle:0 parent:6
+[2026-04-17 15:47:46.326166] | Thread:654197 | [QDISC] [RESP] [PER_IF] | End req=0 ifindex=3 handle:0 parent:6
+[2026-04-17 15:47:46.326167] | Thread:654197 | [QDISC] [RESP] [PER_IF] | Start req=0 ifindex=3 handle:0 parent:5
+[2026-04-17 15:47:46.326167] | Thread:654197 | [QDISC] [RESP] [PER_IF] | End req=0 ifindex=3 handle:0 parent:5
+[2026-04-17 15:47:46.326168] | Thread:654197 | [QDISC] [RESP] [PER_IF] | Start req=0 ifindex=3 handle:0 parent:4
+[2026-04-17 15:47:46.326168] | Thread:654197 | [QDISC] [RESP] [PER_IF] | End req=0 ifindex=3 handle:0 parent:4
+[2026-04-17 15:47:46.326169] | Thread:654197 | [QDISC] [RESP] [PER_IF] | Start req=0 ifindex=3 handle:0 parent:3
+[2026-04-17 15:47:46.326169] | Thread:654197 | [QDISC] [RESP] [PER_IF] | End req=0 ifindex=3 handle:0 parent:3
+[2026-04-17 15:47:46.326170] | Thread:654197 | [QDISC] [RESP] [PER_IF] | Start req=0 ifindex=3 handle:0 parent:2
+[2026-04-17 15:47:46.326171] | Thread:654197 | [QDISC] [RESP] [PER_IF] | End req=0 ifindex=3 handle:0 parent:2
+[2026-04-17 15:47:46.326176] | Thread:654197 | [QDISC] [RESP] [PER_IF] | Start req=0 ifindex=3 handle:0 parent:1
+[2026-04-17 15:47:46.326177] | Thread:654197 | [QDISC] [RESP] [PER_IF] | End req=0 ifindex=3 handle:0 parent:1
+[2026-04-17 15:47:46.326178] | Thread:654197 | [QDISC] [RESP] [PER_IF] | Start req=0 ifindex=4 handle:0 parent:4294967295
+[2026-04-17 15:47:46.326178] | Thread:654197 | [QDISC] [RESP] [PER_IF] | End req=0 ifindex=4 handle:0 parent:4294967295
+[2026-04-17 15:47:46.326179] | Thread:654197 | [QDISC] [RESP] [PER_IF] | Start req=0 ifindex=4 handle:0 parent:8
+[2026-04-17 15:47:46.326179] | Thread:654197 | [QDISC] [RESP] [PER_IF] | End req=0 ifindex=4 handle:0 parent:8
+[2026-04-17 15:47:46.326180] | Thread:654197 | [QDISC] [RESP] [PER_IF] | Start req=0 ifindex=4 handle:0 parent:7
+[2026-04-17 15:47:46.326180] | Thread:654197 | [QDISC] [RESP] [PER_IF] | End req=0 ifindex=4 handle:0 parent:7
+[2026-04-17 15:47:46.326181] | Thread:654197 | [QDISC] [RESP] [PER_IF] | Start req=0 ifindex=4 handle:0 parent:6
+[2026-04-17 15:47:46.326182] | Thread:654197 | [QDISC] [RESP] [PER_IF] | End req=0 ifindex=4 handle:0 parent:6
+[2026-04-17 15:47:46.326187] | Thread:654197 | [QDISC] [RESP] [PER_IF] | Start req=0 ifindex=4 handle:0 parent:5
+[2026-04-17 15:47:46.326188] | Thread:654197 | [QDISC] [RESP] [PER_IF] | End req=0 ifindex=4 handle:0 parent:5
+[2026-04-17 15:47:46.326189] | Thread:654197 | [QDISC] [RESP] [PER_IF] | Start req=0 ifindex=4 handle:0 parent:4
+[2026-04-17 15:47:46.326190] | Thread:654197 | [QDISC] [RESP] [PER_IF] | End req=0 ifindex=4 handle:0 parent:4
+[2026-04-17 15:47:46.326191] | Thread:654197 | [QDISC] [RESP] [PER_IF] | Start req=0 ifindex=4 handle:0 parent:3
+[2026-04-17 15:47:46.326191] | Thread:654197 | [QDISC] [RESP] [PER_IF] | End req=0 ifindex=4 handle:0 parent:3
+[2026-04-17 15:47:46.326192] | Thread:654197 | [QDISC] [RESP] [PER_IF] | Start req=0 ifindex=4 handle:0 parent:2
+[2026-04-17 15:47:46.326193] | Thread:654197 | [QDISC] [RESP] [PER_IF] | End req=0 ifindex=4 handle:0 parent:2
+[2026-04-17 15:47:46.326193] | Thread:654197 | [QDISC] [RESP] [PER_IF] | Start req=0 ifindex=4 handle:0 parent:1
+[2026-04-17 15:47:46.326194] | Thread:654197 | [QDISC] [RESP] [PER_IF] | End req=0 ifindex=4 handle:0 parent:1
+[2026-04-17 15:47:46.326199] | Thread:654197 | [QDISC] [RESP] [PER_IF] | Start req=0 ifindex=5 handle:0 parent:4294967295
+[2026-04-17 15:47:46.326200] | Thread:654197 | [QDISC] [RESP] [PER_IF] | End req=0 ifindex=5 handle:0 parent:4294967295
+[2026-04-17 15:47:46.326200] | Thread:654197 | [QDISC] [RESP] [PER_IF] | Start req=0 ifindex=6 handle:0 parent:4294967295
+[2026-04-17 15:47:46.326201] | Thread:654197 | [QDISC] [RESP] [PER_IF] | End req=0 ifindex=6 handle:0 parent:4294967295
+[2026-04-17 15:47:46.326202] | Thread:654197 | [QDISC] [RESP] [PER_IF] | Start req=0 ifindex=6 handle:0 parent:8
+[2026-04-17 15:47:46.326203] | Thread:654197 | [QDISC] [RESP] [PER_IF] | End req=0 ifindex=6 handle:0 parent:8
+[2026-04-17 15:47:46.326204] | Thread:654197 | [QDISC] [RESP] [PER_IF] | Start req=0 ifindex=6 handle:0 parent:7
+[2026-04-17 15:47:46.326204] | Thread:654197 | [QDISC] [RESP] [PER_IF] | End req=0 ifindex=6 handle:0 parent:7
+[2026-04-17 15:47:46.326206] | Thread:654197 | [QDISC] [RESP] [PER_IF] | Start req=0 ifindex=6 handle:0 parent:6
+[2026-04-17 15:47:46.326206] | Thread:654197 | [QDISC] [RESP] [PER_IF] | End req=0 ifindex=6 handle:0 parent:6
+[2026-04-17 15:47:46.326211] | Thread:654197 | [QDISC] [RESP] [PER_IF] | Start req=0 ifindex=6 handle:0 parent:5
+[2026-04-17 15:47:46.326212] | Thread:654197 | [QDISC] [RESP] [PER_IF] | End req=0 ifindex=6 handle:0 parent:5
+[2026-04-17 15:47:46.326212] | Thread:654197 | [QDISC] [RESP] [PER_IF] | Start req=0 ifindex=6 handle:0 parent:4
+[2026-04-17 15:47:46.326214] | Thread:654197 | [QDISC] [RESP] [PER_IF] | End req=0 ifindex=6 handle:0 parent:4
+[2026-04-17 15:47:46.326214] | Thread:654197 | [QDISC] [RESP] [PER_IF] | Start req=0 ifindex=6 handle:0 parent:3
+[2026-04-17 15:47:46.326215] | Thread:654197 | [QDISC] [RESP] [PER_IF] | End req=0 ifindex=6 handle:0 parent:3
+[2026-04-17 15:47:46.326215] | Thread:654197 | [QDISC] [RESP] [PER_IF] | Start req=0 ifindex=6 handle:0 parent:2
+[2026-04-17 15:47:46.326216] | Thread:654197 | [QDISC] [RESP] [PER_IF] | End req=0 ifindex=6 handle:0 parent:2
+[2026-04-17 15:47:46.326216] | Thread:654197 | [QDISC] [RESP] [PER_IF] | Start req=0 ifindex=6 handle:0 parent:1
+[2026-04-17 15:47:46.326217] | Thread:654197 | [QDISC] [RESP] [PER_IF] | End req=0 ifindex=6 handle:0 parent:1
+[2026-04-17 15:47:46.326221] | Thread:654197 | [QDISC] [RESP] [PER_IF] | Start req=0 ifindex=7 handle:0 parent:4294967295
+[2026-04-17 15:47:46.326222] | Thread:654197 | [QDISC] [RESP] [PER_IF] | End req=0 ifindex=7 handle:0 parent:4294967295
+[2026-04-17 15:47:46.326223] | Thread:654197 | [QDISC] [RESP] [PER_IF] | Start req=0 ifindex=8 handle:0 parent:4294967295
+[2026-04-17 15:47:46.326223] | Thread:654197 | [QDISC] [RESP] [PER_IF] | End req=0 ifindex=8 handle:0 parent:4294967295
+[2026-04-17 15:47:46.326224] | Thread:654197 | [QDISC] [RESP] [PER_IF] | Start req=0 ifindex=140 handle:0 parent:4294967295
+[2026-04-17 15:47:46.326225] | Thread:654197 | [QDISC] [RESP] [PER_IF] | End req=0 ifindex=140 handle:0 parent:4294967295
+[2026-04-17 15:47:46.326225] | Thread:654197 | [QDISC] [RESP] [PER_IF] | Start req=0 ifindex=141 handle:2226454528 parent:4294967295
+[2026-04-17 15:47:46.326228] | Thread:654197 | [QDISC] [RESP] [PER_IF] | End req=0 ifindex=141 handle:2226454528 parent:4294967295
+[2026-04-17 15:47:46.326229] | Thread:654197 | [QDISC] [RESP] [PER_IF] | Start req=0 ifindex=141 handle:0 parent:2226454536
+[2026-04-17 15:47:46.326230] | Thread:654197 | [QDISC] [RESP] [PER_IF] | End req=0 ifindex=141 handle:0 parent:2226454536
+[2026-04-17 15:47:46.326236] | Thread:654197 | [QDISC] [RESP] [PER_IF] | Start req=0 ifindex=141 handle:0 parent:2226454535
+[2026-04-17 15:47:46.326236] | Thread:654197 | [QDISC] [RESP] [PER_IF] | End req=0 ifindex=141 handle:0 parent:2226454535
+[2026-04-17 15:47:46.326237] | Thread:654197 | [QDISC] [RESP] [PER_IF] | Start req=0 ifindex=141 handle:0 parent:2226454534
+[2026-04-17 15:47:46.326237] | Thread:654197 | [QDISC] [RESP] [PER_IF] | End req=0 ifindex=141 handle:0 parent:2226454534
+[2026-04-17 15:47:46.326239] | Thread:654197 | [QDISC] [RESP] [PER_IF] | Start req=0 ifindex=141 handle:0 parent:2226454533
+[2026-04-17 15:47:46.326239] | Thread:654197 | [QDISC] [RESP] [PER_IF] | End req=0 ifindex=141 handle:0 parent:2226454533
+[2026-04-17 15:47:46.326240] | Thread:654197 | [QDISC] [RESP] [PER_IF] | Start req=0 ifindex=141 handle:0 parent:2226454532
+[2026-04-17 15:47:46.326241] | Thread:654197 | [QDISC] [RESP] [PER_IF] | End req=0 ifindex=141 handle:0 parent:2226454532
+[2026-04-17 15:47:46.326242] | Thread:654197 | [QDISC] [RESP] [PER_IF] | Start req=0 ifindex=141 handle:0 parent:2226454531
+[2026-04-17 15:47:46.326244] | Thread:654197 | [QDISC] [RESP] [PER_IF] | End req=0 ifindex=141 handle:0 parent:2226454531
+[2026-04-17 15:47:46.326251] | Thread:654197 | [QDISC] [RESP] [PER_IF] | Start req=0 ifindex=141 handle:0 parent:2226454530
+[2026-04-17 15:47:46.326252] | Thread:654197 | [QDISC] [RESP] [PER_IF] | End req=0 ifindex=141 handle:0 parent:2226454530
+[2026-04-17 15:47:46.326252] | Thread:654197 | [QDISC] [RESP] [PER_IF] | Start req=0 ifindex=141 handle:0 parent:2226454529
+[2026-04-17 15:47:46.326253] | Thread:654197 | [QDISC] [RESP] [PER_IF] | End req=0 ifindex=141 handle:0 parent:2226454529
+[2026-04-17 15:47:46.326253] | Thread:654197 | [QDISC] [RESP] [PER_IF] | Start req=0 ifindex=143 handle:2226126848 parent:4294967295
+[2026-04-17 15:47:46.326254] | Thread:654197 | [QDISC] [RESP] [PER_IF] | End req=0 ifindex=143 handle:2226126848 parent:4294967295
+[2026-04-17 15:47:46.326255] | Thread:654197 | [QDISC] [RESP] [PER_IF] | Start req=0 ifindex=143 handle:0 parent:2226126856
+[2026-04-17 15:47:46.326255] | Thread:654197 | [QDISC] [RESP] [PER_IF] | End req=0 ifindex=143 handle:0 parent:2226126856
+[2026-04-17 15:47:46.326256] | Thread:654197 | [QDISC] [RESP] [PER_IF] | Start req=0 ifindex=143 handle:0 parent:2226126855
+[2026-04-17 15:47:46.326267] | Thread:654197 | [QDISC] [RESP] [PER_IF] | End req=0 ifindex=143 handle:0 parent:2226126855
+[2026-04-17 15:47:46.326273] | Thread:654197 | [QDISC] [RESP] [PER_IF] | Start req=0 ifindex=143 handle:0 parent:2226126854
+[2026-04-17 15:47:46.326273] | Thread:654197 | [QDISC] [RESP] [PER_IF] | End req=0 ifindex=143 handle:0 parent:2226126854
+[2026-04-17 15:47:46.326274] | Thread:654197 | [QDISC] [RESP] [PER_IF] | Start req=0 ifindex=143 handle:0 parent:2226126853
+[2026-04-17 15:47:46.326275] | Thread:654197 | [QDISC] [RESP] [PER_IF] | End req=0 ifindex=143 handle:0 parent:2226126853
+[2026-04-17 15:47:46.326275] | Thread:654197 | [QDISC] [RESP] [PER_IF] | Start req=0 ifindex=143 handle:0 parent:2226126852
+[2026-04-17 15:47:46.326276] | Thread:654197 | [QDISC] [RESP] [PER_IF] | End req=0 ifindex=143 handle:0 parent:2226126852
+[2026-04-17 15:47:46.326278] | Thread:654197 | [QDISC] [RESP] [PER_IF] | Start req=0 ifindex=143 handle:0 parent:2226126851
+[2026-04-17 15:47:46.326278] | Thread:654197 | [QDISC] [RESP] [PER_IF] | End req=0 ifindex=143 handle:0 parent:2226126851
+[2026-04-17 15:47:46.326279] | Thread:654197 | [QDISC] [RESP] [PER_IF] | Start req=0 ifindex=143 handle:0 parent:2226126850
+[2026-04-17 15:47:46.326280] | Thread:654197 | [QDISC] [RESP] [PER_IF] | End req=0 ifindex=143 handle:0 parent:2226126850
+[2026-04-17 15:47:46.326295] | Thread:654197 | [QDISC] [RESP] [PER_IF] | Start req=0 ifindex=143 handle:0 parent:2226126849
+[2026-04-17 15:47:46.326295] | Thread:654197 | [QDISC] [RESP] [PER_IF] | End req=0 ifindex=143 handle:0 parent:2226126849
+[2026-04-17 15:47:46.326296] | Thread:654197 | [QDISC] [RESP] | End req=0
+[2026-04-17 15:47:46.326297] | Thread:654197 | [IFCACHE] [QDISC] | End req=0
+[2026-04-17 15:47:46.357301] | Thread:654197 | [SYNC] | End
+[2026-04-17 15:47:46.360026] | Thread:654197 | [INIT] | End
+[2026-04-17 15:47:46.360037] | Thread:654197 | [MAIN] [INIT] | End
+[2026-04-17 15:48:08.986473] | Thread:654231 | [CB_OPER] [IF] | Start req=3575
+[2026-04-17 15:48:08.986485] | Thread:654231 | [CB_OPER] [IF] [DUMP] | Start req=3575
+[2026-04-17 15:48:08.986496] | Thread:654231 | [IFCACHE] [LINK] | Start req=3575
+[2026-04-17 15:48:08.986497] | Thread:654231 | [LINK] [GET_ALL] | Start
+[2026-04-17 15:48:08.986498] | Thread:654231 | [NL] [SEND_SNYC] | Start
+[2026-04-17 15:48:08.986675] | Thread:654231 | [NL] [RECV] | Start
+[2026-04-17 15:48:08.986846] | Thread:654231 | [NL] [RECV] | End
+[2026-04-17 15:48:08.986849] | Thread:654231 | [NL] [SEND_SNYC] | End
+[2026-04-17 15:48:08.986856] | Thread:654231 | [LINK] [GET_ALL] | End
+[2026-04-17 15:48:08.986857] | Thread:654231 | [LINK] [RESP] | Start req=3575
+[2026-04-17 15:48:08.986859] | Thread:654231 | [LINK] [RESP] [PER_IF] | Start req=3575 ifindex=1
+[2026-04-17 15:48:08.986861] | Thread:654231 | [LINK] [RESP] [PER_IF] | End req=3575 ifindex=1
+[2026-04-17 15:48:08.986862] | Thread:654231 | [LINK] [RESP] [PER_IF] | Start req=3575 ifindex=2
+[2026-04-17 15:48:08.986862] | Thread:654231 | [LINK] [RESP] [PER_IF] | End req=3575 ifindex=2
+[2026-04-17 15:48:08.986864] | Thread:654231 | [LINK] [RESP] [PER_IF] | Start req=3575 ifindex=3
+[2026-04-17 15:48:08.986865] | Thread:654231 | [LINK] [RESP] [PER_IF] | End req=3575 ifindex=3
+[2026-04-17 15:48:08.986866] | Thread:654231 | [LINK] [RESP] [PER_IF] | Start req=3575 ifindex=4
+[2026-04-17 15:48:08.986866] | Thread:654231 | [LINK] [RESP] [PER_IF] | End req=3575 ifindex=4
+[2026-04-17 15:48:08.986872] | Thread:654231 | [LINK] [RESP] [PER_IF] | Start req=3575 ifindex=5
+[2026-04-17 15:48:08.986873] | Thread:654231 | [LINK] [RESP] [PER_IF] | End req=3575 ifindex=5
+[2026-04-17 15:48:08.986873] | Thread:654231 | [LINK] [RESP] [PER_IF] | Start req=3575 ifindex=6
+[2026-04-17 15:48:08.986874] | Thread:654231 | [LINK] [RESP] [PER_IF] | End req=3575 ifindex=6
+[2026-04-17 15:48:08.986874] | Thread:654231 | [LINK] [RESP] [PER_IF] | Start req=3575 ifindex=7
+[2026-04-17 15:48:08.986875] | Thread:654231 | [LINK] [RESP] [PER_IF] | End req=3575 ifindex=7
+[2026-04-17 15:48:08.986876] | Thread:654231 | [LINK] [RESP] [PER_IF] | Start req=3575 ifindex=8
+[2026-04-17 15:48:08.986878] | Thread:654231 | [LINK] [RESP] [PER_IF] | End req=3575 ifindex=8
+[2026-04-17 15:48:08.986880] | Thread:654231 | [LINK] [RESP] [PER_IF] | Start req=3575 ifindex=140
+[2026-04-17 15:48:08.986881] | Thread:654231 | [LINK] [RESP] [PER_IF] | End req=3575 ifindex=140
+[2026-04-17 15:48:08.986882] | Thread:654231 | [LINK] [RESP] [PER_IF] | Start req=3575 ifindex=141
+[2026-04-17 15:48:08.986904] | Thread:654231 | [LINK] [RESP] [PER_IF] | End req=3575 ifindex=141
+[2026-04-17 15:48:08.986906] | Thread:654231 | [LINK] [RESP] [PER_IF] | Start req=3575 ifindex=143
+[2026-04-17 15:48:08.986913] | Thread:654231 | [LINK] [RESP] [PER_IF] | End req=3575 ifindex=143
+[2026-04-17 15:48:08.986914] | Thread:654231 | [LINK] [RESP] | End req=3575
+[2026-04-17 15:48:08.986915] | Thread:654231 | [IFCACHE] [LINK] [QS+SPEED] | Start req=3575
+[2026-04-17 15:48:08.986916] | Thread:654231 | [IFCACHE] [LINK] [QS+SPEED] | Start req=3575 ifname=lo
+[2026-04-17 15:48:08.986916] | Thread:654231 | [LINK] [QUEUE_COUNT] | Start iface=lo
+[2026-04-17 15:48:08.986921] | Thread:654231 | [LINK] [QUEUE_COUNT] | End iface=lo Single Queue
+[2026-04-17 15:48:08.986922] | Thread:654231 | [LINK] [LINK_SPEED] | Start iface=lo
+[2026-04-17 15:48:08.986926] | Thread:654231 | [LINK] [LINK_SPEED] | End iface=lo
+[2026-04-17 15:48:08.986943] | Thread:654231 | [IFCACHE] [LINK] [QS+SPEED] | End req=3575 ifname=lo
+[2026-04-17 15:48:08.986944] | Thread:654231 | [IFCACHE] [LINK] [QS+SPEED] | Start req=3575 ifname=enp2s0f0
+[2026-04-17 15:48:08.986944] | Thread:654231 | [LINK] [QUEUE_COUNT] | Start iface=enp2s0f0
+[2026-04-17 15:48:08.986949] | Thread:654231 | [LINK] [QUEUE_COUNT] | End iface=enp2s0f0
+[2026-04-17 15:48:08.986951] | Thread:654231 | [LINK] [LINK_SPEED] | Start iface=enp2s0f0
+[2026-04-17 15:48:08.986955] | Thread:654231 | [LINK] [LINK_SPEED] | End iface=enp2s0f0
+[2026-04-17 15:48:08.986957] | Thread:654231 | [IFCACHE] [LINK] [QS+SPEED] | End req=3575 ifname=enp2s0f0
+[2026-04-17 15:48:08.986957] | Thread:654231 | [IFCACHE] [LINK] [QS+SPEED] | Start req=3575 ifname=enp2s0f1
+[2026-04-17 15:48:08.986958] | Thread:654231 | [LINK] [QUEUE_COUNT] | Start iface=enp2s0f1
+[2026-04-17 15:48:08.986960] | Thread:654231 | [LINK] [QUEUE_COUNT] | End iface=enp2s0f1
+[2026-04-17 15:48:08.986965] | Thread:654231 | [LINK] [LINK_SPEED] | Start iface=enp2s0f1
+[2026-04-17 15:48:08.986968] | Thread:654231 | [LINK] [LINK_SPEED] | End iface=enp2s0f1
+[2026-04-17 15:48:08.986969] | Thread:654231 | [IFCACHE] [LINK] [QS+SPEED] | End req=3575 ifname=enp2s0f1
+[2026-04-17 15:48:08.986969] | Thread:654231 | [IFCACHE] [LINK] [QS+SPEED] | Start req=3575 ifname=enp2s0f2
+[2026-04-17 15:48:08.986970] | Thread:654231 | [LINK] [QUEUE_COUNT] | Start iface=enp2s0f2
+[2026-04-17 15:48:08.986972] | Thread:654231 | [LINK] [QUEUE_COUNT] | End iface=enp2s0f2
+[2026-04-17 15:48:08.986972] | Thread:654231 | [LINK] [LINK_SPEED] | Start iface=enp2s0f2
+[2026-04-17 15:48:08.986975] | Thread:654231 | [LINK] [LINK_SPEED] | End iface=enp2s0f2
+[2026-04-17 15:48:08.986976] | Thread:654231 | [IFCACHE] [LINK] [QS+SPEED] | End req=3575 ifname=enp2s0f2
+[2026-04-17 15:48:08.986976] | Thread:654231 | [IFCACHE] [LINK] [QS+SPEED] | Start req=3575 ifname=eno1
+[2026-04-17 15:48:08.986980] | Thread:654231 | [LINK] [QUEUE_COUNT] | Start iface=eno1
+[2026-04-17 15:48:08.986983] | Thread:654231 | [LINK] [QUEUE_COUNT] | End iface=eno1 Single Queue
+[2026-04-17 15:48:08.986983] | Thread:654231 | [LINK] [LINK_SPEED] | Start iface=eno1
+[2026-04-17 15:48:08.986986] | Thread:654231 | [LINK] [LINK_SPEED] | End iface=eno1
+[2026-04-17 15:48:08.986987] | Thread:654231 | [IFCACHE] [LINK] [QS+SPEED] | End req=3575 ifname=eno1
+[2026-04-17 15:48:08.986987] | Thread:654231 | [IFCACHE] [LINK] [QS+SPEED] | Start req=3575 ifname=enp2s0f3
+[2026-04-17 15:48:08.986988] | Thread:654231 | [LINK] [QUEUE_COUNT] | Start iface=enp2s0f3
+[2026-04-17 15:48:08.986990] | Thread:654231 | [LINK] [QUEUE_COUNT] | End iface=enp2s0f3
+[2026-04-17 15:48:08.986990] | Thread:654231 | [LINK] [LINK_SPEED] | Start iface=enp2s0f3
+[2026-04-17 15:48:08.986993] | Thread:654231 | [LINK] [LINK_SPEED] | End iface=enp2s0f3
+[2026-04-17 15:48:08.986999] | Thread:654231 | [IFCACHE] [LINK] [QS+SPEED] | End req=3575 ifname=enp2s0f3
+[2026-04-17 15:48:08.986999] | Thread:654231 | [IFCACHE] [LINK] [QS+SPEED] | Start req=3575 ifname=enp5s0
+[2026-04-17 15:48:08.987002] | Thread:654231 | [LINK] [QUEUE_COUNT] | Start iface=enp5s0
+[2026-04-17 15:48:08.987005] | Thread:654231 | [LINK] [QUEUE_COUNT] | End iface=enp5s0 Single Queue
+[2026-04-17 15:48:08.987006] | Thread:654231 | [LINK] [LINK_SPEED] | Start iface=enp5s0
+[2026-04-17 15:48:08.987009] | Thread:654231 | [LINK] [LINK_SPEED] | End iface=enp5s0
+[2026-04-17 15:48:08.987010] | Thread:654231 | [IFCACHE] [LINK] [QS+SPEED] | End req=3575 ifname=enp5s0
+[2026-04-17 15:48:08.987010] | Thread:654231 | [IFCACHE] [LINK] [QS+SPEED] | Start req=3575 ifname=docker0
+[2026-04-17 15:48:08.987011] | Thread:654231 | [LINK] [QUEUE_COUNT] | Start iface=docker0
+[2026-04-17 15:48:08.987013] | Thread:654231 | [LINK] [QUEUE_COUNT] | End iface=docker0 Single Queue
+[2026-04-17 15:48:08.987018] | Thread:654231 | [LINK] [LINK_SPEED] | Start iface=docker0
+[2026-04-17 15:48:08.987021] | Thread:654231 | [LINK] [LINK_SPEED] | End iface=docker0
+[2026-04-17 15:48:08.987021] | Thread:654231 | [IFCACHE] [LINK] [QS+SPEED] | End req=3575 ifname=docker0
+[2026-04-17 15:48:08.987025] | Thread:654231 | [IFCACHE] [LINK] [QS+SPEED] | Start req=3575 ifname=br-purple
+[2026-04-17 15:48:08.987025] | Thread:654231 | [LINK] [QUEUE_COUNT] | Start iface=br-purple
+[2026-04-17 15:48:08.987027] | Thread:654231 | [LINK] [QUEUE_COUNT] | End iface=br-purple Single Queue
+[2026-04-17 15:48:08.987027] | Thread:654231 | [LINK] [LINK_SPEED] | Start iface=br-purple
+[2026-04-17 15:48:08.987030] | Thread:654231 | [LINK] [LINK_SPEED] | End iface=br-purple
+[2026-04-17 15:48:08.987032] | Thread:654231 | [IFCACHE] [LINK] [QS+SPEED] | End req=3575 ifname=br-purple
+[2026-04-17 15:48:08.987032] | Thread:654231 | [IFCACHE] [LINK] [QS+SPEED] | Start req=3575 ifname=veth-red-host
+[2026-04-17 15:48:08.987038] | Thread:654231 | [LINK] [QUEUE_COUNT] | Start iface=veth-red-host
+[2026-04-17 15:48:08.987041] | Thread:654231 | [LINK] [QUEUE_COUNT] | End iface=veth-red-host
+[2026-04-17 15:48:08.987041] | Thread:654231 | [LINK] [LINK_SPEED] | Start iface=veth-red-host
+[2026-04-17 15:48:08.987044] | Thread:654231 | [LINK] [LINK_SPEED] | End iface=veth-red-host
+[2026-04-17 15:48:08.987044] | Thread:654231 | [IFCACHE] [LINK] [QS+SPEED] | End req=3575 ifname=veth-red-host
+[2026-04-17 15:48:08.987045] | Thread:654231 | [IFCACHE] [LINK] [QS+SPEED] | Start req=3575 ifname=veth-blue-host
+[2026-04-17 15:48:08.987045] | Thread:654231 | [LINK] [QUEUE_COUNT] | Start iface=veth-blue-host
+[2026-04-17 15:48:08.987047] | Thread:654231 | [LINK] [QUEUE_COUNT] | End iface=veth-blue-host
+[2026-04-17 15:48:08.987047] | Thread:654231 | [LINK] [LINK_SPEED] | Start iface=veth-blue-host
+[2026-04-17 15:48:08.987050] | Thread:654231 | [LINK] [LINK_SPEED] | End iface=veth-blue-host
+[2026-04-17 15:48:08.987057] | Thread:654231 | [IFCACHE] [LINK] [QS+SPEED] | End req=3575 ifname=veth-blue-host
+[2026-04-17 15:48:08.987057] | Thread:654231 | [IFCACHE] [LINK] [QS+SPEED] | End req=3575
+[2026-04-17 15:48:08.987058] | Thread:654231 | [IFCACHE] [LINK] | End req=3575
+[2026-04-17 15:48:08.987058] | Thread:654231 | [IFCACHE] [QDISC] | Start req=3575
+[2026-04-17 15:48:08.987059] | Thread:654231 | [QDISC] [GET_ALL] | Start
+[2026-04-17 15:48:08.987060] | Thread:654231 | [NL] [SEND_SNYC] | Start
+[2026-04-17 15:48:08.987088] | Thread:654231 | [NL] [RECV] | Start
+[2026-04-17 15:48:08.987125] | Thread:654231 | [NL] [RECV] | End
+[2026-04-17 15:48:08.987127] | Thread:654231 | [NL] [SEND_SNYC] | End
+[2026-04-17 15:48:08.987127] | Thread:654231 | [QDISC] [GET_ALL] | End
+[2026-04-17 15:48:08.987135] | Thread:654231 | [QDISC] [RESP] | Start req=3575
+[2026-04-17 15:48:08.987137] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3575 ifindex=1 handle:0 parent:4294967295
+[2026-04-17 15:48:08.987138] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3575 ifindex=1 handle:0 parent:4294967295
+[2026-04-17 15:48:08.987138] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3575 ifindex=2 handle:0 parent:4294967295
+[2026-04-17 15:48:08.987139] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3575 ifindex=2 handle:0 parent:4294967295
+[2026-04-17 15:48:08.987140] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3575 ifindex=2 handle:0 parent:8
+[2026-04-17 15:48:08.987141] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3575 ifindex=2 handle:0 parent:8
+[2026-04-17 15:48:08.987142] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3575 ifindex=2 handle:0 parent:7
+[2026-04-17 15:48:08.987145] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3575 ifindex=2 handle:0 parent:7
+[2026-04-17 15:48:08.987145] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3575 ifindex=2 handle:0 parent:6
+[2026-04-17 15:48:08.987151] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3575 ifindex=2 handle:0 parent:6
+[2026-04-17 15:48:08.987152] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3575 ifindex=2 handle:0 parent:5
+[2026-04-17 15:48:08.987152] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3575 ifindex=2 handle:0 parent:5
+[2026-04-17 15:48:08.987154] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3575 ifindex=2 handle:0 parent:4
+[2026-04-17 15:48:08.987154] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3575 ifindex=2 handle:0 parent:4
+[2026-04-17 15:48:08.987155] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3575 ifindex=2 handle:0 parent:3
+[2026-04-17 15:48:08.987156] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3575 ifindex=2 handle:0 parent:3
+[2026-04-17 15:48:08.987156] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3575 ifindex=2 handle:0 parent:2
+[2026-04-17 15:48:08.987157] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3575 ifindex=2 handle:0 parent:2
+[2026-04-17 15:48:08.987158] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3575 ifindex=2 handle:0 parent:1
+[2026-04-17 15:48:08.987163] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3575 ifindex=2 handle:0 parent:1
+[2026-04-17 15:48:08.987164] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3575 ifindex=2 handle:4294901760 parent:4294967281
+[2026-04-17 15:48:08.987165] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3575 ifindex=2 handle:4294901760 parent:4294967281
+[2026-04-17 15:48:08.987165] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3575 ifindex=3 handle:0 parent:4294967295
+[2026-04-17 15:48:08.987166] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3575 ifindex=3 handle:0 parent:4294967295
+[2026-04-17 15:48:08.987166] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3575 ifindex=3 handle:0 parent:8
+[2026-04-17 15:48:08.987167] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3575 ifindex=3 handle:0 parent:8
+[2026-04-17 15:48:08.987167] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3575 ifindex=3 handle:0 parent:7
+[2026-04-17 15:48:08.987168] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3575 ifindex=3 handle:0 parent:7
+[2026-04-17 15:48:08.987168] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3575 ifindex=3 handle:0 parent:6
+[2026-04-17 15:48:08.987173] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3575 ifindex=3 handle:0 parent:6
+[2026-04-17 15:48:08.987173] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3575 ifindex=3 handle:0 parent:5
+[2026-04-17 15:48:08.987174] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3575 ifindex=3 handle:0 parent:5
+[2026-04-17 15:48:08.987175] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3575 ifindex=3 handle:0 parent:4
+[2026-04-17 15:48:08.987175] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3575 ifindex=3 handle:0 parent:4
+[2026-04-17 15:48:08.987176] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3575 ifindex=3 handle:0 parent:3
+[2026-04-17 15:48:08.987176] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3575 ifindex=3 handle:0 parent:3
+[2026-04-17 15:48:08.987177] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3575 ifindex=3 handle:0 parent:2
+[2026-04-17 15:48:08.987177] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3575 ifindex=3 handle:0 parent:2
+[2026-04-17 15:48:08.987178] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3575 ifindex=3 handle:0 parent:1
+[2026-04-17 15:48:08.987183] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3575 ifindex=3 handle:0 parent:1
+[2026-04-17 15:48:08.987185] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3575 ifindex=4 handle:0 parent:4294967295
+[2026-04-17 15:48:08.987186] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3575 ifindex=4 handle:0 parent:4294967295
+[2026-04-17 15:48:08.987186] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3575 ifindex=4 handle:0 parent:8
+[2026-04-17 15:48:08.987187] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3575 ifindex=4 handle:0 parent:8
+[2026-04-17 15:48:08.987188] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3575 ifindex=4 handle:0 parent:7
+[2026-04-17 15:48:08.987188] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3575 ifindex=4 handle:0 parent:7
+[2026-04-17 15:48:08.987189] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3575 ifindex=4 handle:0 parent:6
+[2026-04-17 15:48:08.987190] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3575 ifindex=4 handle:0 parent:6
+[2026-04-17 15:48:08.987190] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3575 ifindex=4 handle:0 parent:5
+[2026-04-17 15:48:08.987197] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3575 ifindex=4 handle:0 parent:5
+[2026-04-17 15:48:08.987197] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3575 ifindex=4 handle:0 parent:4
+[2026-04-17 15:48:08.987198] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3575 ifindex=4 handle:0 parent:4
+[2026-04-17 15:48:08.987198] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3575 ifindex=4 handle:0 parent:3
+[2026-04-17 15:48:08.987200] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3575 ifindex=4 handle:0 parent:3
+[2026-04-17 15:48:08.987200] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3575 ifindex=4 handle:0 parent:2
+[2026-04-17 15:48:08.987201] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3575 ifindex=4 handle:0 parent:2
+[2026-04-17 15:48:08.987202] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3575 ifindex=4 handle:0 parent:1
+[2026-04-17 15:48:08.987202] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3575 ifindex=4 handle:0 parent:1
+[2026-04-17 15:48:08.987203] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3575 ifindex=5 handle:0 parent:4294967295
+[2026-04-17 15:48:08.987208] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3575 ifindex=5 handle:0 parent:4294967295
+[2026-04-17 15:48:08.987209] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3575 ifindex=6 handle:0 parent:4294967295
+[2026-04-17 15:48:08.987210] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3575 ifindex=6 handle:0 parent:4294967295
+[2026-04-17 15:48:08.987210] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3575 ifindex=6 handle:0 parent:8
+[2026-04-17 15:48:08.987211] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3575 ifindex=6 handle:0 parent:8
+[2026-04-17 15:48:08.987211] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3575 ifindex=6 handle:0 parent:7
+[2026-04-17 15:48:08.987213] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3575 ifindex=6 handle:0 parent:7
+[2026-04-17 15:48:08.987214] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3575 ifindex=6 handle:0 parent:6
+[2026-04-17 15:48:08.987214] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3575 ifindex=6 handle:0 parent:6
+[2026-04-17 15:48:08.987215] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3575 ifindex=6 handle:0 parent:5
+[2026-04-17 15:48:08.987219] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3575 ifindex=6 handle:0 parent:5
+[2026-04-17 15:48:08.987220] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3575 ifindex=6 handle:0 parent:4
+[2026-04-17 15:48:08.987220] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3575 ifindex=6 handle:0 parent:4
+[2026-04-17 15:48:08.987221] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3575 ifindex=6 handle:0 parent:3
+[2026-04-17 15:48:08.987222] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3575 ifindex=6 handle:0 parent:3
+[2026-04-17 15:48:08.987222] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3575 ifindex=6 handle:0 parent:2
+[2026-04-17 15:48:08.987223] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3575 ifindex=6 handle:0 parent:2
+[2026-04-17 15:48:08.987223] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3575 ifindex=6 handle:0 parent:1
+[2026-04-17 15:48:08.987224] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3575 ifindex=6 handle:0 parent:1
+[2026-04-17 15:48:08.987224] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3575 ifindex=7 handle:0 parent:4294967295
+[2026-04-17 15:48:08.987234] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3575 ifindex=7 handle:0 parent:4294967295
+[2026-04-17 15:48:08.987235] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3575 ifindex=8 handle:0 parent:4294967295
+[2026-04-17 15:48:08.987235] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3575 ifindex=8 handle:0 parent:4294967295
+[2026-04-17 15:48:08.987237] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3575 ifindex=140 handle:0 parent:4294967295
+[2026-04-17 15:48:08.987238] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3575 ifindex=140 handle:0 parent:4294967295
+[2026-04-17 15:48:08.987239] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3575 ifindex=141 handle:2226454528 parent:4294967295
+[2026-04-17 15:48:08.987242] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3575 ifindex=141 handle:2226454528 parent:4294967295
+[2026-04-17 15:48:08.987242] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3575 ifindex=141 handle:0 parent:2226454536
+[2026-04-17 15:48:08.987243] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3575 ifindex=141 handle:0 parent:2226454536
+[2026-04-17 15:48:08.987244] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3575 ifindex=141 handle:0 parent:2226454535
+[2026-04-17 15:48:08.987250] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3575 ifindex=141 handle:0 parent:2226454535
+[2026-04-17 15:48:08.987251] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3575 ifindex=141 handle:0 parent:2226454534
+[2026-04-17 15:48:08.987251] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3575 ifindex=141 handle:0 parent:2226454534
+[2026-04-17 15:48:08.987252] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3575 ifindex=141 handle:0 parent:2226454533
+[2026-04-17 15:48:08.987252] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3575 ifindex=141 handle:0 parent:2226454533
+[2026-04-17 15:48:08.987253] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3575 ifindex=141 handle:0 parent:2226454532
+[2026-04-17 15:48:08.987255] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3575 ifindex=141 handle:0 parent:2226454532
+[2026-04-17 15:48:08.987255] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3575 ifindex=141 handle:0 parent:2226454531
+[2026-04-17 15:48:08.987256] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3575 ifindex=141 handle:0 parent:2226454531
+[2026-04-17 15:48:08.987257] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3575 ifindex=141 handle:0 parent:2226454530
+[2026-04-17 15:48:08.987261] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3575 ifindex=141 handle:0 parent:2226454530
+[2026-04-17 15:48:08.987262] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3575 ifindex=141 handle:0 parent:2226454529
+[2026-04-17 15:48:08.987262] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3575 ifindex=141 handle:0 parent:2226454529
+[2026-04-17 15:48:08.987263] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3575 ifindex=143 handle:2226126848 parent:4294967295
+[2026-04-17 15:48:08.987264] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3575 ifindex=143 handle:2226126848 parent:4294967295
+[2026-04-17 15:48:08.987264] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3575 ifindex=143 handle:0 parent:2226126856
+[2026-04-17 15:48:08.987266] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3575 ifindex=143 handle:0 parent:2226126856
+[2026-04-17 15:48:08.987267] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3575 ifindex=143 handle:0 parent:2226126855
+[2026-04-17 15:48:08.987268] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3575 ifindex=143 handle:0 parent:2226126855
+[2026-04-17 15:48:08.987268] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3575 ifindex=143 handle:0 parent:2226126854
+[2026-04-17 15:48:08.987274] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3575 ifindex=143 handle:0 parent:2226126854
+[2026-04-17 15:48:08.987275] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3575 ifindex=143 handle:0 parent:2226126853
+[2026-04-17 15:48:08.987276] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3575 ifindex=143 handle:0 parent:2226126853
+[2026-04-17 15:48:08.987276] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3575 ifindex=143 handle:0 parent:2226126852
+[2026-04-17 15:48:08.987277] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3575 ifindex=143 handle:0 parent:2226126852
+[2026-04-17 15:48:08.987277] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3575 ifindex=143 handle:0 parent:2226126851
+[2026-04-17 15:48:08.987278] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3575 ifindex=143 handle:0 parent:2226126851
+[2026-04-17 15:48:08.987279] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3575 ifindex=143 handle:0 parent:2226126850
+[2026-04-17 15:48:08.987279] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3575 ifindex=143 handle:0 parent:2226126850
+[2026-04-17 15:48:08.987280] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3575 ifindex=143 handle:0 parent:2226126849
+[2026-04-17 15:48:08.987286] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3575 ifindex=143 handle:0 parent:2226126849
+[2026-04-17 15:48:08.987286] | Thread:654231 | [QDISC] [RESP] | End req=3575
+[2026-04-17 15:48:08.987287] | Thread:654231 | [IFCACHE] [QDISC] | End req=3575
+[2026-04-17 15:48:08.987288] | Thread:654231 | [CB_OPER] [IF] [DUMP] | End req=3575
+[2026-04-17 15:48:08.987297] | Thread:654231 | [CB_OPER] [IF] [SINGLE_IF] | Start req=3575 iface=lo done
+[2026-04-17 15:48:08.987349] | Thread:654231 | [CB_OPER] [IF] [SINGLE_IF] | End req=3575 iface=lo done
+[2026-04-17 15:48:08.987353] | Thread:654231 | [CB_OPER] [IF] [SINGLE_IF] | Start req=3575 iface=enp2s0f0 done
+[2026-04-17 15:48:08.987459] | Thread:654231 | [CB_OPER] [IF] [FILL_GPT] | Start req=3575 iface=enp2s0f0
+[2026-04-17 15:48:08.987475] | Thread:654231 | [CB_OPER] [IF] [FILL_GPT] | End req=3575 iface=enp2s0f0
+[2026-04-17 15:48:08.987479] | Thread:654231 | [CB_OPER] [IF] [SINGLE_IF] | End req=3575 iface=enp2s0f0 done
+[2026-04-17 15:48:08.987487] | Thread:654231 | [CB_OPER] [IF] [SINGLE_IF] | Start req=3575 iface=enp2s0f1 done
+[2026-04-17 15:48:08.987547] | Thread:654231 | [CB_OPER] [IF] [FILL_GPT] | Start req=3575 iface=enp2s0f1
+[2026-04-17 15:48:08.987560] | Thread:654231 | [CB_OPER] [IF] [FILL_GPT] | End req=3575 iface=enp2s0f1
+[2026-04-17 15:48:08.987564] | Thread:654231 | [CB_OPER] [IF] [SINGLE_IF] | End req=3575 iface=enp2s0f1 done
+[2026-04-17 15:48:08.987566] | Thread:654231 | [CB_OPER] [IF] [SINGLE_IF] | Start req=3575 iface=enp2s0f2 done
+[2026-04-17 15:48:08.987627] | Thread:654231 | [CB_OPER] [IF] [FILL_GPT] | Start req=3575 iface=enp2s0f2
+[2026-04-17 15:48:08.987639] | Thread:654231 | [CB_OPER] [IF] [FILL_GPT] | End req=3575 iface=enp2s0f2
+[2026-04-17 15:48:08.987643] | Thread:654231 | [CB_OPER] [IF] [SINGLE_IF] | End req=3575 iface=enp2s0f2 done
+[2026-04-17 15:48:08.987645] | Thread:654231 | [CB_OPER] [IF] [SINGLE_IF] | Start req=3575 iface=eno1 done
+[2026-04-17 15:48:08.987694] | Thread:654231 | [CB_OPER] [IF] [FILL_GPT] | Start req=3575 iface=eno1
+[2026-04-17 15:48:08.987712] | Thread:654231 | [CB_OPER] [IF] [FILL_GPT] | End req=3575 iface=eno1
+[2026-04-17 15:48:08.987716] | Thread:654231 | [CB_OPER] [IF] [SINGLE_IF] | End req=3575 iface=eno1 done
+[2026-04-17 15:48:08.987718] | Thread:654231 | [CB_OPER] [IF] [SINGLE_IF] | Start req=3575 iface=enp2s0f3 done
+[2026-04-17 15:48:08.987767] | Thread:654231 | [CB_OPER] [IF] [FILL_GPT] | Start req=3575 iface=enp2s0f3
+[2026-04-17 15:48:08.987779] | Thread:654231 | [CB_OPER] [IF] [FILL_GPT] | End req=3575 iface=enp2s0f3
+[2026-04-17 15:48:08.987783] | Thread:654231 | [CB_OPER] [IF] [SINGLE_IF] | End req=3575 iface=enp2s0f3 done
+[2026-04-17 15:48:08.987785] | Thread:654231 | [CB_OPER] [IF] [SINGLE_IF] | Start req=3575 iface=enp5s0 done
+[2026-04-17 15:48:08.987853] | Thread:654231 | [CB_OPER] [IF] [FILL_GPT] | Start req=3575 iface=enp5s0
+[2026-04-17 15:48:08.987866] | Thread:654231 | [CB_OPER] [IF] [FILL_GPT] | End req=3575 iface=enp5s0
+[2026-04-17 15:48:08.987870] | Thread:654231 | [CB_OPER] [IF] [SINGLE_IF] | End req=3575 iface=enp5s0 done
+[2026-04-17 15:48:08.987878] | Thread:654231 | [CB_OPER] [IF] [SINGLE_IF] | Start req=3575 iface=docker0 done
+[2026-04-17 15:48:08.987930] | Thread:654231 | [CB_OPER] [IF] [FILL_GPT] | Start req=3575 iface=docker0
+[2026-04-17 15:48:08.987942] | Thread:654231 | [CB_OPER] [IF] [FILL_GPT] | End req=3575 iface=docker0
+[2026-04-17 15:48:08.987946] | Thread:654231 | [CB_OPER] [IF] [SINGLE_IF] | End req=3575 iface=docker0 done
+[2026-04-17 15:48:08.987948] | Thread:654231 | [CB_OPER] [IF] [SINGLE_IF] | Start req=3575 iface=br-purple done
+[2026-04-17 15:48:08.988006] | Thread:654231 | [CB_OPER] [IF] [FILL_GPT] | Start req=3575 iface=br-purple
+[2026-04-17 15:48:08.988019] | Thread:654231 | [CB_OPER] [IF] [FILL_GPT] | End req=3575 iface=br-purple
+[2026-04-17 15:48:08.988023] | Thread:654231 | [CB_OPER] [IF] [SINGLE_IF] | End req=3575 iface=br-purple done
+[2026-04-17 15:48:08.988025] | Thread:654231 | [CB_OPER] [IF] [SINGLE_IF] | Start req=3575 iface=veth-red-host done
+[2026-04-17 15:48:08.988079] | Thread:654231 | [CB_OPER] [IF] [FILL_GPT] | Start req=3575 iface=veth-red-host
+[2026-04-17 15:48:08.988317] | Thread:654231 | [CB_OPER] [IF] [FILL_GPT] | End req=3575 iface=veth-red-host
+[2026-04-17 15:48:08.988322] | Thread:654231 | [CB_OPER] [IF] [SINGLE_IF] | End req=3575 iface=veth-red-host done
+[2026-04-17 15:48:08.988324] | Thread:654231 | [CB_OPER] [IF] [SINGLE_IF] | Start req=3575 iface=veth-blue-host done
+[2026-04-17 15:48:08.988385] | Thread:654231 | [CB_OPER] [IF] [FILL_GPT] | Start req=3575 iface=veth-blue-host
+[2026-04-17 15:48:08.988530] | Thread:654231 | [CB_OPER] [IF] [FILL_GPT] | End req=3575 iface=veth-blue-host
+[2026-04-17 15:48:08.988535] | Thread:654231 | [CB_OPER] [IF] [SINGLE_IF] | End req=3575 iface=veth-blue-host done
+[2026-04-17 15:48:08.988538] | Thread:654231 | [CB_OPER] [IF] | End req=3575
+[2026-04-17 15:48:08.990210] | Thread:654233 | [CB_OPER] [BP] | Start req=3575
+[2026-04-17 15:48:08.990217] | Thread:654233 | [CB_OPER] [BP] | End req=3575
+[2026-04-17 15:48:08.990509] | Thread:654233 | [CB_OPER] [BP] | Start req=3575
+[2026-04-17 15:48:08.990516] | Thread:654233 | [CB_OPER] [BP] | End req=3575
+[2026-04-17 15:48:08.990843] | Thread:654233 | [CB_OPER] [BP] | Start req=3575
+[2026-04-17 15:48:08.990850] | Thread:654233 | [CB_OPER] [BP] | End req=3575
+[2026-04-17 15:48:08.991137] | Thread:654233 | [CB_OPER] [BP] | Start req=3575
+[2026-04-17 15:48:08.991143] | Thread:654233 | [CB_OPER] [BP] | End req=3575
+[2026-04-17 15:48:08.991433] | Thread:654233 | [CB_OPER] [BP] | Start req=3575
+[2026-04-17 15:48:08.991438] | Thread:654233 | [CB_OPER] [BP] | End req=3575
+[2026-04-17 15:48:08.991792] | Thread:654233 | [CB_OPER] [BP] | Start req=3575
+[2026-04-17 15:48:08.991797] | Thread:654233 | [CB_OPER] [BP] | End req=3575
+[2026-04-17 15:48:08.992107] | Thread:654233 | [CB_OPER] [BP] | Start req=3575
+[2026-04-17 15:48:08.992112] | Thread:654233 | [CB_OPER] [BP] | End req=3575
+[2026-04-17 15:48:08.992391] | Thread:654233 | [CB_OPER] [BP] | Start req=3575
+[2026-04-17 15:48:08.992396] | Thread:654233 | [CB_OPER] [BP] | End req=3575
+[2026-04-17 15:48:08.992662] | Thread:654233 | [CB_OPER] [BP] | Start req=3575
+[2026-04-17 15:48:08.992669] | Thread:654233 | [CB_OPER] [BP] | End req=3575
+[2026-04-17 15:48:08.992940] | Thread:654233 | [CB_OPER] [BP] | Start req=3575
+[2026-04-17 15:48:08.992945] | Thread:654233 | [CB_OPER] [BP] | End req=3575
+[2026-04-17 15:48:08.993219] | Thread:654233 | [CB_OPER] [BP] | Start req=3575
+[2026-04-17 15:48:08.993224] | Thread:654233 | [CB_OPER] [BP] | End req=3575
+[2026-04-17 15:48:09.012960] | Thread:654234 | [CB_OPER] [LLDP] | Start req=3581
+[2026-04-17 15:48:09.013142] | Thread:654234 | [CB_OPER] [LLDP] | End req=3581
+[2026-04-17 15:48:09.027861] | Thread:654231 | [CB_OPER] [IF] | Start req=3587
+[2026-04-17 15:48:09.027869] | Thread:654231 | [CB_OPER] [IF] [DUMP] | Start req=3587
+[2026-04-17 15:48:09.027870] | Thread:654231 | [IFCACHE] [LINK] | Start req=3587
+[2026-04-17 15:48:09.027870] | Thread:654231 | [LINK] [GET_ALL] | Start
+[2026-04-17 15:48:09.027872] | Thread:654231 | [NL] [SEND_SNYC] | Start
+[2026-04-17 15:48:09.028045] | Thread:654231 | [NL] [RECV] | Start
+[2026-04-17 15:48:09.028196] | Thread:654231 | [NL] [RECV] | End
+[2026-04-17 15:48:09.028198] | Thread:654231 | [NL] [SEND_SNYC] | End
+[2026-04-17 15:48:09.028199] | Thread:654231 | [LINK] [GET_ALL] | End
+[2026-04-17 15:48:09.028199] | Thread:654231 | [LINK] [RESP] | Start req=3587
+[2026-04-17 15:48:09.028211] | Thread:654231 | [LINK] [RESP] [PER_IF] | Start req=3587 ifindex=1
+[2026-04-17 15:48:09.028215] | Thread:654231 | [LINK] [RESP] [PER_IF] | End req=3587 ifindex=1
+[2026-04-17 15:48:09.028215] | Thread:654231 | [LINK] [RESP] [PER_IF] | Start req=3587 ifindex=2
+[2026-04-17 15:48:09.028220] | Thread:654231 | [LINK] [RESP] [PER_IF] | End req=3587 ifindex=2
+[2026-04-17 15:48:09.028220] | Thread:654231 | [LINK] [RESP] [PER_IF] | Start req=3587 ifindex=3
+[2026-04-17 15:48:09.028221] | Thread:654231 | [LINK] [RESP] [PER_IF] | End req=3587 ifindex=3
+[2026-04-17 15:48:09.028222] | Thread:654231 | [LINK] [RESP] [PER_IF] | Start req=3587 ifindex=4
+[2026-04-17 15:48:09.028222] | Thread:654231 | [LINK] [RESP] [PER_IF] | End req=3587 ifindex=4
+[2026-04-17 15:48:09.028223] | Thread:654231 | [LINK] [RESP] [PER_IF] | Start req=3587 ifindex=5
+[2026-04-17 15:48:09.028225] | Thread:654231 | [LINK] [RESP] [PER_IF] | End req=3587 ifindex=5
+[2026-04-17 15:48:09.028231] | Thread:654231 | [LINK] [RESP] [PER_IF] | Start req=3587 ifindex=6
+[2026-04-17 15:48:09.028232] | Thread:654231 | [LINK] [RESP] [PER_IF] | End req=3587 ifindex=6
+[2026-04-17 15:48:09.028232] | Thread:654231 | [LINK] [RESP] [PER_IF] | Start req=3587 ifindex=7
+[2026-04-17 15:48:09.028233] | Thread:654231 | [LINK] [RESP] [PER_IF] | End req=3587 ifindex=7
+[2026-04-17 15:48:09.028233] | Thread:654231 | [LINK] [RESP] [PER_IF] | Start req=3587 ifindex=8
+[2026-04-17 15:48:09.028234] | Thread:654231 | [LINK] [RESP] [PER_IF] | End req=3587 ifindex=8
+[2026-04-17 15:48:09.028235] | Thread:654231 | [LINK] [RESP] [PER_IF] | Start req=3587 ifindex=140
+[2026-04-17 15:48:09.028236] | Thread:654231 | [LINK] [RESP] [PER_IF] | End req=3587 ifindex=140
+[2026-04-17 15:48:09.028236] | Thread:654231 | [LINK] [RESP] [PER_IF] | Start req=3587 ifindex=141
+[2026-04-17 15:48:09.028251] | Thread:654231 | [LINK] [RESP] [PER_IF] | End req=3587 ifindex=141
+[2026-04-17 15:48:09.028259] | Thread:654231 | [LINK] [RESP] [PER_IF] | Start req=3587 ifindex=143
+[2026-04-17 15:48:09.028266] | Thread:654231 | [LINK] [RESP] [PER_IF] | End req=3587 ifindex=143
+[2026-04-17 15:48:09.028267] | Thread:654231 | [LINK] [RESP] | End req=3587
+[2026-04-17 15:48:09.028268] | Thread:654231 | [IFCACHE] [LINK] [QS+SPEED] | Start req=3587
+[2026-04-17 15:48:09.028268] | Thread:654231 | [IFCACHE] [LINK] [QS+SPEED] | Start req=3587 ifname=lo
+[2026-04-17 15:48:09.028269] | Thread:654231 | [LINK] [QUEUE_COUNT] | Start iface=lo
+[2026-04-17 15:48:09.028274] | Thread:654231 | [LINK] [QUEUE_COUNT] | End iface=lo Single Queue
+[2026-04-17 15:48:09.028276] | Thread:654231 | [LINK] [LINK_SPEED] | Start iface=lo
+[2026-04-17 15:48:09.028279] | Thread:654231 | [LINK] [LINK_SPEED] | End iface=lo
+[2026-04-17 15:48:09.028280] | Thread:654231 | [IFCACHE] [LINK] [QS+SPEED] | End req=3587 ifname=lo
+[2026-04-17 15:48:09.028286] | Thread:654231 | [IFCACHE] [LINK] [QS+SPEED] | Start req=3587 ifname=enp2s0f0
+[2026-04-17 15:48:09.028286] | Thread:654231 | [LINK] [QUEUE_COUNT] | Start iface=enp2s0f0
+[2026-04-17 15:48:09.028289] | Thread:654231 | [LINK] [QUEUE_COUNT] | End iface=enp2s0f0
+[2026-04-17 15:48:09.028290] | Thread:654231 | [LINK] [LINK_SPEED] | Start iface=enp2s0f0
+[2026-04-17 15:48:09.028295] | Thread:654231 | [LINK] [LINK_SPEED] | End iface=enp2s0f0
+[2026-04-17 15:48:09.028296] | Thread:654231 | [IFCACHE] [LINK] [QS+SPEED] | End req=3587 ifname=enp2s0f0
+[2026-04-17 15:48:09.028297] | Thread:654231 | [IFCACHE] [LINK] [QS+SPEED] | Start req=3587 ifname=enp2s0f1
+[2026-04-17 15:48:09.028297] | Thread:654231 | [LINK] [QUEUE_COUNT] | Start iface=enp2s0f1
+[2026-04-17 15:48:09.028299] | Thread:654231 | [LINK] [QUEUE_COUNT] | End iface=enp2s0f1
+[2026-04-17 15:48:09.028302] | Thread:654231 | [LINK] [LINK_SPEED] | Start iface=enp2s0f1
+[2026-04-17 15:48:09.028311] | Thread:654231 | [LINK] [LINK_SPEED] | End iface=enp2s0f1
+[2026-04-17 15:48:09.028312] | Thread:654231 | [IFCACHE] [LINK] [QS+SPEED] | End req=3587 ifname=enp2s0f1
+[2026-04-17 15:48:09.028312] | Thread:654231 | [IFCACHE] [LINK] [QS+SPEED] | Start req=3587 ifname=enp2s0f2
+[2026-04-17 15:48:09.028313] | Thread:654231 | [LINK] [QUEUE_COUNT] | Start iface=enp2s0f2
+[2026-04-17 15:48:09.028315] | Thread:654231 | [LINK] [QUEUE_COUNT] | End iface=enp2s0f2
+[2026-04-17 15:48:09.028316] | Thread:654231 | [LINK] [LINK_SPEED] | Start iface=enp2s0f2
+[2026-04-17 15:48:09.028319] | Thread:654231 | [LINK] [LINK_SPEED] | End iface=enp2s0f2
+[2026-04-17 15:48:09.028320] | Thread:654231 | [IFCACHE] [LINK] [QS+SPEED] | End req=3587 ifname=enp2s0f2
+[2026-04-17 15:48:09.028323] | Thread:654231 | [IFCACHE] [LINK] [QS+SPEED] | Start req=3587 ifname=eno1
+[2026-04-17 15:48:09.028323] | Thread:654231 | [LINK] [QUEUE_COUNT] | Start iface=eno1
+[2026-04-17 15:48:09.028330] | Thread:654231 | [LINK] [QUEUE_COUNT] | End iface=eno1 Single Queue
+[2026-04-17 15:48:09.028331] | Thread:654231 | [LINK] [LINK_SPEED] | Start iface=eno1
+[2026-04-17 15:48:09.028334] | Thread:654231 | [LINK] [LINK_SPEED] | End iface=eno1
+[2026-04-17 15:48:09.028335] | Thread:654231 | [IFCACHE] [LINK] [QS+SPEED] | End req=3587 ifname=eno1
+[2026-04-17 15:48:09.028335] | Thread:654231 | [IFCACHE] [LINK] [QS+SPEED] | Start req=3587 ifname=enp2s0f3
+[2026-04-17 15:48:09.028336] | Thread:654231 | [LINK] [QUEUE_COUNT] | Start iface=enp2s0f3
+[2026-04-17 15:48:09.028337] | Thread:654231 | [LINK] [QUEUE_COUNT] | End iface=enp2s0f3
+[2026-04-17 15:48:09.028338] | Thread:654231 | [LINK] [LINK_SPEED] | Start iface=enp2s0f3
+[2026-04-17 15:48:09.028341] | Thread:654231 | [LINK] [LINK_SPEED] | End iface=enp2s0f3
+[2026-04-17 15:48:09.028342] | Thread:654231 | [IFCACHE] [LINK] [QS+SPEED] | End req=3587 ifname=enp2s0f3
+[2026-04-17 15:48:09.028348] | Thread:654231 | [IFCACHE] [LINK] [QS+SPEED] | Start req=3587 ifname=enp5s0
+[2026-04-17 15:48:09.028348] | Thread:654231 | [LINK] [QUEUE_COUNT] | Start iface=enp5s0
+[2026-04-17 15:48:09.028350] | Thread:654231 | [LINK] [QUEUE_COUNT] | End iface=enp5s0 Single Queue
+[2026-04-17 15:48:09.028351] | Thread:654231 | [LINK] [LINK_SPEED] | Start iface=enp5s0
+[2026-04-17 15:48:09.028353] | Thread:654231 | [LINK] [LINK_SPEED] | End iface=enp5s0
+[2026-04-17 15:48:09.028355] | Thread:654231 | [IFCACHE] [LINK] [QS+SPEED] | End req=3587 ifname=enp5s0
+[2026-04-17 15:48:09.028355] | Thread:654231 | [IFCACHE] [LINK] [QS+SPEED] | Start req=3587 ifname=docker0
+[2026-04-17 15:48:09.028356] | Thread:654231 | [LINK] [QUEUE_COUNT] | Start iface=docker0
+[2026-04-17 15:48:09.028357] | Thread:654231 | [LINK] [QUEUE_COUNT] | End iface=docker0 Single Queue
+[2026-04-17 15:48:09.028361] | Thread:654231 | [LINK] [LINK_SPEED] | Start iface=docker0
+[2026-04-17 15:48:09.028370] | Thread:654231 | [LINK] [LINK_SPEED] | End iface=docker0
+[2026-04-17 15:48:09.028370] | Thread:654231 | [IFCACHE] [LINK] [QS+SPEED] | End req=3587 ifname=docker0
+[2026-04-17 15:48:09.028372] | Thread:654231 | [IFCACHE] [LINK] [QS+SPEED] | Start req=3587 ifname=br-purple
+[2026-04-17 15:48:09.028374] | Thread:654231 | [LINK] [QUEUE_COUNT] | Start iface=br-purple
+[2026-04-17 15:48:09.028376] | Thread:654231 | [LINK] [QUEUE_COUNT] | End iface=br-purple Single Queue
+[2026-04-17 15:48:09.028376] | Thread:654231 | [LINK] [LINK_SPEED] | Start iface=br-purple
+[2026-04-17 15:48:09.028379] | Thread:654231 | [LINK] [LINK_SPEED] | End iface=br-purple
+[2026-04-17 15:48:09.028381] | Thread:654231 | [IFCACHE] [LINK] [QS+SPEED] | End req=3587 ifname=br-purple
+[2026-04-17 15:48:09.028381] | Thread:654231 | [IFCACHE] [LINK] [QS+SPEED] | Start req=3587 ifname=veth-red-host
+[2026-04-17 15:48:09.028382] | Thread:654231 | [LINK] [QUEUE_COUNT] | Start iface=veth-red-host
+[2026-04-17 15:48:09.028388] | Thread:654231 | [LINK] [QUEUE_COUNT] | End iface=veth-red-host
+[2026-04-17 15:48:09.028389] | Thread:654231 | [LINK] [LINK_SPEED] | Start iface=veth-red-host
+[2026-04-17 15:48:09.028392] | Thread:654231 | [LINK] [LINK_SPEED] | End iface=veth-red-host
+[2026-04-17 15:48:09.028394] | Thread:654231 | [IFCACHE] [LINK] [QS+SPEED] | End req=3587 ifname=veth-red-host
+[2026-04-17 15:48:09.028394] | Thread:654231 | [IFCACHE] [LINK] [QS+SPEED] | Start req=3587 ifname=veth-blue-host
+[2026-04-17 15:48:09.028395] | Thread:654231 | [LINK] [QUEUE_COUNT] | Start iface=veth-blue-host
+[2026-04-17 15:48:09.028397] | Thread:654231 | [LINK] [QUEUE_COUNT] | End iface=veth-blue-host
+[2026-04-17 15:48:09.028399] | Thread:654231 | [LINK] [LINK_SPEED] | Start iface=veth-blue-host
+[2026-04-17 15:48:09.028401] | Thread:654231 | [LINK] [LINK_SPEED] | End iface=veth-blue-host
+[2026-04-17 15:48:09.028402] | Thread:654231 | [IFCACHE] [LINK] [QS+SPEED] | End req=3587 ifname=veth-blue-host
+[2026-04-17 15:48:09.028407] | Thread:654231 | [IFCACHE] [LINK] [QS+SPEED] | End req=3587
+[2026-04-17 15:48:09.028407] | Thread:654231 | [IFCACHE] [LINK] | End req=3587
+[2026-04-17 15:48:09.028408] | Thread:654231 | [IFCACHE] [QDISC] | Start req=3587
+[2026-04-17 15:48:09.028408] | Thread:654231 | [QDISC] [GET_ALL] | Start
+[2026-04-17 15:48:09.028410] | Thread:654231 | [NL] [SEND_SNYC] | Start
+[2026-04-17 15:48:09.028438] | Thread:654231 | [NL] [RECV] | Start
+[2026-04-17 15:48:09.028473] | Thread:654231 | [NL] [RECV] | End
+[2026-04-17 15:48:09.028476] | Thread:654231 | [NL] [SEND_SNYC] | End
+[2026-04-17 15:48:09.028477] | Thread:654231 | [QDISC] [GET_ALL] | End
+[2026-04-17 15:48:09.028478] | Thread:654231 | [QDISC] [RESP] | Start req=3587
+[2026-04-17 15:48:09.028488] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3587 ifindex=1 handle:0 parent:4294967295
+[2026-04-17 15:48:09.028490] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3587 ifindex=1 handle:0 parent:4294967295
+[2026-04-17 15:48:09.028494] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3587 ifindex=2 handle:0 parent:4294967295
+[2026-04-17 15:48:09.028495] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3587 ifindex=2 handle:0 parent:4294967295
+[2026-04-17 15:48:09.028495] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3587 ifindex=2 handle:0 parent:8
+[2026-04-17 15:48:09.028496] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3587 ifindex=2 handle:0 parent:8
+[2026-04-17 15:48:09.028497] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3587 ifindex=2 handle:0 parent:7
+[2026-04-17 15:48:09.028499] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3587 ifindex=2 handle:0 parent:7
+[2026-04-17 15:48:09.028502] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3587 ifindex=2 handle:0 parent:6
+[2026-04-17 15:48:09.028504] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3587 ifindex=2 handle:0 parent:6
+[2026-04-17 15:48:09.028511] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3587 ifindex=2 handle:0 parent:5
+[2026-04-17 15:48:09.028512] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3587 ifindex=2 handle:0 parent:5
+[2026-04-17 15:48:09.028512] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3587 ifindex=2 handle:0 parent:4
+[2026-04-17 15:48:09.028513] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3587 ifindex=2 handle:0 parent:4
+[2026-04-17 15:48:09.028513] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3587 ifindex=2 handle:0 parent:3
+[2026-04-17 15:48:09.028514] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3587 ifindex=2 handle:0 parent:3
+[2026-04-17 15:48:09.028514] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3587 ifindex=2 handle:0 parent:2
+[2026-04-17 15:48:09.028515] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3587 ifindex=2 handle:0 parent:2
+[2026-04-17 15:48:09.028516] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3587 ifindex=2 handle:0 parent:1
+[2026-04-17 15:48:09.028516] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3587 ifindex=2 handle:0 parent:1
+[2026-04-17 15:48:09.028522] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3587 ifindex=2 handle:4294901760 parent:4294967281
+[2026-04-17 15:48:09.028523] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3587 ifindex=2 handle:4294901760 parent:4294967281
+[2026-04-17 15:48:09.028524] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3587 ifindex=3 handle:0 parent:4294967295
+[2026-04-17 15:48:09.028524] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3587 ifindex=3 handle:0 parent:4294967295
+[2026-04-17 15:48:09.028525] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3587 ifindex=3 handle:0 parent:8
+[2026-04-17 15:48:09.028525] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3587 ifindex=3 handle:0 parent:8
+[2026-04-17 15:48:09.028527] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3587 ifindex=3 handle:0 parent:7
+[2026-04-17 15:48:09.028527] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3587 ifindex=3 handle:0 parent:7
+[2026-04-17 15:48:09.028528] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3587 ifindex=3 handle:0 parent:6
+[2026-04-17 15:48:09.028529] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3587 ifindex=3 handle:0 parent:6
+[2026-04-17 15:48:09.028534] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3587 ifindex=3 handle:0 parent:5
+[2026-04-17 15:48:09.028534] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3587 ifindex=3 handle:0 parent:5
+[2026-04-17 15:48:09.028535] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3587 ifindex=3 handle:0 parent:4
+[2026-04-17 15:48:09.028535] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3587 ifindex=3 handle:0 parent:4
+[2026-04-17 15:48:09.028536] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3587 ifindex=3 handle:0 parent:3
+[2026-04-17 15:48:09.028537] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3587 ifindex=3 handle:0 parent:3
+[2026-04-17 15:48:09.028538] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3587 ifindex=3 handle:0 parent:2
+[2026-04-17 15:48:09.028539] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3587 ifindex=3 handle:0 parent:2
+[2026-04-17 15:48:09.028540] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3587 ifindex=3 handle:0 parent:1
+[2026-04-17 15:48:09.028540] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3587 ifindex=3 handle:0 parent:1
+[2026-04-17 15:48:09.028545] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3587 ifindex=4 handle:0 parent:4294967295
+[2026-04-17 15:48:09.028545] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3587 ifindex=4 handle:0 parent:4294967295
+[2026-04-17 15:48:09.028546] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3587 ifindex=4 handle:0 parent:8
+[2026-04-17 15:48:09.028546] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3587 ifindex=4 handle:0 parent:8
+[2026-04-17 15:48:09.028547] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3587 ifindex=4 handle:0 parent:7
+[2026-04-17 15:48:09.028548] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3587 ifindex=4 handle:0 parent:7
+[2026-04-17 15:48:09.028548] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3587 ifindex=4 handle:0 parent:6
+[2026-04-17 15:48:09.028549] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3587 ifindex=4 handle:0 parent:6
+[2026-04-17 15:48:09.028549] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3587 ifindex=4 handle:0 parent:5
+[2026-04-17 15:48:09.028550] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3587 ifindex=4 handle:0 parent:5
+[2026-04-17 15:48:09.028556] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3587 ifindex=4 handle:0 parent:4
+[2026-04-17 15:48:09.028557] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3587 ifindex=4 handle:0 parent:4
+[2026-04-17 15:48:09.028557] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3587 ifindex=4 handle:0 parent:3
+[2026-04-17 15:48:09.028558] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3587 ifindex=4 handle:0 parent:3
+[2026-04-17 15:48:09.028559] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3587 ifindex=4 handle:0 parent:2
+[2026-04-17 15:48:09.028559] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3587 ifindex=4 handle:0 parent:2
+[2026-04-17 15:48:09.028560] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3587 ifindex=4 handle:0 parent:1
+[2026-04-17 15:48:09.028560] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3587 ifindex=4 handle:0 parent:1
+[2026-04-17 15:48:09.028561] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3587 ifindex=5 handle:0 parent:4294967295
+[2026-04-17 15:48:09.028562] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3587 ifindex=5 handle:0 parent:4294967295
+[2026-04-17 15:48:09.028567] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3587 ifindex=6 handle:0 parent:4294967295
+[2026-04-17 15:48:09.028567] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3587 ifindex=6 handle:0 parent:4294967295
+[2026-04-17 15:48:09.028568] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3587 ifindex=6 handle:0 parent:8
+[2026-04-17 15:48:09.028569] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3587 ifindex=6 handle:0 parent:8
+[2026-04-17 15:48:09.028570] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3587 ifindex=6 handle:0 parent:7
+[2026-04-17 15:48:09.028570] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3587 ifindex=6 handle:0 parent:7
+[2026-04-17 15:48:09.028571] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3587 ifindex=6 handle:0 parent:6
+[2026-04-17 15:48:09.028571] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3587 ifindex=6 handle:0 parent:6
+[2026-04-17 15:48:09.028572] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3587 ifindex=6 handle:0 parent:5
+[2026-04-17 15:48:09.028573] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3587 ifindex=6 handle:0 parent:5
+[2026-04-17 15:48:09.028578] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3587 ifindex=6 handle:0 parent:4
+[2026-04-17 15:48:09.028578] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3587 ifindex=6 handle:0 parent:4
+[2026-04-17 15:48:09.028579] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3587 ifindex=6 handle:0 parent:3
+[2026-04-17 15:48:09.028580] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3587 ifindex=6 handle:0 parent:3
+[2026-04-17 15:48:09.028581] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3587 ifindex=6 handle:0 parent:2
+[2026-04-17 15:48:09.028582] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3587 ifindex=6 handle:0 parent:2
+[2026-04-17 15:48:09.028582] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3587 ifindex=6 handle:0 parent:1
+[2026-04-17 15:48:09.028583] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3587 ifindex=6 handle:0 parent:1
+[2026-04-17 15:48:09.028583] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3587 ifindex=7 handle:0 parent:4294967295
+[2026-04-17 15:48:09.028584] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3587 ifindex=7 handle:0 parent:4294967295
+[2026-04-17 15:48:09.028589] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3587 ifindex=8 handle:0 parent:4294967295
+[2026-04-17 15:48:09.028589] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3587 ifindex=8 handle:0 parent:4294967295
+[2026-04-17 15:48:09.028590] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3587 ifindex=140 handle:0 parent:4294967295
+[2026-04-17 15:48:09.028591] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3587 ifindex=140 handle:0 parent:4294967295
+[2026-04-17 15:48:09.028591] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3587 ifindex=141 handle:2226454528 parent:4294967295
+[2026-04-17 15:48:09.028594] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3587 ifindex=141 handle:2226454528 parent:4294967295
+[2026-04-17 15:48:09.028595] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3587 ifindex=141 handle:0 parent:2226454536
+[2026-04-17 15:48:09.028595] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3587 ifindex=141 handle:0 parent:2226454536
+[2026-04-17 15:48:09.028596] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3587 ifindex=141 handle:0 parent:2226454535
+[2026-04-17 15:48:09.028598] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3587 ifindex=141 handle:0 parent:2226454535
+[2026-04-17 15:48:09.028604] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3587 ifindex=141 handle:0 parent:2226454534
+[2026-04-17 15:48:09.028605] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3587 ifindex=141 handle:0 parent:2226454534
+[2026-04-17 15:48:09.028605] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3587 ifindex=141 handle:0 parent:2226454533
+[2026-04-17 15:48:09.028606] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3587 ifindex=141 handle:0 parent:2226454533
+[2026-04-17 15:48:09.028606] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3587 ifindex=141 handle:0 parent:2226454532
+[2026-04-17 15:48:09.028607] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3587 ifindex=141 handle:0 parent:2226454532
+[2026-04-17 15:48:09.028607] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3587 ifindex=141 handle:0 parent:2226454531
+[2026-04-17 15:48:09.028608] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3587 ifindex=141 handle:0 parent:2226454531
+[2026-04-17 15:48:09.028609] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3587 ifindex=141 handle:0 parent:2226454530
+[2026-04-17 15:48:09.028610] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3587 ifindex=141 handle:0 parent:2226454530
+[2026-04-17 15:48:09.028615] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3587 ifindex=141 handle:0 parent:2226454529
+[2026-04-17 15:48:09.028616] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3587 ifindex=141 handle:0 parent:2226454529
+[2026-04-17 15:48:09.028617] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3587 ifindex=143 handle:2226126848 parent:4294967295
+[2026-04-17 15:48:09.028619] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3587 ifindex=143 handle:2226126848 parent:4294967295
+[2026-04-17 15:48:09.028619] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3587 ifindex=143 handle:0 parent:2226126856
+[2026-04-17 15:48:09.028620] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3587 ifindex=143 handle:0 parent:2226126856
+[2026-04-17 15:48:09.028621] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3587 ifindex=143 handle:0 parent:2226126855
+[2026-04-17 15:48:09.028622] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3587 ifindex=143 handle:0 parent:2226126855
+[2026-04-17 15:48:09.028622] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3587 ifindex=143 handle:0 parent:2226126854
+[2026-04-17 15:48:09.028624] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3587 ifindex=143 handle:0 parent:2226126854
+[2026-04-17 15:48:09.028628] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3587 ifindex=143 handle:0 parent:2226126853
+[2026-04-17 15:48:09.028629] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3587 ifindex=143 handle:0 parent:2226126853
+[2026-04-17 15:48:09.028630] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3587 ifindex=143 handle:0 parent:2226126852
+[2026-04-17 15:48:09.028630] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3587 ifindex=143 handle:0 parent:2226126852
+[2026-04-17 15:48:09.028631] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3587 ifindex=143 handle:0 parent:2226126851
+[2026-04-17 15:48:09.028631] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3587 ifindex=143 handle:0 parent:2226126851
+[2026-04-17 15:48:09.028632] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3587 ifindex=143 handle:0 parent:2226126850
+[2026-04-17 15:48:09.028632] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3587 ifindex=143 handle:0 parent:2226126850
+[2026-04-17 15:48:09.028633] | Thread:654231 | [QDISC] [RESP] [PER_IF] | Start req=3587 ifindex=143 handle:0 parent:2226126849
+[2026-04-17 15:48:09.028634] | Thread:654231 | [QDISC] [RESP] [PER_IF] | End req=3587 ifindex=143 handle:0 parent:2226126849
+[2026-04-17 15:48:09.028640] | Thread:654231 | [QDISC] [RESP] | End req=3587
+[2026-04-17 15:48:09.028640] | Thread:654231 | [IFCACHE] [QDISC] | End req=3587
+[2026-04-17 15:48:09.028641] | Thread:654231 | [CB_OPER] [IF] [DUMP] | End req=3587
+[2026-04-17 15:48:09.028648] | Thread:654231 | [CB_OPER] [IF] [SINGLE_IF] | Start req=3587 iface=lo done
+[2026-04-17 15:48:09.028693] | Thread:654231 | [CB_OPER] [IF] [SINGLE_IF] | End req=3587 iface=lo done
+[2026-04-17 15:48:09.028698] | Thread:654231 | [CB_OPER] [IF] [SINGLE_IF] | Start req=3587 iface=enp2s0f0 done
+[2026-04-17 15:48:09.028800] | Thread:654231 | [CB_OPER] [IF] [FILL_GPT] | Start req=3587 iface=enp2s0f0
+[2026-04-17 15:48:09.028818] | Thread:654231 | [CB_OPER] [IF] [FILL_GPT] | End req=3587 iface=enp2s0f0
+[2026-04-17 15:48:09.028822] | Thread:654231 | [CB_OPER] [IF] [SINGLE_IF] | End req=3587 iface=enp2s0f0 done
+[2026-04-17 15:48:09.028824] | Thread:654231 | [CB_OPER] [IF] [SINGLE_IF] | Start req=3587 iface=enp2s0f1 done
+[2026-04-17 15:48:09.028884] | Thread:654231 | [CB_OPER] [IF] [FILL_GPT] | Start req=3587 iface=enp2s0f1
+[2026-04-17 15:48:09.028904] | Thread:654231 | [CB_OPER] [IF] [FILL_GPT] | End req=3587 iface=enp2s0f1
+[2026-04-17 15:48:09.028908] | Thread:654231 | [CB_OPER] [IF] [SINGLE_IF] | End req=3587 iface=enp2s0f1 done
+[2026-04-17 15:48:09.028910] | Thread:654231 | [CB_OPER] [IF] [SINGLE_IF] | Start req=3587 iface=enp2s0f2 done
+[2026-04-17 15:48:09.028969] | Thread:654231 | [CB_OPER] [IF] [FILL_GPT] | Start req=3587 iface=enp2s0f2
+[2026-04-17 15:48:09.028982] | Thread:654231 | [CB_OPER] [IF] [FILL_GPT] | End req=3587 iface=enp2s0f2
+[2026-04-17 15:48:09.028986] | Thread:654231 | [CB_OPER] [IF] [SINGLE_IF] | End req=3587 iface=enp2s0f2 done
+[2026-04-17 15:48:09.028987] | Thread:654231 | [CB_OPER] [IF] [SINGLE_IF] | Start req=3587 iface=eno1 done
+[2026-04-17 15:48:09.029038] | Thread:654231 | [CB_OPER] [IF] [FILL_GPT] | Start req=3587 iface=eno1
+[2026-04-17 15:48:09.029050] | Thread:654231 | [CB_OPER] [IF] [FILL_GPT] | End req=3587 iface=eno1
+[2026-04-17 15:48:09.029054] | Thread:654231 | [CB_OPER] [IF] [SINGLE_IF] | End req=3587 iface=eno1 done
+[2026-04-17 15:48:09.029062] | Thread:654231 | [CB_OPER] [IF] [SINGLE_IF] | Start req=3587 iface=enp2s0f3 done
+[2026-04-17 15:48:09.029120] | Thread:654231 | [CB_OPER] [IF] [FILL_GPT] | Start req=3587 iface=enp2s0f3
+[2026-04-17 15:48:09.029133] | Thread:654231 | [CB_OPER] [IF] [FILL_GPT] | End req=3587 iface=enp2s0f3
+[2026-04-17 15:48:09.029137] | Thread:654231 | [CB_OPER] [IF] [SINGLE_IF] | End req=3587 iface=enp2s0f3 done
+[2026-04-17 15:48:09.029139] | Thread:654231 | [CB_OPER] [IF] [SINGLE_IF] | Start req=3587 iface=enp5s0 done
+[2026-04-17 15:48:09.029195] | Thread:654231 | [CB_OPER] [IF] [FILL_GPT] | Start req=3587 iface=enp5s0
+[2026-04-17 15:48:09.029218] | Thread:654231 | [CB_OPER] [IF] [FILL_GPT] | End req=3587 iface=enp5s0
+[2026-04-17 15:48:09.029223] | Thread:654231 | [CB_OPER] [IF] [SINGLE_IF] | End req=3587 iface=enp5s0 done
+[2026-04-17 15:48:09.029224] | Thread:654231 | [CB_OPER] [IF] [SINGLE_IF] | Start req=3587 iface=docker0 done
+[2026-04-17 15:48:09.029273] | Thread:654231 | [CB_OPER] [IF] [FILL_GPT] | Start req=3587 iface=docker0
+[2026-04-17 15:48:09.029292] | Thread:654231 | [CB_OPER] [IF] [FILL_GPT] | End req=3587 iface=docker0
+[2026-04-17 15:48:09.029296] | Thread:654231 | [CB_OPER] [IF] [SINGLE_IF] | End req=3587 iface=docker0 done
+[2026-04-17 15:48:09.029298] | Thread:654231 | [CB_OPER] [IF] [SINGLE_IF] | Start req=3587 iface=br-purple done
+[2026-04-17 15:48:09.029354] | Thread:654231 | [CB_OPER] [IF] [FILL_GPT] | Start req=3587 iface=br-purple
+[2026-04-17 15:48:09.029366] | Thread:654231 | [CB_OPER] [IF] [FILL_GPT] | End req=3587 iface=br-purple
+[2026-04-17 15:48:09.029369] | Thread:654231 | [CB_OPER] [IF] [SINGLE_IF] | End req=3587 iface=br-purple done
+[2026-04-17 15:48:09.029371] | Thread:654231 | [CB_OPER] [IF] [SINGLE_IF] | Start req=3587 iface=veth-red-host done
+[2026-04-17 15:48:09.029425] | Thread:654231 | [CB_OPER] [IF] [FILL_GPT] | Start req=3587 iface=veth-red-host
+[2026-04-17 15:48:09.029654] | Thread:654231 | [CB_OPER] [IF] [FILL_GPT] | End req=3587 iface=veth-red-host
+[2026-04-17 15:48:09.029660] | Thread:654231 | [CB_OPER] [IF] [SINGLE_IF] | End req=3587 iface=veth-red-host done
+[2026-04-17 15:48:09.029669] | Thread:654231 | [CB_OPER] [IF] [SINGLE_IF] | Start req=3587 iface=veth-blue-host done
+[2026-04-17 15:48:09.029752] | Thread:654231 | [CB_OPER] [IF] [FILL_GPT] | Start req=3587 iface=veth-blue-host
+[2026-04-17 15:48:09.029930] | Thread:654231 | [CB_OPER] [IF] [FILL_GPT] | End req=3587 iface=veth-blue-host
+[2026-04-17 15:48:09.029935] | Thread:654231 | [CB_OPER] [IF] [SINGLE_IF] | End req=3587 iface=veth-blue-host done
+[2026-04-17 15:48:09.029937] | Thread:654231 | [CB_OPER] [IF] | End req=3587
+[2026-04-17 15:48:09.031532] | Thread:654233 | [CB_OPER] [BP] | Start req=3587
+[2026-04-17 15:48:09.031538] | Thread:654233 | [CB_OPER] [BP] | End req=3587
+[2026-04-17 15:48:09.031820] | Thread:654233 | [CB_OPER] [BP] | Start req=3587
+[2026-04-17 15:48:09.031824] | Thread:654233 | [CB_OPER] [BP] | End req=3587
+[2026-04-17 15:48:09.032101] | Thread:654233 | [CB_OPER] [BP] | Start req=3587
+[2026-04-17 15:48:09.032115] | Thread:654233 | [CB_OPER] [BP] | End req=3587
+[2026-04-17 15:48:09.032415] | Thread:654233 | [CB_OPER] [BP] | Start req=3587
+[2026-04-17 15:48:09.032420] | Thread:654233 | [CB_OPER] [BP] | End req=3587
+[2026-04-17 15:48:09.032716] | Thread:654233 | [CB_OPER] [BP] | Start req=3587
+[2026-04-17 15:48:09.032720] | Thread:654233 | [CB_OPER] [BP] | End req=3587
+[2026-04-17 15:48:09.032994] | Thread:654233 | [CB_OPER] [BP] | Start req=3587
+[2026-04-17 15:48:09.032998] | Thread:654233 | [CB_OPER] [BP] | End req=3587
+[2026-04-17 15:48:09.033277] | Thread:654233 | [CB_OPER] [BP] | Start req=3587
+[2026-04-17 15:48:09.033281] | Thread:654233 | [CB_OPER] [BP] | End req=3587
+[2026-04-17 15:48:09.033561] | Thread:654233 | [CB_OPER] [BP] | Start req=3587
+[2026-04-17 15:48:09.033571] | Thread:654233 | [CB_OPER] [BP] | End req=3587
+[2026-04-17 15:48:09.033831] | Thread:654233 | [CB_OPER] [BP] | Start req=3587
+[2026-04-17 15:48:09.033836] | Thread:654233 | [CB_OPER] [BP] | End req=3587
+[2026-04-17 15:48:09.034097] | Thread:654233 | [CB_OPER] [BP] | Start req=3587
+[2026-04-17 15:48:09.034102] | Thread:654233 | [CB_OPER] [BP] | End req=3587
+[2026-04-17 15:48:09.034365] | Thread:654233 | [CB_OPER] [BP] | Start req=3587
+[2026-04-17 15:48:09.034370] | Thread:654233 | [CB_OPER] [BP] | End req=3587
+[2026-04-17 15:48:21.424062] | Thread:654223 | [LLDP] [CHANGE_EVENT] | Start
+[2026-04-17 15:48:21.426212] | Thread:654223 | [LLDP] [CHANGE_EVENT] | End
+[2026-04-17 15:48:21.440743] | Thread:654234 | [CB_OPER] [LLDP] | Start req=3596
+[2026-04-17 15:48:21.441063] | Thread:654234 | [CB_OPER] [LLDP] | End req=3596
+[2026-04-17 15:48:35.213018] | Thread:654223 | [LLDP] [CHANGE_EVENT] | Start
+[2026-04-17 15:48:35.221192] | Thread:654223 | [LLDP] [CHANGE_EVENT] | End
+[2026-04-17 15:48:35.245605] | Thread:654234 | [CB_OPER] [LLDP] | Start req=3605
+[2026-04-17 15:48:35.245914] | Thread:654234 | [CB_OPER] [LLDP] | End req=3605
+[2026-04-17 15:48:41.712119] | Thread:654223 | [LLDP] [CHANGE_EVENT] | Start
+[2026-04-17 15:48:41.716147] | Thread:654223 | [LLDP] [CHANGE_EVENT] | End
+[2026-04-17 15:48:41.736638] | Thread:654234 | [CB_OPER] [LLDP] | Start req=3614
+[2026-04-17 15:48:41.736957] | Thread:654234 | [CB_OPER] [LLDP] | End req=3614
+[2026-04-17 15:48:51.596565] | Thread:654223 | [LLDP] [CHANGE_EVENT] | Start
+[2026-04-17 15:48:51.603901] | Thread:654223 | [LLDP] [CHANGE_EVENT] | End
+[2026-04-17 15:48:51.625255] | Thread:654234 | [CB_OPER] [LLDP] | Start req=3623
+[2026-04-17 15:48:51.625608] | Thread:654234 | [CB_OPER] [LLDP] | End req=3623
+[2026-04-17 15:48:55.512756] | Thread:654223 | [LLDP] [CHANGE_EVENT] | Start
+[2026-04-17 15:48:55.516862] | Thread:654223 | [LLDP] [CHANGE_EVENT] | End
+[2026-04-17 15:48:55.537876] | Thread:654234 | [CB_OPER] [LLDP] | Start req=3632
+[2026-04-17 15:48:55.538197] | Thread:654234 | [CB_OPER] [LLDP] | End req=3632
+[2026-04-17 15:49:11.051833] | Thread:654223 | [LLDP] [CHANGE_EVENT] | Start
+[2026-04-17 15:49:11.059198] | Thread:654223 | [LLDP] [CHANGE_EVENT] | End
+[2026-04-17 15:49:11.080038] | Thread:654234 | [CB_OPER] [LLDP] | Start req=3641
+[2026-04-17 15:49:11.080365] | Thread:654234 | [CB_OPER] [LLDP] | End req=3641
+[2026-04-17 15:49:17.752285] | Thread:654223 | [LLDP] [CHANGE_EVENT] | Start
+[2026-04-17 15:49:17.754233] | Thread:654223 | [LLDP] [CHANGE_EVENT] | End
+[2026-04-17 15:49:17.767816] | Thread:654234 | [CB_OPER] [LLDP] | Start req=3650
+[2026-04-17 15:49:17.768007] | Thread:654234 | [CB_OPER] [LLDP] | End req=3650
+[2026-04-17 15:49:25.387156] | Thread:654223 | [LLDP] [CHANGE_EVENT] | Start
+[2026-04-17 15:49:25.390944] | Thread:654223 | [LLDP] [CHANGE_EVENT] | End
+[2026-04-17 15:49:25.401446] | Thread:654234 | [CB_OPER] [LLDP] | Start req=3659
+[2026-04-17 15:49:25.401624] | Thread:654234 | [CB_OPER] [LLDP] | End req=3659
+[2026-04-17 15:49:31.684367] | Thread:654223 | [LLDP] [CHANGE_EVENT] | Start
+[2026-04-17 15:49:31.686372] | Thread:654223 | [LLDP] [CHANGE_EVENT] | End
+[2026-04-17 15:49:31.696192] | Thread:654234 | [CB_OPER] [LLDP] | Start req=3668
+[2026-04-17 15:49:31.696402] | Thread:654234 | [CB_OPER] [LLDP] | End req=3668
+[2026-04-17 15:49:38.700564] | Thread:654223 | [LLDP] [CHANGE_EVENT] | Start
+[2026-04-17 15:49:38.707984] | Thread:654223 | [LLDP] [CHANGE_EVENT] | End
+[2026-04-17 15:49:38.728152] | Thread:654234 | [CB_OPER] [LLDP] | Start req=3677
+[2026-04-17 15:49:38.728466] | Thread:654234 | [CB_OPER] [LLDP] | End req=3677
+[2026-04-17 15:49:42.017731] | Thread:654223 | [LLDP] [CHANGE_EVENT] | Start
+[2026-04-17 15:49:42.021849] | Thread:654223 | [LLDP] [CHANGE_EVENT] | End
+[2026-04-17 15:49:42.042623] | Thread:654234 | [CB_OPER] [LLDP] | Start req=3686
+[2026-04-17 15:49:42.042998] | Thread:654234 | [CB_OPER] [LLDP] | End req=3686
+[2026-04-17 15:49:49.968965] | Thread:654223 | [LLDP] [CHANGE_EVENT] | Start
+[2026-04-17 15:49:49.976223] | Thread:654223 | [LLDP] [CHANGE_EVENT] | End
+[2026-04-17 15:49:49.996800] | Thread:654234 | [CB_OPER] [LLDP] | Start req=3695
+[2026-04-17 15:49:49.997150] | Thread:654234 | [CB_OPER] [LLDP] | End req=3695
+[2026-04-17 15:49:55.158648] | Thread:654223 | [LLDP] [CHANGE_EVENT] | Start
+[2026-04-17 15:49:55.162790] | Thread:654223 | [LLDP] [CHANGE_EVENT] | End
+[2026-04-17 15:49:55.183052] | Thread:654234 | [CB_OPER] [LLDP] | Start req=3704
+[2026-04-17 15:49:55.183380] | Thread:654234 | [CB_OPER] [LLDP] | End req=3704
+[2026-04-17 15:50:03.278180] | Thread:654223 | [LLDP] [CHANGE_EVENT] | Start
+[2026-04-17 15:50:03.285991] | Thread:654223 | [LLDP] [CHANGE_EVENT] | End
+[2026-04-17 15:50:03.306759] | Thread:654234 | [CB_OPER] [LLDP] | Start req=3713
+[2026-04-17 15:50:03.307066] | Thread:654234 | [CB_OPER] [LLDP] | End req=3713
+[2026-04-17 15:50:27.136792] | Thread:654223 | [LLDP] [CHANGE_EVENT] | Start
+[2026-04-17 15:50:27.141350] | Thread:654223 | [LLDP] [CHANGE_EVENT] | End
+[2026-04-17 15:50:27.170380] | Thread:654234 | [CB_OPER] [LLDP] | Start req=3722
+[2026-04-17 15:50:27.170718] | Thread:654234 | [CB_OPER] [LLDP] | End req=3722
+[2026-04-17 15:50:34.001642] | Thread:654223 | [LLDP] [CHANGE_EVENT] | Start
+[2026-04-17 15:50:34.008819] | Thread:654223 | [LLDP] [CHANGE_EVENT] | End
+[2026-04-17 15:50:34.035703] | Thread:654234 | [CB_OPER] [LLDP] | Start req=3731
+[2026-04-17 15:50:34.035996] | Thread:654234 | [CB_OPER] [LLDP] | End req=3731
+[2026-04-17 15:50:39.220789] | Thread:654223 | [LLDP] [CHANGE_EVENT] | Start
+[2026-04-17 15:50:39.224938] | Thread:654223 | [LLDP] [CHANGE_EVENT] | End
+[2026-04-17 15:50:39.254363] | Thread:654234 | [CB_OPER] [LLDP] | Start req=3740
+[2026-04-17 15:50:39.254715] | Thread:654234 | [CB_OPER] [LLDP] | End req=3740
+[2026-04-17 15:50:46.285453] | Thread:654223 | [LLDP] [CHANGE_EVENT] | Start
+[2026-04-17 15:50:46.293413] | Thread:654223 | [LLDP] [CHANGE_EVENT] | End
+[2026-04-17 15:50:46.315820] | Thread:654234 | [CB_OPER] [LLDP] | Start req=3749
+[2026-04-17 15:50:46.316127] | Thread:654234 | [CB_OPER] [LLDP] | End req=3749
+[2026-04-17 15:50:55.262807] | Thread:654223 | [LLDP] [CHANGE_EVENT] | Start
+[2026-04-17 15:50:55.265646] | Thread:654223 | [LLDP] [CHANGE_EVENT] | End
+[2026-04-17 15:50:55.280113] | Thread:654234 | [CB_OPER] [LLDP] | Start req=3758
+[2026-04-17 15:50:55.280335] | Thread:654234 | [CB_OPER] [LLDP] | End req=3758
+[2026-04-17 15:51:02.669874] | Thread:654223 | [LLDP] [CHANGE_EVENT] | Start
+[2026-04-17 15:51:02.677440] | Thread:654223 | [LLDP] [CHANGE_EVENT] | End
+[2026-04-17 15:51:02.701832] | Thread:654234 | [CB_OPER] [LLDP] | Start req=3767
+[2026-04-17 15:51:02.702159] | Thread:654234 | [CB_OPER] [LLDP] | End req=3767
+[2026-04-17 15:51:05.351739] | Thread:654223 | [LLDP] [CHANGE_EVENT] | Start
+[2026-04-17 15:51:05.355893] | Thread:654223 | [LLDP] [CHANGE_EVENT] | End
+[2026-04-17 15:51:05.376725] | Thread:654234 | [CB_OPER] [LLDP] | Start req=3776
+[2026-04-17 15:51:05.377058] | Thread:654234 | [CB_OPER] [LLDP] | End req=3776
+[2026-04-17 15:51:21.101804] | Thread:654223 | [LLDP] [CHANGE_EVENT] | Start
+[2026-04-17 15:51:21.109079] | Thread:654223 | [LLDP] [CHANGE_EVENT] | End
+[2026-04-17 15:51:21.135798] | Thread:654234 | [CB_OPER] [LLDP] | Start req=3785
+[2026-04-17 15:51:21.136128] | Thread:654234 | [CB_OPER] [LLDP] | End req=3785
+[2026-04-17 15:51:23.913252] | Thread:654223 | [LLDP] [CHANGE_EVENT] | Start
+[2026-04-17 15:51:23.915722] | Thread:654223 | [LLDP] [CHANGE_EVENT] | End
+[2026-04-17 15:51:23.928089] | Thread:654234 | [CB_OPER] [LLDP] | Start req=3794
+[2026-04-17 15:51:23.928268] | Thread:654234 | [CB_OPER] [LLDP] | End req=3794
+[2026-04-17 15:51:31.340061] | Thread:654223 | [LLDP] [CHANGE_EVENT] | Start
+[2026-04-17 15:51:31.343361] | Thread:654223 | [LLDP] [CHANGE_EVENT] | End
+[2026-04-17 15:51:31.355688] | Thread:654234 | [CB_OPER] [LLDP] | Start req=3803
+[2026-04-17 15:51:31.355855] | Thread:654234 | [CB_OPER] [LLDP] | End req=3803
+[2026-04-17 15:51:33.707772] | Thread:654223 | [LLDP] [CHANGE_EVENT] | Start
+[2026-04-17 15:51:33.711965] | Thread:654223 | [LLDP] [CHANGE_EVENT] | End
+[2026-04-17 15:51:33.729809] | Thread:654234 | [CB_OPER] [LLDP] | Start req=3812
+[2026-04-17 15:51:33.730152] | Thread:654234 | [CB_OPER] [LLDP] | End req=3812
+[2026-04-17 15:51:40.561055] | Thread:654223 | [LLDP] [CHANGE_EVENT] | Start
+[2026-04-17 15:51:40.568409] | Thread:654223 | [LLDP] [CHANGE_EVENT] | End
+[2026-04-17 15:51:40.599416] | Thread:654234 | [CB_OPER] [LLDP] | Start req=3821
+[2026-04-17 15:51:40.599710] | Thread:654234 | [CB_OPER] [LLDP] | End req=3821
+[2026-04-17 15:51:42.658777] | Thread:654223 | [LLDP] [CHANGE_EVENT] | Start
+[2026-04-17 15:51:42.661041] | Thread:654223 | [LLDP] [CHANGE_EVENT] | End
+[2026-04-17 15:51:42.676654] | Thread:654234 | [CB_OPER] [LLDP] | Start req=3830
+[2026-04-17 15:51:42.676842] | Thread:654234 | [CB_OPER] [LLDP] | End req=3830
+[2026-04-17 15:51:53.872675] | Thread:654223 | [LLDP] [CHANGE_EVENT] | Start
+[2026-04-17 15:51:53.879679] | Thread:654223 | [LLDP] [CHANGE_EVENT] | End
+[2026-04-17 15:51:53.900821] | Thread:654234 | [CB_OPER] [LLDP] | Start req=3839
+[2026-04-17 15:51:53.901115] | Thread:654234 | [CB_OPER] [LLDP] | End req=3839
+[2026-04-17 15:51:56.466361] | Thread:654223 | [LLDP] [CHANGE_EVENT] | Start
+[2026-04-17 15:51:56.470527] | Thread:654223 | [LLDP] [CHANGE_EVENT] | End
+[2026-04-17 15:51:56.490504] | Thread:654234 | [CB_OPER] [LLDP] | Start req=3848
+[2026-04-17 15:51:56.490832] | Thread:654234 | [CB_OPER] [LLDP] | End req=3848
+[2026-04-17 15:52:04.113377] | Thread:654223 | [LLDP] [CHANGE_EVENT] | Start
+[2026-04-17 15:52:04.120764] | Thread:654223 | [LLDP] [CHANGE_EVENT] | End
+[2026-04-17 15:52:04.144125] | Thread:654234 | [CB_OPER] [LLDP] | Start req=3857
+[2026-04-17 15:52:04.144430] | Thread:654234 | [CB_OPER] [LLDP] | End req=3857
+[2026-04-17 15:52:06.692825] | Thread:654223 | [LLDP] [CHANGE_EVENT] | Start
+[2026-04-17 15:52:06.696980] | Thread:654223 | [LLDP] [CHANGE_EVENT] | End
+[2026-04-17 15:52:06.717388] | Thread:654234 | [CB_OPER] [LLDP] | Start req=3866
+[2026-04-17 15:52:06.717725] | Thread:654234 | [CB_OPER] [LLDP] | End req=3866
+[2026-04-17 15:52:31.360385] | Thread:654197 | [MAIN] | End

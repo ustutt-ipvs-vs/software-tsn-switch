@@ -1,0 +1,495 @@
+[2026-04-17 02:21:48.061623] | Thread:18587 | [CncServiceImpl::SetNodeSchedule] | Start setting node schedule for node: vstsn01
+[2026-04-17 02:21:48.061707] | Thread:18587 | [NetworkManager::deployConfigToNode] | Start config deployment for node: vstsn01
+[2026-04-17 02:21:48.061890] | Thread:18557 | [NetconfSession::editData] | Start edit-config with XML length: 3260
+[2026-04-17 02:21:48.090847] | Thread:18557 | [NetconfSession::editData] | Finished edit-config with XML length: 3260
+[2026-04-17 02:21:48.090875] | Thread:18557 | [NetconfSession::commit] | Start commit operation.
+[2026-04-17 02:21:48.132384] | Thread:18557 | [NetconfSession::commit] | Finished commit operation.
+[2026-04-17 02:21:48.132411] | Thread:18557 | [NetworkManager::deployConfigToNode] | Successfully deployed config for node: vstsn01
+[2026-04-17 02:21:48.132469] | Thread:18587 | [CncServiceImpl::SetNodeSchedule] | Finished deploying config to node: vstsn01
+[2026-04-17 02:21:48.132520] | Thread:18587 | [CncServiceImpl::SetNodeSchedule] | Finished setting node schedule (with verification) for node: vstsn01
+[2026-04-17 02:21:49.055597] | Thread:18654 | [CncServiceImpl::SetNodeSchedule] | Start setting node schedule for node: vstsn01
+[2026-04-17 02:21:49.055677] | Thread:18654 | [NetworkManager::deployConfigToNode] | Start config deployment for node: vstsn01
+[2026-04-17 02:21:49.055800] | Thread:18557 | [NetconfSession::editData] | Start edit-config with XML length: 3260
+[2026-04-17 02:21:49.056082] | Thread:18587 | [CncServiceImpl::SetNodeSchedule] | Start setting node schedule for node: vstsn01
+[2026-04-17 02:21:49.085409] | Thread:18557 | [NetconfSession::editData] | Finished edit-config with XML length: 3260
+[2026-04-17 02:21:49.085438] | Thread:18557 | [NetconfSession::commit] | Start commit operation.
+[2026-04-17 02:21:49.126480] | Thread:18557 | [NetconfSession::commit] | Finished commit operation.
+[2026-04-17 02:21:49.126508] | Thread:18557 | [NetworkManager::deployConfigToNode] | Successfully deployed config for node: vstsn01
+[2026-04-17 02:21:49.126560] | Thread:18654 | [CncServiceImpl::SetNodeSchedule] | Finished deploying config to node: vstsn01
+[2026-04-17 02:21:49.126609] | Thread:18654 | [CncServiceImpl::SetNodeSchedule] | Finished setting node schedule (with verification) for node: vstsn01
+[2026-04-17 02:21:49.126657] | Thread:18587 | [NetworkManager::deployConfigToNode] | Start config deployment for node: vstsn01
+[2026-04-17 02:21:49.126796] | Thread:18557 | [NetconfSession::editData] | Start edit-config with XML length: 3260
+[2026-04-17 02:21:49.161027] | Thread:18557 | [NetconfSession::editData] | Finished edit-config with XML length: 3260
+[2026-04-17 02:21:49.161057] | Thread:18557 | [NetconfSession::commit] | Start commit operation.
+[2026-04-17 02:21:49.204205] | Thread:18557 | [NetconfSession::commit] | Finished commit operation.
+[2026-04-17 02:21:49.204234] | Thread:18557 | [NetworkManager::deployConfigToNode] | Successfully deployed config for node: vstsn01
+[2026-04-17 02:21:49.204279] | Thread:18587 | [CncServiceImpl::SetNodeSchedule] | Finished deploying config to node: vstsn01
+[2026-04-17 02:21:49.204313] | Thread:18587 | [CncServiceImpl::SetNodeSchedule] | Finished setting node schedule (with verification) for node: vstsn01
+[2026-04-17 02:21:50.059692] | Thread:18654 | [CncServiceImpl::SetNodeSchedule] | Start setting node schedule for node: vstsn01
+[2026-04-17 02:21:50.059771] | Thread:18654 | [NetworkManager::deployConfigToNode] | Start config deployment for node: vstsn01
+[2026-04-17 02:21:50.059927] | Thread:18557 | [NetconfSession::editData] | Start edit-config with XML length: 3260
+[2026-04-17 02:21:50.060159] | Thread:18676 | [CncServiceImpl::SetNodeSchedule] | Start setting node schedule for node: vstsn01
+[2026-04-17 02:21:50.062078] | Thread:18702 | [CncServiceImpl::SetNodeSchedule] | Start setting node schedule for node: vstsn01
+[2026-04-17 02:21:50.090546] | Thread:18557 | [NetconfSession::editData] | Finished edit-config with XML length: 3260
+[2026-04-17 02:21:50.090579] | Thread:18557 | [NetconfSession::commit] | Start commit operation.
+[2026-04-17 02:21:50.131251] | Thread:18557 | [NetconfSession::commit] | Finished commit operation.
+[2026-04-17 02:21:50.131279] | Thread:18557 | [NetworkManager::deployConfigToNode] | Successfully deployed config for node: vstsn01
+[2026-04-17 02:21:50.131320] | Thread:18654 | [CncServiceImpl::SetNodeSchedule] | Finished deploying config to node: vstsn01
+[2026-04-17 02:21:50.131362] | Thread:18654 | [CncServiceImpl::SetNodeSchedule] | Finished setting node schedule (with verification) for node: vstsn01
+[2026-04-17 02:21:50.131414] | Thread:18676 | [NetworkManager::deployConfigToNode] | Start config deployment for node: vstsn01
+[2026-04-17 02:21:50.131646] | Thread:18557 | [NetconfSession::editData] | Start edit-config with XML length: 3260
+[2026-04-17 02:21:50.160908] | Thread:18557 | [NetconfSession::editData] | Finished edit-config with XML length: 3260
+[2026-04-17 02:21:50.160933] | Thread:18557 | [NetconfSession::commit] | Start commit operation.
+[2026-04-17 02:21:50.202838] | Thread:18557 | [NetconfSession::commit] | Finished commit operation.
+[2026-04-17 02:21:50.202871] | Thread:18557 | [NetworkManager::deployConfigToNode] | Successfully deployed config for node: vstsn01
+[2026-04-17 02:21:50.202947] | Thread:18676 | [CncServiceImpl::SetNodeSchedule] | Finished deploying config to node: vstsn01
+[2026-04-17 02:21:50.202975] | Thread:18676 | [CncServiceImpl::SetNodeSchedule] | Finished setting node schedule (with verification) for node: vstsn01
+[2026-04-17 02:21:50.203021] | Thread:18702 | [NetworkManager::deployConfigToNode] | Start config deployment for node: vstsn01
+[2026-04-17 02:21:50.203133] | Thread:18557 | [NetconfSession::editData] | Start edit-config with XML length: 3260
+[2026-04-17 02:21:50.230855] | Thread:18557 | [NetconfSession::editData] | Finished edit-config with XML length: 3260
+[2026-04-17 02:21:50.230925] | Thread:18557 | [NetconfSession::commit] | Start commit operation.
+[2026-04-17 02:21:50.271246] | Thread:18557 | [NetconfSession::commit] | Finished commit operation.
+[2026-04-17 02:21:50.271278] | Thread:18557 | [NetworkManager::deployConfigToNode] | Successfully deployed config for node: vstsn01
+[2026-04-17 02:21:50.271324] | Thread:18702 | [CncServiceImpl::SetNodeSchedule] | Finished deploying config to node: vstsn01
+[2026-04-17 02:21:50.271350] | Thread:18702 | [CncServiceImpl::SetNodeSchedule] | Finished setting node schedule (with verification) for node: vstsn01
+[2026-04-17 02:21:51.065374] | Thread:18654 | [CncServiceImpl::SetNodeSchedule] | Start setting node schedule for node: vstsn01
+[2026-04-17 02:21:51.065448] | Thread:18703 | [CncServiceImpl::SetNodeSchedule] | Start setting node schedule for node: vstsn01
+[2026-04-17 02:21:51.065458] | Thread:18654 | [NetworkManager::deployConfigToNode] | Start config deployment for node: vstsn01
+[2026-04-17 02:21:51.065735] | Thread:18557 | [NetconfSession::editData] | Start edit-config with XML length: 3260
+[2026-04-17 02:21:51.066048] | Thread:18728 | [CncServiceImpl::SetNodeSchedule] | Start setting node schedule for node: vstsn01
+[2026-04-17 02:21:51.066819] | Thread:18729 | [CncServiceImpl::SetNodeSchedule] | Start setting node schedule for node: vstsn01
+[2026-04-17 02:21:51.094779] | Thread:18557 | [NetconfSession::editData] | Finished edit-config with XML length: 3260
+[2026-04-17 02:21:51.094807] | Thread:18557 | [NetconfSession::commit] | Start commit operation.
+[2026-04-17 02:21:51.136024] | Thread:18557 | [NetconfSession::commit] | Finished commit operation.
+[2026-04-17 02:21:51.136049] | Thread:18557 | [NetworkManager::deployConfigToNode] | Successfully deployed config for node: vstsn01
+[2026-04-17 02:21:51.136118] | Thread:18654 | [CncServiceImpl::SetNodeSchedule] | Finished deploying config to node: vstsn01
+[2026-04-17 02:21:51.136155] | Thread:18654 | [CncServiceImpl::SetNodeSchedule] | Finished setting node schedule (with verification) for node: vstsn01
+[2026-04-17 02:21:51.136269] | Thread:18703 | [NetworkManager::deployConfigToNode] | Start config deployment for node: vstsn01
+[2026-04-17 02:21:51.136429] | Thread:18557 | [NetconfSession::editData] | Start edit-config with XML length: 3260
+[2026-04-17 02:21:51.165929] | Thread:18557 | [NetconfSession::editData] | Finished edit-config with XML length: 3260
+[2026-04-17 02:21:51.165952] | Thread:18557 | [NetconfSession::commit] | Start commit operation.
+[2026-04-17 02:21:51.208032] | Thread:18557 | [NetconfSession::commit] | Finished commit operation.
+[2026-04-17 02:21:51.208065] | Thread:18557 | [NetworkManager::deployConfigToNode] | Successfully deployed config for node: vstsn01
+[2026-04-17 02:21:51.208148] | Thread:18703 | [CncServiceImpl::SetNodeSchedule] | Finished deploying config to node: vstsn01
+[2026-04-17 02:21:51.208196] | Thread:18703 | [CncServiceImpl::SetNodeSchedule] | Finished setting node schedule (with verification) for node: vstsn01
+[2026-04-17 02:21:51.208236] | Thread:18728 | [NetworkManager::deployConfigToNode] | Start config deployment for node: vstsn01
+[2026-04-17 02:21:51.208377] | Thread:18557 | [NetconfSession::editData] | Start edit-config with XML length: 3260
+[2026-04-17 02:21:51.238718] | Thread:18557 | [NetconfSession::editData] | Finished edit-config with XML length: 3260
+[2026-04-17 02:21:51.238754] | Thread:18557 | [NetconfSession::commit] | Start commit operation.
+[2026-04-17 02:21:51.278839] | Thread:18557 | [NetconfSession::commit] | Finished commit operation.
+[2026-04-17 02:21:51.278863] | Thread:18557 | [NetworkManager::deployConfigToNode] | Successfully deployed config for node: vstsn01
+[2026-04-17 02:21:51.278916] | Thread:18728 | [CncServiceImpl::SetNodeSchedule] | Finished deploying config to node: vstsn01
+[2026-04-17 02:21:51.278921] | Thread:18728 | [CncServiceImpl::SetNodeSchedule] | Finished setting node schedule (with verification) for node: vstsn01
+[2026-04-17 02:21:51.279000] | Thread:18729 | [NetworkManager::deployConfigToNode] | Start config deployment for node: vstsn01
+[2026-04-17 02:21:51.279329] | Thread:18557 | [NetconfSession::editData] | Start edit-config with XML length: 3260
+[2026-04-17 02:21:51.308783] | Thread:18557 | [NetconfSession::editData] | Finished edit-config with XML length: 3260
+[2026-04-17 02:21:51.308813] | Thread:18557 | [NetconfSession::commit] | Start commit operation.
+[2026-04-17 02:21:51.349077] | Thread:18557 | [NetconfSession::commit] | Finished commit operation.
+[2026-04-17 02:21:51.349114] | Thread:18557 | [NetworkManager::deployConfigToNode] | Successfully deployed config for node: vstsn01
+[2026-04-17 02:21:51.349164] | Thread:18729 | [CncServiceImpl::SetNodeSchedule] | Finished deploying config to node: vstsn01
+[2026-04-17 02:21:51.349225] | Thread:18729 | [CncServiceImpl::SetNodeSchedule] | Finished setting node schedule (with verification) for node: vstsn01
+[2026-04-17 02:21:52.069475] | Thread:18730 | [CncServiceImpl::SetNodeSchedule] | Start setting node schedule for node: vstsn01
+[2026-04-17 02:21:52.069547] | Thread:18730 | [NetworkManager::deployConfigToNode] | Start config deployment for node: vstsn01
+[2026-04-17 02:21:52.069657] | Thread:18557 | [NetconfSession::editData] | Start edit-config with XML length: 3260
+[2026-04-17 02:21:52.069720] | Thread:18654 | [CncServiceImpl::SetNodeSchedule] | Start setting node schedule for node: vstsn01
+[2026-04-17 02:21:52.070475] | Thread:18746 | [CncServiceImpl::SetNodeSchedule] | Start setting node schedule for node: vstsn01
+[2026-04-17 02:21:52.071545] | Thread:18747 | [CncServiceImpl::SetNodeSchedule] | Start setting node schedule for node: vstsn01
+[2026-04-17 02:21:52.072696] | Thread:18748 | [CncServiceImpl::SetNodeSchedule] | Start setting node schedule for node: vstsn01
+[2026-04-17 02:21:52.099445] | Thread:18557 | [NetconfSession::editData] | Finished edit-config with XML length: 3260
+[2026-04-17 02:21:52.099472] | Thread:18557 | [NetconfSession::commit] | Start commit operation.
+[2026-04-17 02:21:52.142241] | Thread:18557 | [NetconfSession::commit] | Finished commit operation.
+[2026-04-17 02:21:52.142270] | Thread:18557 | [NetworkManager::deployConfigToNode] | Successfully deployed config for node: vstsn01
+[2026-04-17 02:21:52.142308] | Thread:18730 | [CncServiceImpl::SetNodeSchedule] | Finished deploying config to node: vstsn01
+[2026-04-17 02:21:52.142346] | Thread:18730 | [CncServiceImpl::SetNodeSchedule] | Finished setting node schedule (with verification) for node: vstsn01
+[2026-04-17 02:21:52.142394] | Thread:18654 | [NetworkManager::deployConfigToNode] | Start config deployment for node: vstsn01
+[2026-04-17 02:21:52.142518] | Thread:18557 | [NetconfSession::editData] | Start edit-config with XML length: 3260
+[2026-04-17 02:21:52.171172] | Thread:18557 | [NetconfSession::editData] | Finished edit-config with XML length: 3260
+[2026-04-17 02:21:52.171198] | Thread:18557 | [NetconfSession::commit] | Start commit operation.
+[2026-04-17 02:21:52.211819] | Thread:18557 | [NetconfSession::commit] | Finished commit operation.
+[2026-04-17 02:21:52.211869] | Thread:18557 | [NetworkManager::deployConfigToNode] | Successfully deployed config for node: vstsn01
+[2026-04-17 02:21:52.211923] | Thread:18654 | [CncServiceImpl::SetNodeSchedule] | Finished deploying config to node: vstsn01
+[2026-04-17 02:21:52.211977] | Thread:18654 | [CncServiceImpl::SetNodeSchedule] | Finished setting node schedule (with verification) for node: vstsn01
+[2026-04-17 02:21:52.212047] | Thread:18746 | [NetworkManager::deployConfigToNode] | Start config deployment for node: vstsn01
+[2026-04-17 02:21:52.212194] | Thread:18557 | [NetconfSession::editData] | Start edit-config with XML length: 3260
+[2026-04-17 02:21:52.239086] | Thread:18557 | [NetconfSession::editData] | Finished edit-config with XML length: 3260
+[2026-04-17 02:21:52.239113] | Thread:18557 | [NetconfSession::commit] | Start commit operation.
+[2026-04-17 02:21:52.281421] | Thread:18557 | [NetconfSession::commit] | Finished commit operation.
+[2026-04-17 02:21:52.281447] | Thread:18557 | [NetworkManager::deployConfigToNode] | Successfully deployed config for node: vstsn01
+[2026-04-17 02:21:52.281565] | Thread:18746 | [CncServiceImpl::SetNodeSchedule] | Finished deploying config to node: vstsn01
+[2026-04-17 02:21:52.281612] | Thread:18746 | [CncServiceImpl::SetNodeSchedule] | Finished setting node schedule (with verification) for node: vstsn01
+[2026-04-17 02:21:52.281653] | Thread:18747 | [NetworkManager::deployConfigToNode] | Start config deployment for node: vstsn01
+[2026-04-17 02:21:52.281804] | Thread:18557 | [NetconfSession::editData] | Start edit-config with XML length: 3260
+[2026-04-17 02:21:52.313752] | Thread:18557 | [NetconfSession::editData] | Finished edit-config with XML length: 3260
+[2026-04-17 02:21:52.313776] | Thread:18557 | [NetconfSession::commit] | Start commit operation.
+[2026-04-17 02:21:52.355436] | Thread:18557 | [NetconfSession::commit] | Finished commit operation.
+[2026-04-17 02:21:52.355457] | Thread:18557 | [NetworkManager::deployConfigToNode] | Successfully deployed config for node: vstsn01
+[2026-04-17 02:21:52.355540] | Thread:18747 | [CncServiceImpl::SetNodeSchedule] | Finished deploying config to node: vstsn01
+[2026-04-17 02:21:52.355603] | Thread:18747 | [CncServiceImpl::SetNodeSchedule] | Finished setting node schedule (with verification) for node: vstsn01
+[2026-04-17 02:21:52.355644] | Thread:18748 | [NetworkManager::deployConfigToNode] | Start config deployment for node: vstsn01
+[2026-04-17 02:21:52.355787] | Thread:18557 | [NetconfSession::editData] | Start edit-config with XML length: 3260
+[2026-04-17 02:21:52.383982] | Thread:18557 | [NetconfSession::editData] | Finished edit-config with XML length: 3260
+[2026-04-17 02:21:52.384005] | Thread:18557 | [NetconfSession::commit] | Start commit operation.
+[2026-04-17 02:21:52.426158] | Thread:18557 | [NetconfSession::commit] | Finished commit operation.
+[2026-04-17 02:21:52.426189] | Thread:18557 | [NetworkManager::deployConfigToNode] | Successfully deployed config for node: vstsn01
+[2026-04-17 02:21:52.426239] | Thread:18748 | [CncServiceImpl::SetNodeSchedule] | Finished deploying config to node: vstsn01
+[2026-04-17 02:21:52.426297] | Thread:18748 | [CncServiceImpl::SetNodeSchedule] | Finished setting node schedule (with verification) for node: vstsn01
+[2026-04-17 02:21:53.074957] | Thread:18730 | [CncServiceImpl::SetNodeSchedule] | Start setting node schedule for node: vstsn01
+[2026-04-17 02:21:53.075034] | Thread:18730 | [NetworkManager::deployConfigToNode] | Start config deployment for node: vstsn01
+[2026-04-17 02:21:53.075165] | Thread:18557 | [NetconfSession::editData] | Start edit-config with XML length: 3260
+[2026-04-17 02:21:53.075462] | Thread:18749 | [CncServiceImpl::SetNodeSchedule] | Start setting node schedule for node: vstsn01
+[2026-04-17 02:21:53.076150] | Thread:18762 | [CncServiceImpl::SetNodeSchedule] | Start setting node schedule for node: vstsn01
+[2026-04-17 02:21:53.077024] | Thread:18763 | [CncServiceImpl::SetNodeSchedule] | Start setting node schedule for node: vstsn01
+[2026-04-17 02:21:53.077799] | Thread:18764 | [CncServiceImpl::SetNodeSchedule] | Start setting node schedule for node: vstsn01
+[2026-04-17 02:21:53.078508] | Thread:18765 | [CncServiceImpl::SetNodeSchedule] | Start setting node schedule for node: vstsn01
+[2026-04-17 02:21:53.110573] | Thread:18557 | [NetconfSession::editData] | Finished edit-config with XML length: 3260
+[2026-04-17 02:21:53.110608] | Thread:18557 | [NetconfSession::commit] | Start commit operation.
+[2026-04-17 02:21:53.169272] | Thread:18557 | [NetconfSession::commit] | Finished commit operation.
+[2026-04-17 02:21:53.169304] | Thread:18557 | [NetworkManager::deployConfigToNode] | Successfully deployed config for node: vstsn01
+[2026-04-17 02:21:53.169346] | Thread:18730 | [CncServiceImpl::SetNodeSchedule] | Finished deploying config to node: vstsn01
+[2026-04-17 02:21:53.169376] | Thread:18730 | [CncServiceImpl::SetNodeSchedule] | Finished setting node schedule (with verification) for node: vstsn01
+[2026-04-17 02:21:53.169416] | Thread:18749 | [NetworkManager::deployConfigToNode] | Start config deployment for node: vstsn01
+[2026-04-17 02:21:53.169551] | Thread:18557 | [NetconfSession::editData] | Start edit-config with XML length: 3260
+[2026-04-17 02:21:53.198058] | Thread:18557 | [NetconfSession::editData] | Finished edit-config with XML length: 3260
+[2026-04-17 02:21:53.198090] | Thread:18557 | [NetconfSession::commit] | Start commit operation.
+[2026-04-17 02:21:53.239682] | Thread:18557 | [NetconfSession::commit] | Finished commit operation.
+[2026-04-17 02:21:53.239715] | Thread:18557 | [NetworkManager::deployConfigToNode] | Successfully deployed config for node: vstsn01
+[2026-04-17 02:21:53.239775] | Thread:18749 | [CncServiceImpl::SetNodeSchedule] | Finished deploying config to node: vstsn01
+[2026-04-17 02:21:53.239832] | Thread:18749 | [CncServiceImpl::SetNodeSchedule] | Finished setting node schedule (with verification) for node: vstsn01
+[2026-04-17 02:21:53.239886] | Thread:18762 | [NetworkManager::deployConfigToNode] | Start config deployment for node: vstsn01
+[2026-04-17 02:21:53.240011] | Thread:18557 | [NetconfSession::editData] | Start edit-config with XML length: 3260
+[2026-04-17 02:21:53.267984] | Thread:18557 | [NetconfSession::editData] | Finished edit-config with XML length: 3260
+[2026-04-17 02:21:53.268008] | Thread:18557 | [NetconfSession::commit] | Start commit operation.
+[2026-04-17 02:21:53.309679] | Thread:18557 | [NetconfSession::commit] | Finished commit operation.
+[2026-04-17 02:21:53.309713] | Thread:18557 | [NetworkManager::deployConfigToNode] | Successfully deployed config for node: vstsn01
+[2026-04-17 02:21:53.309762] | Thread:18762 | [CncServiceImpl::SetNodeSchedule] | Finished deploying config to node: vstsn01
+[2026-04-17 02:21:53.309802] | Thread:18762 | [CncServiceImpl::SetNodeSchedule] | Finished setting node schedule (with verification) for node: vstsn01
+[2026-04-17 02:21:53.309852] | Thread:18763 | [NetworkManager::deployConfigToNode] | Start config deployment for node: vstsn01
+[2026-04-17 02:21:53.309946] | Thread:18557 | [NetconfSession::editData] | Start edit-config with XML length: 3260
+[2026-04-17 02:21:53.339597] | Thread:18557 | [NetconfSession::editData] | Finished edit-config with XML length: 3260
+[2026-04-17 02:21:53.339621] | Thread:18557 | [NetconfSession::commit] | Start commit operation.
+[2026-04-17 02:21:53.382483] | Thread:18557 | [NetconfSession::commit] | Finished commit operation.
+[2026-04-17 02:21:53.382503] | Thread:18557 | [NetworkManager::deployConfigToNode] | Successfully deployed config for node: vstsn01
+[2026-04-17 02:21:53.382658] | Thread:18763 | [CncServiceImpl::SetNodeSchedule] | Finished deploying config to node: vstsn01
+[2026-04-17 02:21:53.382699] | Thread:18763 | [CncServiceImpl::SetNodeSchedule] | Finished setting node schedule (with verification) for node: vstsn01
+[2026-04-17 02:21:53.382813] | Thread:18764 | [NetworkManager::deployConfigToNode] | Start config deployment for node: vstsn01
+[2026-04-17 02:21:53.382935] | Thread:18557 | [NetconfSession::editData] | Start edit-config with XML length: 3260
+[2026-04-17 02:21:53.410635] | Thread:18557 | [NetconfSession::editData] | Finished edit-config with XML length: 3260
+[2026-04-17 02:21:53.410662] | Thread:18557 | [NetconfSession::commit] | Start commit operation.
+[2026-04-17 02:21:53.451849] | Thread:18557 | [NetconfSession::commit] | Finished commit operation.
+[2026-04-17 02:21:53.451862] | Thread:18557 | [NetworkManager::deployConfigToNode] | Successfully deployed config for node: vstsn01
+[2026-04-17 02:21:53.451926] | Thread:18764 | [CncServiceImpl::SetNodeSchedule] | Finished deploying config to node: vstsn01
+[2026-04-17 02:21:53.451971] | Thread:18764 | [CncServiceImpl::SetNodeSchedule] | Finished setting node schedule (with verification) for node: vstsn01
+[2026-04-17 02:21:53.452046] | Thread:18765 | [NetworkManager::deployConfigToNode] | Start config deployment for node: vstsn01
+[2026-04-17 02:21:53.452200] | Thread:18557 | [NetconfSession::editData] | Start edit-config with XML length: 3260
+[2026-04-17 02:21:53.479141] | Thread:18557 | [NetconfSession::editData] | Finished edit-config with XML length: 3260
+[2026-04-17 02:21:53.479168] | Thread:18557 | [NetconfSession::commit] | Start commit operation.
+[2026-04-17 02:21:53.520356] | Thread:18557 | [NetconfSession::commit] | Finished commit operation.
+[2026-04-17 02:21:53.520398] | Thread:18557 | [NetworkManager::deployConfigToNode] | Successfully deployed config for node: vstsn01
+[2026-04-17 02:21:53.520452] | Thread:18765 | [CncServiceImpl::SetNodeSchedule] | Finished deploying config to node: vstsn01
+[2026-04-17 02:21:53.520524] | Thread:18765 | [CncServiceImpl::SetNodeSchedule] | Finished setting node schedule (with verification) for node: vstsn01
+[2026-04-17 02:21:54.077855] | Thread:18730 | [CncServiceImpl::SetNodeSchedule] | Start setting node schedule for node: vstsn01
+[2026-04-17 02:21:54.077914] | Thread:18730 | [NetworkManager::deployConfigToNode] | Start config deployment for node: vstsn01
+[2026-04-17 02:21:54.078046] | Thread:18557 | [NetconfSession::editData] | Start edit-config with XML length: 3260
+[2026-04-17 02:21:54.078311] | Thread:18766 | [CncServiceImpl::SetNodeSchedule] | Start setting node schedule for node: vstsn01
+[2026-04-17 02:21:54.079268] | Thread:18786 | [CncServiceImpl::SetNodeSchedule] | Start setting node schedule for node: vstsn01
+[2026-04-17 02:21:54.079853] | Thread:18788 | [CncServiceImpl::SetNodeSchedule] | Start setting node schedule for node: vstsn01
+[2026-04-17 02:21:54.080747] | Thread:18789 | [CncServiceImpl::SetNodeSchedule] | Start setting node schedule for node: vstsn01
+[2026-04-17 02:21:54.081530] | Thread:18790 | [CncServiceImpl::SetNodeSchedule] | Start setting node schedule for node: vstsn01
+[2026-04-17 02:21:54.082421] | Thread:18792 | [CncServiceImpl::SetNodeSchedule] | Start setting node schedule for node: vstsn01
+[2026-04-17 02:21:54.106029] | Thread:18557 | [NetconfSession::editData] | Finished edit-config with XML length: 3260
+[2026-04-17 02:21:54.106055] | Thread:18557 | [NetconfSession::commit] | Start commit operation.
+[2026-04-17 02:21:54.146769] | Thread:18557 | [NetconfSession::commit] | Finished commit operation.
+[2026-04-17 02:21:54.146795] | Thread:18557 | [NetworkManager::deployConfigToNode] | Successfully deployed config for node: vstsn01
+[2026-04-17 02:21:54.146862] | Thread:18730 | [CncServiceImpl::SetNodeSchedule] | Finished deploying config to node: vstsn01
+[2026-04-17 02:21:54.146922] | Thread:18730 | [CncServiceImpl::SetNodeSchedule] | Finished setting node schedule (with verification) for node: vstsn01
+[2026-04-17 02:21:54.146961] | Thread:18766 | [NetworkManager::deployConfigToNode] | Start config deployment for node: vstsn01
+[2026-04-17 02:21:54.147101] | Thread:18557 | [NetconfSession::editData] | Start edit-config with XML length: 3260
+[2026-04-17 02:21:54.176747] | Thread:18557 | [NetconfSession::editData] | Finished edit-config with XML length: 3260
+[2026-04-17 02:21:54.176779] | Thread:18557 | [NetconfSession::commit] | Start commit operation.
+[2026-04-17 02:21:54.218119] | Thread:18557 | [NetconfSession::commit] | Finished commit operation.
+[2026-04-17 02:21:54.218145] | Thread:18557 | [NetworkManager::deployConfigToNode] | Successfully deployed config for node: vstsn01
+[2026-04-17 02:21:54.218201] | Thread:18766 | [CncServiceImpl::SetNodeSchedule] | Finished deploying config to node: vstsn01
+[2026-04-17 02:21:54.218250] | Thread:18766 | [CncServiceImpl::SetNodeSchedule] | Finished setting node schedule (with verification) for node: vstsn01
+[2026-04-17 02:21:54.218296] | Thread:18786 | [NetworkManager::deployConfigToNode] | Start config deployment for node: vstsn01
+[2026-04-17 02:21:54.218393] | Thread:18557 | [NetconfSession::editData] | Start edit-config with XML length: 3260
+[2026-04-17 02:21:54.249674] | Thread:18557 | [NetconfSession::editData] | Finished edit-config with XML length: 3260
+[2026-04-17 02:21:54.249703] | Thread:18557 | [NetconfSession::commit] | Start commit operation.
+[2026-04-17 02:21:54.289671] | Thread:18557 | [NetconfSession::commit] | Finished commit operation.
+[2026-04-17 02:21:54.289701] | Thread:18557 | [NetworkManager::deployConfigToNode] | Successfully deployed config for node: vstsn01
+[2026-04-17 02:21:54.289745] | Thread:18786 | [CncServiceImpl::SetNodeSchedule] | Finished deploying config to node: vstsn01
+[2026-04-17 02:21:54.289770] | Thread:18786 | [CncServiceImpl::SetNodeSchedule] | Finished setting node schedule (with verification) for node: vstsn01
+[2026-04-17 02:21:54.289810] | Thread:18788 | [NetworkManager::deployConfigToNode] | Start config deployment for node: vstsn01
+[2026-04-17 02:21:54.289953] | Thread:18557 | [NetconfSession::editData] | Start edit-config with XML length: 3260
+[2026-04-17 02:21:54.324144] | Thread:18557 | [NetconfSession::editData] | Finished edit-config with XML length: 3260
+[2026-04-17 02:21:54.324183] | Thread:18557 | [NetconfSession::commit] | Start commit operation.
+[2026-04-17 02:21:54.375045] | Thread:18557 | [NetconfSession::commit] | Finished commit operation.
+[2026-04-17 02:21:54.375104] | Thread:18557 | [NetworkManager::deployConfigToNode] | Successfully deployed config for node: vstsn01
+[2026-04-17 02:21:54.375184] | Thread:18788 | [CncServiceImpl::SetNodeSchedule] | Finished deploying config to node: vstsn01
+[2026-04-17 02:21:54.375233] | Thread:18788 | [CncServiceImpl::SetNodeSchedule] | Finished setting node schedule (with verification) for node: vstsn01
+[2026-04-17 02:21:54.375308] | Thread:18789 | [NetworkManager::deployConfigToNode] | Start config deployment for node: vstsn01
+[2026-04-17 02:21:54.375462] | Thread:18557 | [NetconfSession::editData] | Start edit-config with XML length: 3260
+[2026-04-17 02:21:54.406206] | Thread:18557 | [NetconfSession::editData] | Finished edit-config with XML length: 3260
+[2026-04-17 02:21:54.406229] | Thread:18557 | [NetconfSession::commit] | Start commit operation.
+[2026-04-17 02:21:54.448660] | Thread:18557 | [NetconfSession::commit] | Finished commit operation.
+[2026-04-17 02:21:54.448695] | Thread:18557 | [NetworkManager::deployConfigToNode] | Successfully deployed config for node: vstsn01
+[2026-04-17 02:21:54.448778] | Thread:18789 | [CncServiceImpl::SetNodeSchedule] | Finished deploying config to node: vstsn01
+[2026-04-17 02:21:54.448850] | Thread:18789 | [CncServiceImpl::SetNodeSchedule] | Finished setting node schedule (with verification) for node: vstsn01
+[2026-04-17 02:21:54.448938] | Thread:18790 | [NetworkManager::deployConfigToNode] | Start config deployment for node: vstsn01
+[2026-04-17 02:21:54.449114] | Thread:18557 | [NetconfSession::editData] | Start edit-config with XML length: 3260
+[2026-04-17 02:21:54.490804] | Thread:18557 | [NetconfSession::editData] | Finished edit-config with XML length: 3260
+[2026-04-17 02:21:54.490843] | Thread:18557 | [NetconfSession::commit] | Start commit operation.
+[2026-04-17 02:21:54.532246] | Thread:18557 | [NetconfSession::commit] | Finished commit operation.
+[2026-04-17 02:21:54.532270] | Thread:18557 | [NetworkManager::deployConfigToNode] | Successfully deployed config for node: vstsn01
+[2026-04-17 02:21:54.532334] | Thread:18790 | [CncServiceImpl::SetNodeSchedule] | Finished deploying config to node: vstsn01
+[2026-04-17 02:21:54.532375] | Thread:18790 | [CncServiceImpl::SetNodeSchedule] | Finished setting node schedule (with verification) for node: vstsn01
+[2026-04-17 02:21:54.532446] | Thread:18792 | [NetworkManager::deployConfigToNode] | Start config deployment for node: vstsn01
+[2026-04-17 02:21:54.532610] | Thread:18557 | [NetconfSession::editData] | Start edit-config with XML length: 3260
+[2026-04-17 02:21:54.566287] | Thread:18557 | [NetconfSession::editData] | Finished edit-config with XML length: 3260
+[2026-04-17 02:21:54.566313] | Thread:18557 | [NetconfSession::commit] | Start commit operation.
+[2026-04-17 02:21:54.607689] | Thread:18557 | [NetconfSession::commit] | Finished commit operation.
+[2026-04-17 02:21:54.607716] | Thread:18557 | [NetworkManager::deployConfigToNode] | Successfully deployed config for node: vstsn01
+[2026-04-17 02:21:54.607755] | Thread:18792 | [CncServiceImpl::SetNodeSchedule] | Finished deploying config to node: vstsn01
+[2026-04-17 02:21:54.607782] | Thread:18792 | [CncServiceImpl::SetNodeSchedule] | Finished setting node schedule (with verification) for node: vstsn01
+[2026-04-17 02:21:55.082736] | Thread:18730 | [CncServiceImpl::SetNodeSchedule] | Start setting node schedule for node: vstsn01
+[2026-04-17 02:21:55.082808] | Thread:18730 | [NetworkManager::deployConfigToNode] | Start config deployment for node: vstsn01
+[2026-04-17 02:21:55.082916] | Thread:18557 | [NetconfSession::editData] | Start edit-config with XML length: 3260
+[2026-04-17 02:21:55.083196] | Thread:18793 | [CncServiceImpl::SetNodeSchedule] | Start setting node schedule for node: vstsn01
+[2026-04-17 02:21:55.083948] | Thread:18807 | [CncServiceImpl::SetNodeSchedule] | Start setting node schedule for node: vstsn01
+[2026-04-17 02:21:55.084889] | Thread:18808 | [CncServiceImpl::SetNodeSchedule] | Start setting node schedule for node: vstsn01
+[2026-04-17 02:21:55.085501] | Thread:18810 | [CncServiceImpl::SetNodeSchedule] | Start setting node schedule for node: vstsn01
+[2026-04-17 02:21:55.086122] | Thread:18811 | [CncServiceImpl::SetNodeSchedule] | Start setting node schedule for node: vstsn01
+[2026-04-17 02:21:55.086887] | Thread:18812 | [CncServiceImpl::SetNodeSchedule] | Start setting node schedule for node: vstsn01
+[2026-04-17 02:21:55.087626] | Thread:18814 | [CncServiceImpl::SetNodeSchedule] | Start setting node schedule for node: vstsn01
+[2026-04-17 02:21:55.111255] | Thread:18557 | [NetconfSession::editData] | Finished edit-config with XML length: 3260
+[2026-04-17 02:21:55.111289] | Thread:18557 | [NetconfSession::commit] | Start commit operation.
+[2026-04-17 02:21:55.152560] | Thread:18557 | [NetconfSession::commit] | Finished commit operation.
+[2026-04-17 02:21:55.152584] | Thread:18557 | [NetworkManager::deployConfigToNode] | Successfully deployed config for node: vstsn01
+[2026-04-17 02:21:55.152625] | Thread:18730 | [CncServiceImpl::SetNodeSchedule] | Finished deploying config to node: vstsn01
+[2026-04-17 02:21:55.152648] | Thread:18730 | [CncServiceImpl::SetNodeSchedule] | Finished setting node schedule (with verification) for node: vstsn01
+[2026-04-17 02:21:55.152690] | Thread:18793 | [NetworkManager::deployConfigToNode] | Start config deployment for node: vstsn01
+[2026-04-17 02:21:55.152803] | Thread:18557 | [NetconfSession::editData] | Start edit-config with XML length: 3260
+[2026-04-17 02:21:55.181200] | Thread:18557 | [NetconfSession::editData] | Finished edit-config with XML length: 3260
+[2026-04-17 02:21:55.181245] | Thread:18557 | [NetconfSession::commit] | Start commit operation.
+[2026-04-17 02:21:55.222169] | Thread:18557 | [NetconfSession::commit] | Finished commit operation.
+[2026-04-17 02:21:55.222195] | Thread:18557 | [NetworkManager::deployConfigToNode] | Successfully deployed config for node: vstsn01
+[2026-04-17 02:21:55.222243] | Thread:18793 | [CncServiceImpl::SetNodeSchedule] | Finished deploying config to node: vstsn01
+[2026-04-17 02:21:55.222271] | Thread:18793 | [CncServiceImpl::SetNodeSchedule] | Finished setting node schedule (with verification) for node: vstsn01
+[2026-04-17 02:21:55.222313] | Thread:18807 | [NetworkManager::deployConfigToNode] | Start config deployment for node: vstsn01
+[2026-04-17 02:21:55.222420] | Thread:18557 | [NetconfSession::editData] | Start edit-config with XML length: 3260
+[2026-04-17 02:21:55.257547] | Thread:18557 | [NetconfSession::editData] | Finished edit-config with XML length: 3260
+[2026-04-17 02:21:55.257570] | Thread:18557 | [NetconfSession::commit] | Start commit operation.
+[2026-04-17 02:21:55.304950] | Thread:18557 | [NetconfSession::commit] | Finished commit operation.
+[2026-04-17 02:21:55.304977] | Thread:18557 | [NetworkManager::deployConfigToNode] | Successfully deployed config for node: vstsn01
+[2026-04-17 02:21:55.305028] | Thread:18807 | [CncServiceImpl::SetNodeSchedule] | Finished deploying config to node: vstsn01
+[2026-04-17 02:21:55.305073] | Thread:18807 | [CncServiceImpl::SetNodeSchedule] | Finished setting node schedule (with verification) for node: vstsn01
+[2026-04-17 02:21:55.305116] | Thread:18808 | [NetworkManager::deployConfigToNode] | Start config deployment for node: vstsn01
+[2026-04-17 02:21:55.305236] | Thread:18557 | [NetconfSession::editData] | Start edit-config with XML length: 3260
+[2026-04-17 02:21:55.340042] | Thread:18557 | [NetconfSession::editData] | Finished edit-config with XML length: 3260
+[2026-04-17 02:21:55.340065] | Thread:18557 | [NetconfSession::commit] | Start commit operation.
+[2026-04-17 02:21:55.380280] | Thread:18557 | [NetconfSession::commit] | Finished commit operation.
+[2026-04-17 02:21:55.380317] | Thread:18557 | [NetworkManager::deployConfigToNode] | Successfully deployed config for node: vstsn01
+[2026-04-17 02:21:55.380401] | Thread:18808 | [CncServiceImpl::SetNodeSchedule] | Finished deploying config to node: vstsn01
+[2026-04-17 02:21:55.380429] | Thread:18808 | [CncServiceImpl::SetNodeSchedule] | Finished setting node schedule (with verification) for node: vstsn01
+[2026-04-17 02:21:55.380475] | Thread:18810 | [NetworkManager::deployConfigToNode] | Start config deployment for node: vstsn01
+[2026-04-17 02:21:55.380637] | Thread:18557 | [NetconfSession::editData] | Start edit-config with XML length: 3260
+[2026-04-17 02:21:55.414056] | Thread:18557 | [NetconfSession::editData] | Finished edit-config with XML length: 3260
+[2026-04-17 02:21:55.414085] | Thread:18557 | [NetconfSession::commit] | Start commit operation.
+[2026-04-17 02:21:55.454314] | Thread:18557 | [NetconfSession::commit] | Finished commit operation.
+[2026-04-17 02:21:55.454356] | Thread:18557 | [NetworkManager::deployConfigToNode] | Successfully deployed config for node: vstsn01
+[2026-04-17 02:21:55.454423] | Thread:18810 | [CncServiceImpl::SetNodeSchedule] | Finished deploying config to node: vstsn01
+[2026-04-17 02:21:55.454486] | Thread:18810 | [CncServiceImpl::SetNodeSchedule] | Finished setting node schedule (with verification) for node: vstsn01
+[2026-04-17 02:21:55.454544] | Thread:18811 | [NetworkManager::deployConfigToNode] | Start config deployment for node: vstsn01
+[2026-04-17 02:21:55.454668] | Thread:18557 | [NetconfSession::editData] | Start edit-config with XML length: 3260
+[2026-04-17 02:21:55.483885] | Thread:18557 | [NetconfSession::editData] | Finished edit-config with XML length: 3260
+[2026-04-17 02:21:55.483908] | Thread:18557 | [NetconfSession::commit] | Start commit operation.
+[2026-04-17 02:21:55.523863] | Thread:18557 | [NetconfSession::commit] | Finished commit operation.
+[2026-04-17 02:21:55.523888] | Thread:18557 | [NetworkManager::deployConfigToNode] | Successfully deployed config for node: vstsn01
+[2026-04-17 02:21:55.523943] | Thread:18811 | [CncServiceImpl::SetNodeSchedule] | Finished deploying config to node: vstsn01
+[2026-04-17 02:21:55.523976] | Thread:18811 | [CncServiceImpl::SetNodeSchedule] | Finished setting node schedule (with verification) for node: vstsn01
+[2026-04-17 02:21:55.524014] | Thread:18812 | [NetworkManager::deployConfigToNode] | Start config deployment for node: vstsn01
+[2026-04-17 02:21:55.524116] | Thread:18557 | [NetconfSession::editData] | Start edit-config with XML length: 3260
+[2026-04-17 02:21:55.551014] | Thread:18557 | [NetconfSession::editData] | Finished edit-config with XML length: 3260
+[2026-04-17 02:21:55.551085] | Thread:18557 | [NetconfSession::commit] | Start commit operation.
+[2026-04-17 02:21:55.592066] | Thread:18557 | [NetconfSession::commit] | Finished commit operation.
+[2026-04-17 02:21:55.592099] | Thread:18557 | [NetworkManager::deployConfigToNode] | Successfully deployed config for node: vstsn01
+[2026-04-17 02:21:55.592155] | Thread:18812 | [CncServiceImpl::SetNodeSchedule] | Finished deploying config to node: vstsn01
+[2026-04-17 02:21:55.592215] | Thread:18812 | [CncServiceImpl::SetNodeSchedule] | Finished setting node schedule (with verification) for node: vstsn01
+[2026-04-17 02:21:55.592322] | Thread:18814 | [NetworkManager::deployConfigToNode] | Start config deployment for node: vstsn01
+[2026-04-17 02:21:55.592467] | Thread:18557 | [NetconfSession::editData] | Start edit-config with XML length: 3260
+[2026-04-17 02:21:55.620899] | Thread:18557 | [NetconfSession::editData] | Finished edit-config with XML length: 3260
+[2026-04-17 02:21:55.620932] | Thread:18557 | [NetconfSession::commit] | Start commit operation.
+[2026-04-17 02:21:55.661847] | Thread:18557 | [NetconfSession::commit] | Finished commit operation.
+[2026-04-17 02:21:55.661872] | Thread:18557 | [NetworkManager::deployConfigToNode] | Successfully deployed config for node: vstsn01
+[2026-04-17 02:21:55.661939] | Thread:18814 | [CncServiceImpl::SetNodeSchedule] | Finished deploying config to node: vstsn01
+[2026-04-17 02:21:55.661974] | Thread:18814 | [CncServiceImpl::SetNodeSchedule] | Finished setting node schedule (with verification) for node: vstsn01
+[2026-04-17 02:21:56.087461] | Thread:18730 | [CncServiceImpl::SetNodeSchedule] | Start setting node schedule for node: vstsn01
+[2026-04-17 02:21:56.087548] | Thread:18730 | [NetworkManager::deployConfigToNode] | Start config deployment for node: vstsn01
+[2026-04-17 02:21:56.087671] | Thread:18557 | [NetconfSession::editData] | Start edit-config with XML length: 3260
+[2026-04-17 02:21:56.087730] | Thread:18815 | [CncServiceImpl::SetNodeSchedule] | Start setting node schedule for node: vstsn01
+[2026-04-17 02:21:56.088458] | Thread:18837 | [CncServiceImpl::SetNodeSchedule] | Start setting node schedule for node: vstsn01
+[2026-04-17 02:21:56.089225] | Thread:18838 | [CncServiceImpl::SetNodeSchedule] | Start setting node schedule for node: vstsn01
+[2026-04-17 02:21:56.090005] | Thread:18839 | [CncServiceImpl::SetNodeSchedule] | Start setting node schedule for node: vstsn01
+[2026-04-17 02:21:56.090695] | Thread:18840 | [CncServiceImpl::SetNodeSchedule] | Start setting node schedule for node: vstsn01
+[2026-04-17 02:21:56.091413] | Thread:18841 | [CncServiceImpl::SetNodeSchedule] | Start setting node schedule for node: vstsn01
+[2026-04-17 02:21:56.092109] | Thread:18842 | [CncServiceImpl::SetNodeSchedule] | Start setting node schedule for node: vstsn01
+[2026-04-17 02:21:56.092851] | Thread:18843 | [CncServiceImpl::SetNodeSchedule] | Start setting node schedule for node: vstsn01
+[2026-04-17 02:21:56.117301] | Thread:18557 | [NetconfSession::editData] | Finished edit-config with XML length: 3260
+[2026-04-17 02:21:56.117326] | Thread:18557 | [NetconfSession::commit] | Start commit operation.
+[2026-04-17 02:21:56.158277] | Thread:18557 | [NetconfSession::commit] | Finished commit operation.
+[2026-04-17 02:21:56.158308] | Thread:18557 | [NetworkManager::deployConfigToNode] | Successfully deployed config for node: vstsn01
+[2026-04-17 02:21:56.158358] | Thread:18730 | [CncServiceImpl::SetNodeSchedule] | Finished deploying config to node: vstsn01
+[2026-04-17 02:21:56.158389] | Thread:18730 | [CncServiceImpl::SetNodeSchedule] | Finished setting node schedule (with verification) for node: vstsn01
+[2026-04-17 02:21:56.158443] | Thread:18815 | [NetworkManager::deployConfigToNode] | Start config deployment for node: vstsn01
+[2026-04-17 02:21:56.158551] | Thread:18557 | [NetconfSession::editData] | Start edit-config with XML length: 3260
+[2026-04-17 02:21:56.188302] | Thread:18557 | [NetconfSession::editData] | Finished edit-config with XML length: 3260
+[2026-04-17 02:21:56.188329] | Thread:18557 | [NetconfSession::commit] | Start commit operation.
+[2026-04-17 02:21:56.230568] | Thread:18557 | [NetconfSession::commit] | Finished commit operation.
+[2026-04-17 02:21:56.230600] | Thread:18557 | [NetworkManager::deployConfigToNode] | Successfully deployed config for node: vstsn01
+[2026-04-17 02:21:56.230648] | Thread:18815 | [CncServiceImpl::SetNodeSchedule] | Finished deploying config to node: vstsn01
+[2026-04-17 02:21:56.230689] | Thread:18815 | [CncServiceImpl::SetNodeSchedule] | Finished setting node schedule (with verification) for node: vstsn01
+[2026-04-17 02:21:56.230768] | Thread:18837 | [NetworkManager::deployConfigToNode] | Start config deployment for node: vstsn01
+[2026-04-17 02:21:56.230886] | Thread:18557 | [NetconfSession::editData] | Start edit-config with XML length: 3260
+[2026-04-17 02:21:56.259928] | Thread:18557 | [NetconfSession::editData] | Finished edit-config with XML length: 3260
+[2026-04-17 02:21:56.259953] | Thread:18557 | [NetconfSession::commit] | Start commit operation.
+[2026-04-17 02:21:56.304690] | Thread:18557 | [NetconfSession::commit] | Finished commit operation.
+[2026-04-17 02:21:56.304728] | Thread:18557 | [NetworkManager::deployConfigToNode] | Successfully deployed config for node: vstsn01
+[2026-04-17 02:21:56.304784] | Thread:18837 | [CncServiceImpl::SetNodeSchedule] | Finished deploying config to node: vstsn01
+[2026-04-17 02:21:56.304845] | Thread:18837 | [CncServiceImpl::SetNodeSchedule] | Finished setting node schedule (with verification) for node: vstsn01
+[2026-04-17 02:21:56.304912] | Thread:18838 | [NetworkManager::deployConfigToNode] | Start config deployment for node: vstsn01
+[2026-04-17 02:21:56.305040] | Thread:18557 | [NetconfSession::editData] | Start edit-config with XML length: 3260
+[2026-04-17 02:21:56.334129] | Thread:18557 | [NetconfSession::editData] | Finished edit-config with XML length: 3260
+[2026-04-17 02:21:56.334153] | Thread:18557 | [NetconfSession::commit] | Start commit operation.
+[2026-04-17 02:21:56.375353] | Thread:18557 | [NetconfSession::commit] | Finished commit operation.
+[2026-04-17 02:21:56.375429] | Thread:18557 | [NetworkManager::deployConfigToNode] | Successfully deployed config for node: vstsn01
+[2026-04-17 02:21:56.375451] | Thread:18838 | [CncServiceImpl::SetNodeSchedule] | Finished deploying config to node: vstsn01
+[2026-04-17 02:21:56.375497] | Thread:18838 | [CncServiceImpl::SetNodeSchedule] | Finished setting node schedule (with verification) for node: vstsn01
+[2026-04-17 02:21:56.375551] | Thread:18839 | [NetworkManager::deployConfigToNode] | Start config deployment for node: vstsn01
+[2026-04-17 02:21:56.375664] | Thread:18557 | [NetconfSession::editData] | Start edit-config with XML length: 3260
+[2026-04-17 02:21:56.406126] | Thread:18557 | [NetconfSession::editData] | Finished edit-config with XML length: 3260
+[2026-04-17 02:21:56.406150] | Thread:18557 | [NetconfSession::commit] | Start commit operation.
+[2026-04-17 02:21:56.447656] | Thread:18557 | [NetconfSession::commit] | Finished commit operation.
+[2026-04-17 02:21:56.447682] | Thread:18557 | [NetworkManager::deployConfigToNode] | Successfully deployed config for node: vstsn01
+[2026-04-17 02:21:56.447744] | Thread:18839 | [CncServiceImpl::SetNodeSchedule] | Finished deploying config to node: vstsn01
+[2026-04-17 02:21:56.447775] | Thread:18839 | [CncServiceImpl::SetNodeSchedule] | Finished setting node schedule (with verification) for node: vstsn01
+[2026-04-17 02:21:56.447871] | Thread:18840 | [NetworkManager::deployConfigToNode] | Start config deployment for node: vstsn01
+[2026-04-17 02:21:56.447997] | Thread:18557 | [NetconfSession::editData] | Start edit-config with XML length: 3260
+[2026-04-17 02:21:56.474425] | Thread:18557 | [NetconfSession::editData] | Finished edit-config with XML length: 3260
+[2026-04-17 02:21:56.474462] | Thread:18557 | [NetconfSession::commit] | Start commit operation.
+[2026-04-17 02:21:56.517003] | Thread:18557 | [NetconfSession::commit] | Finished commit operation.
+[2026-04-17 02:21:56.517027] | Thread:18557 | [NetworkManager::deployConfigToNode] | Successfully deployed config for node: vstsn01
+[2026-04-17 02:21:56.517092] | Thread:18840 | [CncServiceImpl::SetNodeSchedule] | Finished deploying config to node: vstsn01
+[2026-04-17 02:21:56.517127] | Thread:18840 | [CncServiceImpl::SetNodeSchedule] | Finished setting node schedule (with verification) for node: vstsn01
+[2026-04-17 02:21:56.517205] | Thread:18841 | [NetworkManager::deployConfigToNode] | Start config deployment for node: vstsn01
+[2026-04-17 02:21:56.517320] | Thread:18557 | [NetconfSession::editData] | Start edit-config with XML length: 3260
+[2026-04-17 02:21:56.549649] | Thread:18557 | [NetconfSession::editData] | Finished edit-config with XML length: 3260
+[2026-04-17 02:21:56.549681] | Thread:18557 | [NetconfSession::commit] | Start commit operation.
+[2026-04-17 02:21:56.589115] | Thread:18557 | [NetconfSession::commit] | Finished commit operation.
+[2026-04-17 02:21:56.589141] | Thread:18557 | [NetworkManager::deployConfigToNode] | Successfully deployed config for node: vstsn01
+[2026-04-17 02:21:56.589220] | Thread:18841 | [CncServiceImpl::SetNodeSchedule] | Finished deploying config to node: vstsn01
+[2026-04-17 02:21:56.589254] | Thread:18841 | [CncServiceImpl::SetNodeSchedule] | Finished setting node schedule (with verification) for node: vstsn01
+[2026-04-17 02:21:56.589295] | Thread:18842 | [NetworkManager::deployConfigToNode] | Start config deployment for node: vstsn01
+[2026-04-17 02:21:56.589406] | Thread:18557 | [NetconfSession::editData] | Start edit-config with XML length: 3260
+[2026-04-17 02:21:56.618754] | Thread:18557 | [NetconfSession::editData] | Finished edit-config with XML length: 3260
+[2026-04-17 02:21:56.618780] | Thread:18557 | [NetconfSession::commit] | Start commit operation.
+[2026-04-17 02:21:56.659456] | Thread:18557 | [NetconfSession::commit] | Finished commit operation.
+[2026-04-17 02:21:56.659486] | Thread:18557 | [NetworkManager::deployConfigToNode] | Successfully deployed config for node: vstsn01
+[2026-04-17 02:21:56.659531] | Thread:18842 | [CncServiceImpl::SetNodeSchedule] | Finished deploying config to node: vstsn01
+[2026-04-17 02:21:56.659560] | Thread:18842 | [CncServiceImpl::SetNodeSchedule] | Finished setting node schedule (with verification) for node: vstsn01
+[2026-04-17 02:21:56.659611] | Thread:18843 | [NetworkManager::deployConfigToNode] | Start config deployment for node: vstsn01
+[2026-04-17 02:21:56.659731] | Thread:18557 | [NetconfSession::editData] | Start edit-config with XML length: 3260
+[2026-04-17 02:21:56.688606] | Thread:18557 | [NetconfSession::editData] | Finished edit-config with XML length: 3260
+[2026-04-17 02:21:56.688633] | Thread:18557 | [NetconfSession::commit] | Start commit operation.
+[2026-04-17 02:21:56.729359] | Thread:18557 | [NetconfSession::commit] | Finished commit operation.
+[2026-04-17 02:21:56.729394] | Thread:18557 | [NetworkManager::deployConfigToNode] | Successfully deployed config for node: vstsn01
+[2026-04-17 02:21:56.729447] | Thread:18843 | [CncServiceImpl::SetNodeSchedule] | Finished deploying config to node: vstsn01
+[2026-04-17 02:21:56.729478] | Thread:18843 | [CncServiceImpl::SetNodeSchedule] | Finished setting node schedule (with verification) for node: vstsn01
+[2026-04-17 02:21:57.091355] | Thread:18730 | [CncServiceImpl::SetNodeSchedule] | Start setting node schedule for node: vstsn01
+[2026-04-17 02:21:57.091427] | Thread:18730 | [NetworkManager::deployConfigToNode] | Start config deployment for node: vstsn01
+[2026-04-17 02:21:57.091528] | Thread:18557 | [NetconfSession::editData] | Start edit-config with XML length: 3260
+[2026-04-17 02:21:57.091998] | Thread:18844 | [CncServiceImpl::SetNodeSchedule] | Start setting node schedule for node: vstsn01
+[2026-04-17 02:21:57.092555] | Thread:18866 | [CncServiceImpl::SetNodeSchedule] | Start setting node schedule for node: vstsn01
+[2026-04-17 02:21:57.093525] | Thread:18867 | [CncServiceImpl::SetNodeSchedule] | Start setting node schedule for node: vstsn01
+[2026-04-17 02:21:57.094277] | Thread:18868 | [CncServiceImpl::SetNodeSchedule] | Start setting node schedule for node: vstsn01
+[2026-04-17 02:21:57.094898] | Thread:18869 | [CncServiceImpl::SetNodeSchedule] | Start setting node schedule for node: vstsn01
+[2026-04-17 02:21:57.095451] | Thread:18870 | [CncServiceImpl::SetNodeSchedule] | Start setting node schedule for node: vstsn01
+[2026-04-17 02:21:57.096133] | Thread:18871 | [CncServiceImpl::SetNodeSchedule] | Start setting node schedule for node: vstsn01
+[2026-04-17 02:21:57.096880] | Thread:18872 | [CncServiceImpl::SetNodeSchedule] | Start setting node schedule for node: vstsn01
+[2026-04-17 02:21:57.097877] | Thread:18873 | [CncServiceImpl::SetNodeSchedule] | Start setting node schedule for node: vstsn01
+[2026-04-17 02:21:57.125204] | Thread:18557 | [NetconfSession::editData] | Finished edit-config with XML length: 3260
+[2026-04-17 02:21:57.125237] | Thread:18557 | [NetconfSession::commit] | Start commit operation.
+[2026-04-17 02:21:57.167791] | Thread:18557 | [NetconfSession::commit] | Finished commit operation.
+[2026-04-17 02:21:57.167814] | Thread:18557 | [NetworkManager::deployConfigToNode] | Successfully deployed config for node: vstsn01
+[2026-04-17 02:21:57.167946] | Thread:18730 | [CncServiceImpl::SetNodeSchedule] | Finished deploying config to node: vstsn01
+[2026-04-17 02:21:57.167991] | Thread:18730 | [CncServiceImpl::SetNodeSchedule] | Finished setting node schedule (with verification) for node: vstsn01
+[2026-04-17 02:21:57.168071] | Thread:18844 | [NetworkManager::deployConfigToNode] | Start config deployment for node: vstsn01
+[2026-04-17 02:21:57.168214] | Thread:18557 | [NetconfSession::editData] | Start edit-config with XML length: 3260
+[2026-04-17 02:21:57.197758] | Thread:18557 | [NetconfSession::editData] | Finished edit-config with XML length: 3260
+[2026-04-17 02:21:57.197784] | Thread:18557 | [NetconfSession::commit] | Start commit operation.
+[2026-04-17 02:21:57.238154] | Thread:18557 | [NetconfSession::commit] | Finished commit operation.
+[2026-04-17 02:21:57.238181] | Thread:18557 | [NetworkManager::deployConfigToNode] | Successfully deployed config for node: vstsn01
+[2026-04-17 02:21:57.238235] | Thread:18844 | [CncServiceImpl::SetNodeSchedule] | Finished deploying config to node: vstsn01
+[2026-04-17 02:21:57.238267] | Thread:18844 | [CncServiceImpl::SetNodeSchedule] | Finished setting node schedule (with verification) for node: vstsn01
+[2026-04-17 02:21:57.238310] | Thread:18866 | [NetworkManager::deployConfigToNode] | Start config deployment for node: vstsn01
+[2026-04-17 02:21:57.238417] | Thread:18557 | [NetconfSession::editData] | Start edit-config with XML length: 3260
+[2026-04-17 02:21:57.269122] | Thread:18557 | [NetconfSession::editData] | Finished edit-config with XML length: 3260
+[2026-04-17 02:21:57.269149] | Thread:18557 | [NetconfSession::commit] | Start commit operation.
+[2026-04-17 02:21:57.310134] | Thread:18557 | [NetconfSession::commit] | Finished commit operation.
+[2026-04-17 02:21:57.310164] | Thread:18557 | [NetworkManager::deployConfigToNode] | Successfully deployed config for node: vstsn01
+[2026-04-17 02:21:57.310232] | Thread:18866 | [CncServiceImpl::SetNodeSchedule] | Finished deploying config to node: vstsn01
+[2026-04-17 02:21:57.310274] | Thread:18866 | [CncServiceImpl::SetNodeSchedule] | Finished setting node schedule (with verification) for node: vstsn01
+[2026-04-17 02:21:57.310312] | Thread:18867 | [NetworkManager::deployConfigToNode] | Start config deployment for node: vstsn01
+[2026-04-17 02:21:57.310481] | Thread:18557 | [NetconfSession::editData] | Start edit-config with XML length: 3260
+[2026-04-17 02:21:57.339749] | Thread:18557 | [NetconfSession::editData] | Finished edit-config with XML length: 3260
+[2026-04-17 02:21:57.339780] | Thread:18557 | [NetconfSession::commit] | Start commit operation.
+[2026-04-17 02:21:57.390870] | Thread:18557 | [NetconfSession::commit] | Finished commit operation.
+[2026-04-17 02:21:57.390897] | Thread:18557 | [NetworkManager::deployConfigToNode] | Successfully deployed config for node: vstsn01
+[2026-04-17 02:21:57.390944] | Thread:18867 | [CncServiceImpl::SetNodeSchedule] | Finished deploying config to node: vstsn01
+[2026-04-17 02:21:57.390980] | Thread:18867 | [CncServiceImpl::SetNodeSchedule] | Finished setting node schedule (with verification) for node: vstsn01
+[2026-04-17 02:21:57.391028] | Thread:18868 | [NetworkManager::deployConfigToNode] | Start config deployment for node: vstsn01
+[2026-04-17 02:21:57.391121] | Thread:18557 | [NetconfSession::editData] | Start edit-config with XML length: 3260
+[2026-04-17 02:21:57.426633] | Thread:18557 | [NetconfSession::editData] | Finished edit-config with XML length: 3260
+[2026-04-17 02:21:57.426674] | Thread:18557 | [NetconfSession::commit] | Start commit operation.
+[2026-04-17 02:21:57.476078] | Thread:18557 | [NetconfSession::commit] | Finished commit operation.
+[2026-04-17 02:21:57.476106] | Thread:18557 | [NetworkManager::deployConfigToNode] | Successfully deployed config for node: vstsn01
+[2026-04-17 02:21:57.476162] | Thread:18868 | [CncServiceImpl::SetNodeSchedule] | Finished deploying config to node: vstsn01
+[2026-04-17 02:21:57.476190] | Thread:18868 | [CncServiceImpl::SetNodeSchedule] | Finished setting node schedule (with verification) for node: vstsn01
+[2026-04-17 02:21:57.476231] | Thread:18869 | [NetworkManager::deployConfigToNode] | Start config deployment for node: vstsn01
+[2026-04-17 02:21:57.476341] | Thread:18557 | [NetconfSession::editData] | Start edit-config with XML length: 3260
+[2026-04-17 02:21:57.506164] | Thread:18557 | [NetconfSession::editData] | Finished edit-config with XML length: 3260
+[2026-04-17 02:21:57.506203] | Thread:18557 | [NetconfSession::commit] | Start commit operation.
+[2026-04-17 02:21:57.548041] | Thread:18557 | [NetconfSession::commit] | Finished commit operation.
+[2026-04-17 02:21:57.548070] | Thread:18557 | [NetworkManager::deployConfigToNode] | Successfully deployed config for node: vstsn01
+[2026-04-17 02:21:57.548121] | Thread:18869 | [CncServiceImpl::SetNodeSchedule] | Finished deploying config to node: vstsn01
+[2026-04-17 02:21:57.548173] | Thread:18869 | [CncServiceImpl::SetNodeSchedule] | Finished setting node schedule (with verification) for node: vstsn01
+[2026-04-17 02:21:57.548222] | Thread:18870 | [NetworkManager::deployConfigToNode] | Start config deployment for node: vstsn01
+[2026-04-17 02:21:57.548316] | Thread:18557 | [NetconfSession::editData] | Start edit-config with XML length: 3260
+[2026-04-17 02:21:57.574920] | Thread:18557 | [NetconfSession::editData] | Finished edit-config with XML length: 3260
+[2026-04-17 02:21:57.574951] | Thread:18557 | [NetconfSession::commit] | Start commit operation.
+[2026-04-17 02:21:57.615968] | Thread:18557 | [NetconfSession::commit] | Finished commit operation.
+[2026-04-17 02:21:57.615993] | Thread:18557 | [NetworkManager::deployConfigToNode] | Successfully deployed config for node: vstsn01
+[2026-04-17 02:21:57.616092] | Thread:18870 | [CncServiceImpl::SetNodeSchedule] | Finished deploying config to node: vstsn01
+[2026-04-17 02:21:57.616161] | Thread:18870 | [CncServiceImpl::SetNodeSchedule] | Finished setting node schedule (with verification) for node: vstsn01
+[2026-04-17 02:21:57.616239] | Thread:18871 | [NetworkManager::deployConfigToNode] | Start config deployment for node: vstsn01
+[2026-04-17 02:21:57.616370] | Thread:18557 | [NetconfSession::editData] | Start edit-config with XML length: 3260
+[2026-04-17 02:21:57.646081] | Thread:18557 | [NetconfSession::editData] | Finished edit-config with XML length: 3260
+[2026-04-17 02:21:57.646103] | Thread:18557 | [NetconfSession::commit] | Start commit operation.
+[2026-04-17 02:21:57.687875] | Thread:18557 | [NetconfSession::commit] | Finished commit operation.
+[2026-04-17 02:21:57.687902] | Thread:18557 | [NetworkManager::deployConfigToNode] | Successfully deployed config for node: vstsn01
+[2026-04-17 02:21:57.687960] | Thread:18871 | [CncServiceImpl::SetNodeSchedule] | Finished deploying config to node: vstsn01
+[2026-04-17 02:21:57.688013] | Thread:18871 | [CncServiceImpl::SetNodeSchedule] | Finished setting node schedule (with verification) for node: vstsn01
+[2026-04-17 02:21:57.688067] | Thread:18872 | [NetworkManager::deployConfigToNode] | Start config deployment for node: vstsn01
+[2026-04-17 02:21:57.688180] | Thread:18557 | [NetconfSession::editData] | Start edit-config with XML length: 3260
+[2026-04-17 02:21:57.718315] | Thread:18557 | [NetconfSession::editData] | Finished edit-config with XML length: 3260
+[2026-04-17 02:21:57.718341] | Thread:18557 | [NetconfSession::commit] | Start commit operation.
+[2026-04-17 02:21:57.762489] | Thread:18557 | [NetconfSession::commit] | Finished commit operation.
+[2026-04-17 02:21:57.762513] | Thread:18557 | [NetworkManager::deployConfigToNode] | Successfully deployed config for node: vstsn01
+[2026-04-17 02:21:57.762638] | Thread:18872 | [CncServiceImpl::SetNodeSchedule] | Finished deploying config to node: vstsn01
+[2026-04-17 02:21:57.762702] | Thread:18872 | [CncServiceImpl::SetNodeSchedule] | Finished setting node schedule (with verification) for node: vstsn01
+[2026-04-17 02:21:57.762762] | Thread:18873 | [NetworkManager::deployConfigToNode] | Start config deployment for node: vstsn01
+[2026-04-17 02:21:57.762857] | Thread:18557 | [NetconfSession::editData] | Start edit-config with XML length: 3260
+[2026-04-17 02:21:57.790939] | Thread:18557 | [NetconfSession::editData] | Finished edit-config with XML length: 3260
+[2026-04-17 02:21:57.790968] | Thread:18557 | [NetconfSession::commit] | Start commit operation.
+[2026-04-17 02:21:57.831922] | Thread:18557 | [NetconfSession::commit] | Finished commit operation.
+[2026-04-17 02:21:57.831947] | Thread:18557 | [NetworkManager::deployConfigToNode] | Successfully deployed config for node: vstsn01
+[2026-04-17 02:21:57.832079] | Thread:18873 | [CncServiceImpl::SetNodeSchedule] | Finished deploying config to node: vstsn01
+[2026-04-17 02:21:57.832168] | Thread:18873 | [CncServiceImpl::SetNodeSchedule] | Finished setting node schedule (with verification) for node: vstsn01

@@ -1,5 +1,8 @@
 #include "NetconfSession.h"
 
+#include "PerformanceLogger.h"
+#include "spdlog/spdlog.h"
+
 // Not needed anymore since defined in CMakeLists.txt
 /*#ifndef NC_ENABLED_SSH_TlS
 #define NC_ENABLED_SSH_TLS
@@ -13,6 +16,7 @@
 #include <cstdint>
 #include <cstring>
 #include <iostream>
+#include <unordered_map>
 #include <vector>
 
 namespace common {
@@ -47,8 +51,9 @@ NetconfSession::NetconfSession() {
 }
 
 NetconfSession::~NetconfSession() {
-    disconnect();         // Ensure the session is disconnected
-    nc_client_destroy();  // Cleanup libnetconf2 client - maybe not needed
+    // Stop listener first so no thread is still using session_ during disconnect.
+    stopNotificationListener();
+    disconnect();
 }
 
 bool NetconfSession::connect(const std::string &ip, int port, const std::string &user, const std::string &password) {
@@ -94,14 +99,115 @@ bool NetconfSession::isConnected() const {
     return session_ != nullptr;
 }
 
-std::string NetconfSession::getData(const std::string &xpath) {
+bool NetconfSession::subscribe(const std::string &xpath, std::function<void(struct lyd_node *)> callback) {
     if (session_ == nullptr) {
         spdlog::error("[NetconfSession] Not connected.");
-        return "";
+        return false;
+    }
+
+    // Safety if no XPath provided, subscribe to all notifications (not recommended in production)
+    const char *filter = xpath.empty() ? nullptr : xpath.c_str();
+
+    // 1. Build subscription RPC
+    struct nc_rpc *rpc = nc_rpc_subscribe(nullptr, filter, nullptr, nullptr, NC_PARAMTYPE_CONST);
+    if (rpc == nullptr) {
+        spdlog::error("[NetconfSession] Failed to create subscription RPC.");
+        return false;
+    }
+
+    // 2. Send subscription RPC
+    uint64_t msgid;
+    NC_MSG_TYPE status = nc_send_rpc(session_, rpc, 1000, &msgid);
+    if (status == NC_MSG_ERROR || status == NC_MSG_WOULDBLOCK) {
+        spdlog::error("[NetconfSession] Failed to send subscription RPC.");
+        nc_rpc_free(rpc);
+        return false;
+    }
+
+    // 3. Wait for OK reply
+    struct lyd_node *envp = nullptr, *op = nullptr;
+    NC_MSG_TYPE msgtype = nc_recv_reply(session_, rpc, msgid, 5000, &envp, &op);
+    nc_rpc_free(rpc);  // Free RPC object immediately after receiving reply
+
+    if (msgtype == NC_MSG_REPLY) {
+        subscriptions_[xpath] = callback;  // Store the callback for this subscription
+        spdlog::info("[NetconfSession] Successfully subscribed to notifications with XPath: {}", xpath);
+    } else if (msgtype == NC_MSG_ERROR) {
+        spdlog::error("[NetconfSession] Server replied with ERROR to subscription.");
+    } else {
+        spdlog::error("[NetconfSession] Unexpected message type received: {}", static_cast<int>(msgtype));
+    }
+
+    if (envp != nullptr) {
+        lyd_free_all(envp);
+    }
+    if (op != nullptr) {
+        lyd_free_all(op);
+    }
+
+    return msgtype == NC_MSG_REPLY;
+}
+
+void NetconfSession::startNotificationListener() {
+    if (listening_) {
+        spdlog::warn("[NetconfSession] Notification listener is already running.");
+        return;
+    }
+
+    listening_ = true;
+
+    listenerThread_ = std::thread([this]() {
+        spdlog::info("[NetconfSession] Notification listener thread started.");
+
+        while (listening_) {
+            struct lyd_node *envp = nullptr;
+            struct lyd_node *op = nullptr;
+
+            int status = nc_recv_notif(session_, 5000, &envp, &op);
+
+            if (status == NC_MSG_NOTIF) {
+                spdlog::info("[NetconfSession] Received notification.");
+
+                // Got a packet
+                for (const auto &[xpath, callback] : subscriptions_) {
+                    callback(op);
+                }
+
+                if (envp != nullptr) {
+                    lyd_free_all(envp);
+                }
+                if (op != nullptr) {
+                    lyd_free_all(op);
+                }
+            } else if (status == NC_MSG_ERROR) {
+                spdlog::error("[NetconfSession] Error while receiving notification.");
+                listening_ = false;  // Stop listener on error
+            }
+        }
+    });
+}
+
+void NetconfSession::stopNotificationListener() {
+    if (!listening_) {
+        return;
+    }
+
+    listening_ = false;
+
+    if (listenerThread_.joinable()) {
+        listenerThread_.join();
+        spdlog::info("[NetconfSession] Notification listener thread stopped.");
+    }
+}
+
+struct lyd_node *NetconfSession::getData(const std::string &xpath) {
+    PERFORMANCE_LOGGING("[NetconfSession::getData]", "Start data fetch with XPath: " + xpath);
+    if (session_ == nullptr) {
+        spdlog::error("[NetconfSession] Not connected.");
+        return nullptr;
     }
 
     // 1. Create RPC object
-    std::string result_xml;
     struct nc_rpc *rpc = nullptr;
 
     if (xpath.empty()) {
@@ -112,7 +218,7 @@ std::string NetconfSession::getData(const std::string &xpath) {
 
     if (rpc == nullptr) {
         spdlog::error("[NetconfSession] Error: Failed to create RPC.");
-        return "";
+        return nullptr;
     }
 
     // 2. Send RPC to server
@@ -121,7 +227,7 @@ std::string NetconfSession::getData(const std::string &xpath) {
     if (status == NC_MSG_ERROR || status == NC_MSG_WOULDBLOCK) {
         spdlog::error("[NetconfSession] Error: Failed to send RPC.");
         nc_rpc_free(rpc);
-        return "";
+        return nullptr;
     }
 
     struct lyd_node *envp = nullptr;  // Envelope (RPC wrapper)
@@ -130,6 +236,7 @@ std::string NetconfSession::getData(const std::string &xpath) {
     NC_MSG_TYPE msgtype = nc_recv_reply(session_, rpc, msgid, 5000, &envp, &op);
 
     if (msgtype == NC_MSG_REPLY) {
+        PERFORMANCE_LOGGING("[NetconfSession::getData]", "Got return for path: " + xpath);
         // Data received successfully
         if (op != nullptr) {
             char *str_out = nullptr;
@@ -140,7 +247,8 @@ std::string NetconfSession::getData(const std::string &xpath) {
             lyd_print_mem(&str_out, op, LYD_XML, LYD_PRINT_SIBLINGS);
 
             if (str_out != nullptr) {
-                result_xml = std::string(str_out);
+                // result_xml = std::string(str_out); //here something broke in merge --> fix!
+                // spdlog::info("[NetconfSession] Received data:\n{}", str_out); // Debug log for raw xml data
                 free(str_out);
             }
         } else {
@@ -150,17 +258,32 @@ std::string NetconfSession::getData(const std::string &xpath) {
         spdlog::error("[NetconfSession] Server replied with ERROR.");
     }
 
-    if (op != nullptr) {
-        lyd_free_all(op);
-    }
     if (envp != nullptr) {
         lyd_free_all(envp);
     }
 
-    return result_xml;
+    if (msgtype == NC_MSG_REPLY) {
+        // Data received successfully
+        if (op != nullptr) {
+            return op;
+        } else {
+            spdlog::info("[NetconfSession] Reply OK but empty data.");
+        }
+    } else if (msgtype == NC_MSG_ERROR) {
+        spdlog::error("[NetconfSession] Server replied with ERROR.");
+    }
+
+    // Error or no data, cleanup and return nullptr
+    if (op != nullptr) {
+        lyd_free_all(op);
+    }
+
+    return nullptr;
 }
 
 bool NetconfSession::editData(const std::string &configXml) {
+    PERFORMANCE_LOGGING("[NetconfSession::editData]",
+                        "Start edit-config with XML length: " + std::to_string(configXml.size()));
     if (session_ == nullptr) {
         spdlog::error("[NetconfSession] Not connected.");
         return false;
@@ -200,6 +323,8 @@ bool NetconfSession::editData(const std::string &configXml) {
         // Edit-config successful
         success = true;
         spdlog::info("[NetconfSession] edit-config successful.");
+        PERFORMANCE_LOGGING("[NetconfSession::editData]",
+                            "Finished edit-config with XML length: " + std::to_string(configXml.size()));
     } else if (msgtype == NC_MSG_ERROR) {
         spdlog::error("[NetconfSession] Server replied with ERROR to edit-config.");
     }
@@ -217,6 +342,7 @@ bool NetconfSession::editData(const std::string &configXml) {
 }
 
 bool NetconfSession::commit() {
+    PERFORMANCE_LOGGING("[NetconfSession::commit]", "Start commit operation.");
     if (session_ == nullptr) {
         spdlog::error("[NetconfSession] Not connected.");
         return false;
@@ -263,6 +389,7 @@ bool NetconfSession::commit() {
         lyd_free_all(envp);
     }
 
+    PERFORMANCE_LOGGING("[NetconfSession::commit]", "Finished commit operation.");
     return success;
 }
 }  // namespace common

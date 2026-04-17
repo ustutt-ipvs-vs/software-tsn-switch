@@ -31,11 +31,11 @@ function setup_lab {
     ip netns add $NS2
 
     # 3. Create Veth Pairs (MODIFIED FOR TAPRIO)
-    echo "[+] Creating Multi-Queue Virtual Cables (4 queues)"
+    echo "[+] Creating Multi-Queue Virtual Cables (8 queues)"
 
-    ip link add $VETH1 numtxqueues 4 numrxqueues 4 type veth peer name $VETH1_BR numtxqueues 4 numrxqueues 4
+    ip link add $VETH1 numtxqueues 8 numrxqueues 8 type veth peer name $VETH1_BR numtxqueues 8 numrxqueues 8
 
-    ip link add $VETH2 numtxqueues 4 numrxqueues 4 type veth peer name $VETH2_BR numtxqueues 4 numrxqueues 4
+    ip link add $VETH2 numtxqueues 8 numrxqueues 8 type veth peer name $VETH2_BR numtxqueues 8 numrxqueues 8
     # >>> END OF CHANGE <<<
 
     # 4. Attach to Bridge

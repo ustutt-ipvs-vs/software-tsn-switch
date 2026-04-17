@@ -1,0 +1,61 @@
+<div class="topo-wrapper">
+
+    <svg #svgRef class="topo-svg" aria-label="Network topology graph"
+         preserveAspectRatio="xMidYMid meet"></svg>
+
+    @if (tooltip) {
+        <div class="topo-tooltip"
+             [style.left.px]="tooltip.x"
+             [style.top.px]="tooltip.y">
+            <p class="tt-title">Link info</p>
+            <table class="tt-table">
+                <tr>
+                    <td class="tt-label">Source</td>
+                    <td class="tt-value">
+                        {{ tooltip.sourceNode }}
+                        <span class="port-badge">{{ tooltip.sourcePort }}</span>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="tt-label">Target</td>
+                    <td class="tt-value">
+                        {{ tooltip.targetNode }}
+                        <span class="port-badge">{{ tooltip.targetPort }}</span>
+                    </td>
+                </tr>
+                @if (tooltip.chassisId) {
+                    <tr>
+                        <td class="tt-label">Chassis</td>
+                        <td class="tt-value">{{ tooltip.chassisId }}</td>
+                    </tr>
+                }
+                @if (tooltip.managementIp) {
+                    <tr>
+                        <td class="tt-label">Mgmt IP</td>
+                        <td class="tt-value">{{ tooltip.managementIp }}</td>
+                    </tr>
+                }
+            </table>
+        </div>
+    }
+
+    <div class="topo-toolbar">
+        <span class="toolbar-label">Layout</span>
+        <div class="layout-pills">
+            @for (l of layouts; track l) {
+                <button class="pill"
+                        [class.pill--active]="currentLayout === l"
+                        (click)="setLayout(l)">
+                    {{ layoutLabels[l] }}
+                </button>
+            }
+        </div>
+    </div>
+
+    <div class="topo-legend">
+        <span class="legend-item"><span class="dot dot--up"></span> Up</span>
+        <span class="legend-item"><span class="dot dot--down"></span> Down</span>
+        <span class="legend-item"><span class="dot dot--unknown"></span> Unknown</span>
+    </div>
+
+</div>

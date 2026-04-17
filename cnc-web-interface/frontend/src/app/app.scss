@@ -1,0 +1,116 @@
+.html, body {
+  font-family: Roboto, "Helvetica Neue", sans-serif;
+  font-style: normal;
+  font-size: 14px;
+}
+
+.spacer {
+  flex: 1 1 auto;
+}
+
+.sidenav-container {
+  height: 100vh;
+}
+
+.parent-container {
+  padding: 20px;
+  height: 80%;
+}
+
+.header-name {
+  margin-left: 5px;
+}
+
+.nav-wrapper {
+  display: flex;
+  flex-direction: column;
+  padding: 20px 16px 0 16px;
+  gap: 16px;
+}
+
+.side-nav {
+  width: 260px;
+  background-color: white;
+  border-right: 1px solid #eee;
+  overflow-x: hidden;
+}
+
+.nav-btn {
+  width: 100%;
+  height: 48px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  border-radius: 12px !important;
+  background-color: white !important;
+  color: #5f6368 !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  border: none !important;
+  padding: 0 16px !important;
+}
+
+.nav-btn mat-icon {
+  margin-right: 12px;
+}
+
+.nav-btn:hover {
+  background-color: #f1f3f4 !important;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+.active {
+  background-color: #e8f0fe !important;
+  color: #1a73e8 !important;
+  box-shadow: 0 2px 4px rgba(26, 115, 232, 0.2) !important;
+}
+
+.active mat-icon {
+  color: #1a73e8;
+}
+
+.top-toolbar {
+  background-color: white;
+  position: sticky;
+  z-index: 100;
+  top: 0;
+  box-shadow: -1px -5px 20px 1px #1a1b1f2e;
+}
+
+.edit-btn {
+  border-radius: 8px;
+  border-color: #e0e0e0;
+  background-color: white;
+  transition: background-color 0.2s ease;
+  margin-left: 10px;
+}
+
+.edit-btn:hover {
+  background-color: #e8f0fe;
+  border-color: #90b4f7;
+}
+
+.cancel-btn {
+  border-radius: 8px;
+  border-color: #e0e0e0;
+  background-color: white;
+  transition: background-color 0.2s ease;
+  margin-left: 10px;
+}
+
+.cancel-btn:hover {
+  background-color: #fee8e8;
+  border-color: #f79090;
+}
+
+.save-btn {
+  border-radius: 8px;
+  border-color: #e0e0e0;
+  background-color: white;
+  transition: background-color 0.2s ease;
+  margin-left: 10px;
+}
+
+.save-btn:hover {
+  background-color: #ecfee8;
+  border-color: #a6f790;
+}
