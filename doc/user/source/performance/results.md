@@ -44,3 +44,12 @@ To evaluate the system's responsiveness to physical network modifications, we co
 The DOWN commands where executed 16 times, whereas the UP commands where executed 15 times.
 
 ![end_to_end_lldp_latency](../../../../tools/performance_analysis/end_to_end_lldp_latency/end_to_end_lldp_latency.png)
+
+## Function-Level Performance Profiling
+
+Below are the results of the function-level performance profiling.
+Each function has one bar that represents its mean start and end time from the time of the start of the edit to the
+candidate datastore, colors represent nesting levels and lower functions start later.
+
+![aggregate_group_000_msg_0_root](../../../../tools/performance_analysis/out/aggregate_out/aggregate_group_plots/aggregate_group_000_msg_0_root.png)
+![aggregate_group_000_msg_0_root](../../../../tools/performance_analysis/out/aggregate_get_out/aggregate_group_plots/aggregate_group_000_msg_0_root.png)

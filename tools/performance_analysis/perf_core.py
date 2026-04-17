@@ -108,6 +108,7 @@ class LatencySample:
     operation: str
     correlation_mode: str
     response_category: str
+    response_operation: str | None
     initiator_group_key: str
     initiator_iter: int | None
     initiator_msg: int | None
@@ -191,7 +192,7 @@ def parse_log_file(path: str) -> list[tuple[int, ParsedLogLine]]:
 
 def _annotate_response_categories(spans: Sequence[PerformanceSpan]) -> None:
     for span in spans:
-        if "CB_CHANGE" not in span.context_text:
+        if "CB_CHANGE" not in span.context_text and "CB_OPER" not in span.context_text:
             continue
         end_text = span.end_free_text.lower()
         if "internal" in end_text:
@@ -276,7 +277,7 @@ def _annotate_reset_trigger_lineage(spans: Sequence[PerformanceSpan]) -> None:
     # Prefer more specific windows first if nested resets ever occur.
     reset_spans.sort(key=lambda span: (span.duration_seconds, span.start_time, span.end_time))
     for span in spans:
-        if "CB_CHANGE" not in span.context_text or span.request_id is None:
+        if ("CB_CHANGE" not in span.context_text and "CB_OPER" not in span.context_text) or span.request_id is None:
             continue
         for reset in reset_spans:
             if span.request_id == reset.request_id:
@@ -407,14 +408,57 @@ def _initiator_grouping(span: PerformanceSpan, initiator_index: int) -> tuple[st
     return (f"{operation}|iter={iter_part}|msg={msg_part}", iter_index, msg_index)
 
 
+def _normalize_operation_name(value: str) -> str:
+    return value.strip().strip("[]")
+
+
+def _response_operation_name(span: PerformanceSpan) -> str:
+    if span.context_parts:
+        return _normalize_operation_name(span.context_parts[0])
+    return _normalize_operation_name(span.context_text)
+
+
+def _normalize_operation_association_rules(
+        rules: dict[str, Sequence[str]] | None,
+) -> dict[str, tuple[str, ...]]:
+    normalized: dict[str, tuple[str, ...]] = {}
+    if not rules:
+        return normalized
+
+    for initiator_operation, response_operations in rules.items():
+        initiator_key = _normalize_operation_name(str(initiator_operation))
+        if not initiator_key:
+            continue
+
+        normalized_response_operations: list[str] = []
+        for response_operation in response_operations:
+            response_key = _normalize_operation_name(str(response_operation))
+            if response_key and response_key not in normalized_response_operations:
+                normalized_response_operations.append(response_key)
+
+        normalized[initiator_key] = tuple(normalized_response_operations)
+
+    return normalized
+
+
+def _response_pool_key(response_operations: Sequence[str] | None) -> tuple[str, ...] | None:
+    if not response_operations:
+        return None
+    return tuple(
+        sorted({_normalize_operation_name(operation) for operation in response_operations if operation.strip()}))
+
+
 def correlate_spans(
         initiators: Sequence[PerformanceSpan],
         responses: Sequence[PerformanceSpan],
         *,
         initiator_context_pattern: re.Pattern[str] | None = None,
         response_context_pattern: re.Pattern[str] | None = None,
+        operation_association_rules: dict[str, Sequence[str]] | None = None,
         correlation_mode: str = "chronological_first",
 ) -> list[LatencySample]:
+    association_rules = _normalize_operation_association_rules(operation_association_rules)
+
     selected_initiators: list[PerformanceSpan] = []
     for span in initiators:
         if initiator_context_pattern and not initiator_context_pattern.search(span.context_text):
@@ -430,13 +474,35 @@ def correlate_spans(
     selected_initiators.sort(key=lambda span: (span.start_time, span.thread_id, span.start_line_index))
     selected_responses.sort(key=lambda span: (span.start_time, span.thread_id, span.start_line_index))
 
-    pools: dict[str, list[PerformanceSpan]] = {"all": selected_responses}
-    pools["internal"] = [span for span in selected_responses if span.response_category == "internal"]
-    pools["external"] = [span for span in selected_responses if span.response_category == "external"]
+    pool_cache: dict[tuple[str, ...] | None, dict[str, list[PerformanceSpan]]] = {}
+    cursor_cache: dict[tuple[str, ...] | None, dict[str, int]] = {}
 
-    cursors = {"all": 0, "internal": 0, "external": 0}
+    def get_pools(pool_key: tuple[str, ...] | None) -> dict[str, list[PerformanceSpan]]:
+        cached = pool_cache.get(pool_key)
+        if cached is not None:
+            return cached
+
+        if pool_key is None:
+            base_responses = selected_responses
+        else:
+            allowed = set(pool_key)
+            base_responses = [span for span in selected_responses if _response_operation_name(span) in allowed]
+
+        cached = {
+            "all": base_responses,
+            "internal": [span for span in base_responses if span.response_category == "internal"],
+            "external": [span for span in base_responses if span.response_category == "external"],
+        }
+        pool_cache[pool_key] = cached
+        cursor_cache[pool_key] = {"all": 0, "internal": 0, "external": 0}
+        return cached
+
     samples: list[LatencySample] = []
     for initiator_index, initiator in enumerate(selected_initiators):
+        initiator_operation = _normalize_operation_name(initiator.context_text)
+        pool_key = _response_pool_key(association_rules.get(initiator_operation))
+        pools = get_pools(pool_key)
+        cursors = cursor_cache[pool_key]
         group_key, iter_index, msg_index = _initiator_grouping(initiator, initiator_index)
         for category in ("all", "internal", "external"):
             pool = pools[category]
@@ -454,9 +520,10 @@ def correlate_spans(
 
             samples.append(
                 LatencySample(
-                    operation=initiator.context_text.strip("[]"),
+                    operation=initiator_operation,
                     correlation_mode=correlation_mode,
                     response_category=category,
+                    response_operation=_response_operation_name(chosen),
                     initiator_group_key=group_key,
                     initiator_iter=iter_index,
                     initiator_msg=msg_index,
@@ -466,7 +533,11 @@ def correlate_spans(
                     latency_ms=(chosen.start_time - initiator.start_time).total_seconds() * 1000.0,
                     response_request_id=chosen.request_id,
                     heuristic=True,
-                    note="Chronological first-match after initiator start time",
+                    note=(
+                        "Chronological first-match after initiator start time"
+                        if pool_key is None
+                        else f"Chronological first-match after initiator start time with response operations {', '.join(pool_key)}"
+                    ),
                 )
             )
 

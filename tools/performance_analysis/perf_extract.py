@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import re
 from pathlib import Path
 from typing import Sequence
 
@@ -15,6 +16,21 @@ from perf_artifacts import (
 )
 
 DEFAULT_BASE = Path(__file__).resolve().parent
+EXECUTABLE_RE = re.compile(
+    r"^\[(?P<timestamp>[^\]]+)\]\s+\|\s+Thread:(?P<thread>\d+)\s+\|\s+Executable=(?P<executable>[^\s|]+)\s*$")
+
+
+def _infer_source_name(log_path: Path) -> str:
+    with log_path.open("r", encoding="utf-8", errors="replace") as handle:
+        for raw_line in handle:
+            stripped = raw_line.strip()
+            if not stripped:
+                continue
+            match = EXECUTABLE_RE.match(stripped)
+            if match:
+                return match.group("executable")
+            break
+    return log_path.stem
 
 
 def _parse_source_spec(item: str) -> tuple[str, Path]:
@@ -130,18 +146,18 @@ def build_arg_parser() -> argparse.ArgumentParser:
         "--client-log",
         type=Path,
         default=DEFAULT_BASE / "performance_trace_performance_testing.log",
-        help="Compatibility option. Used as source 'client' when --log is not provided.",
+        help="Compatibility option. Used to infer the source name from the executable header when --log is not provided.",
     )
     parser.add_argument(
         "--server-log",
         type=Path,
         default=DEFAULT_BASE / "performance_trace_tsnctrld_app.log",
-        help="Compatibility option. Used as source 'server' when --log is not provided.",
+        help="Compatibility option. Used to infer the source name from the executable header when --log is not provided.",
     )
     parser.add_argument(
         "--output-dir",
         type=Path,
-        default=DEFAULT_BASE / "extract_out",
+        default=DEFAULT_BASE / "out/extract_out",
         help="Directory where extraction artifacts are written.",
     )
     return parser
@@ -155,7 +171,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         for item in args.log:
             source_logs.append(_parse_source_spec(item))
     else:
-        source_logs = [("client", args.client_log), ("server", args.server_log)]
+        source_logs = [(_infer_source_name(args.client_log), args.client_log),
+                       (_infer_source_name(args.server_log), args.server_log)]
 
     for source, path in source_logs:
         if not path.exists():

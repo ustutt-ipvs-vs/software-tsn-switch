@@ -1,3 +1,4 @@
+[2026-04-14 17:39:20.000000] | Thread:111111 | Executable=performance_testing
 [2026-04-14 17:39:38.462967] | Thread:209107 | [EDIT_CANDIDATE] | Start iter=0 msg=0
 [2026-04-14 17:39:38.477531] | Thread:209107 | [EDIT_CANDIDATE] | End iter=0 msg=0 id:15
 [2026-04-14 17:39:38.477537] | Thread:209107 | [COMMIT] | Start iter=0 msg=0

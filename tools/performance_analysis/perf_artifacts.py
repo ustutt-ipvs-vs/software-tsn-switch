@@ -163,6 +163,7 @@ def latency_sample_to_csv_row(sample: LatencySample) -> dict[str, object]:
         "operation": sample.operation,
         "correlation_mode": sample.correlation_mode,
         "response_category": sample.response_category,
+        "response_operation": sample.response_operation,
         "initiator_group_key": sample.initiator_group_key,
         "initiator_iter": sample.initiator_iter,
         "initiator_msg": sample.initiator_msg,

@@ -30,3 +30,17 @@ The scripts and log files used for the evaluation can be found [here](../../../.
 4. **Data Aggregation**: A custom parsing script (ai_lldp_log_to_csv_converter.py) merged the distributed logs and calculated the latency for three distinct phases: Hardware Detection (representing the internal LLDP daemon), Notification Propagation (representing the tsnctrld component), and CNC Processing (repsenting the cncd component).
 
 5. **Visualization**: Finally, the ai_performance_visualizer.py script was run to generate the graphical plots. Before execution, the script was configured to ensure only the plot_lldp_pipeline_anatomy(df) function was uncommented (with all other plotting variations disabled). This function directly generates the end-to-end lldp latency graphs based on the parsed CSV metrics.
+
+## Function-Level Performance Profiling
+
+In order to measure the execution time of individual functions and identify bottlenecks, we recorded their start and end
+timestamps to a logfile.
+We started the `tsnctrld` on two machines to ensure that the timestamps are synchronized via gPTP, and then we ran the
+`performance_testing` executable on one of the machines to send requests that trigger the execution of the functions we
+want to profile.
+The `performance_testing` executable connects to the NETCONF server and sends three different messages to the candidate
+datastore, commits it, and then gets the entire operational data-tree relevant to our project.
+Each of these three-part operations is sent 100 times in order to get statistically significant results, and the
+execution time of each function is recorded in the logs.
+The results were analyzed with python scripts, more information about those can be
+found [here](../../../../tools/performance_analysis/README.md).

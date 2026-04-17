@@ -1,6 +1,7 @@
 # Setting up a test network environment {#howto-test-network-env}
 
-This document describes the setup for a lightweight testing environment consisting of two isolated network namespaces connected via a virtual switch (vSwitch). This architecture is designed to facilitate controlled traffic simulation.
+This document describes the setup for a lightweight testing environment consisting of two isolated network namespaces
+connected via a native linux bridge. This architecture is designed to facilitate controlled traffic simulation.
 
 ## Architecture
 
@@ -11,12 +12,12 @@ The network topology looks like this:
                |      HOST LINUX KERNEL      |
                |                             |
                |   +---------------------+   |
-               |   |     OVS BRIDGE      |   |
-               |   |     (ovs-br0)       |   |
+               |   |   NATIVE BRIDGE     |   |
+               |   |    (br-purple)      |   |
                |   +--+---------------+--+   |
                |      |               |      |
                |  (Port 1)         (Port 2)  |
-               | veth-red-ovs    veth-blue-ovs
+               |veth-red-host  veth-blue-host|
                |      ^               ^      |
                +------|---------------|------+
                       |               |
@@ -33,21 +34,22 @@ The network topology looks like this:
 
 ## Management Script
 
-The environment is managed via the `test_vswitch_v2.sh` script. You can control the network state using the following commands:
+The environment is managed via the `test_vswitch_v3_native.sh` script. You can control the network state using the
+following commands:
 
 - **Start the network:**
 ```bash
-./test_vswitch_v2.sh start
+./test_vswitch_v3_native.sh start
 ```
 
 - **Stop the network:**
 ```bash
-./test_vswitch_v2.sh stop
+./test_vswitch_v3_native.sh stop
 ```
 
 - **Restart the network:**
 ```bash
-./test_vswitch_v2.sh restart
+./test_vswitch_v3_native.sh restart
 ```
 
 ## TAPRIO QDisc Configuration
@@ -55,7 +57,7 @@ The environment is managed via the `test_vswitch_v2.sh` script. You can control 
 The following command can be used to set **TAPRIO QDiscs** (Time Aware Priority Shaper) on the interface:
 
 ```bash
-sudo tc qdisc replace dev veth-red-ovs root handle 100: taprio \
+sudo tc qdisc replace dev veth-red-host root handle 100: taprio \
     num_tc 3 \
     map 0 1 2 0 0 0 0 0 0 0 0 0 0 0 0 0 \
     queues 1@0 1@1 1@2 \
@@ -63,9 +65,7 @@ sudo tc qdisc replace dev veth-red-ovs root handle 100: taprio \
     sched-entry S 01 300000 \
     sched-entry S 02 300000 \
     sched-entry S 04 300000 \
-    flags 0x1 \
-    txtime-delay 0 \
-    clockid CLOCK_MONOTONIC
+    clockid CLOCK_TAI
 ```
 
 ### Parameter Breakdown
@@ -79,11 +79,8 @@ sudo tc qdisc replace dev veth-red-ovs root handle 100: taprio \
   * Priority 1 → TC1
   * Priority 2 → TC2
 
-* **`clockid MONOTONIC`**
-  It is correctly using the software clock (no PTP hardware synchronization needed).
-
-* **`flags 0x1`**
-  It is correctly running in **Software Mode** (TxTime Assist).
+* **`clockid TAI`**
+  It is correctly using the system clock.
 
 * **`cycle-time 900000`**
   Your full cycle is **900µs** (calculated from the sum of schedule entries: 300+300+300).
@@ -104,36 +101,19 @@ Use the following commands to verify connectivity, switch status, and hardware c
 sudo ip netns exec red ping 10.0.0.2
 ```
 
-### 2. OVS Switch Status
-
-**Show Full Topology:**
-```bash
-sudo ovs-vsctl show
-```
-
-**List only ports:**
-```bash
-sudo ovs-vsctl list-ports ovs-br0
-```
-
-**Show the MAC Address table:**
-```bash
-sudo ovs-appctl fdb/show ovs-br0
-```
-
-### 3. Interface / Hardware
+### 2. Interface / Hardware
 
 **Check Namespaces existence:**
 ```bash
 sudo ip netns list
 ```
 
-**Count Hardware Queues (Must be 4 for TAPRIO):**
+**Count Hardware Queues (Set to 8 by the script):**
 ```bash
-ls -d /sys/class/net/veth-red-ovs/queues/tx* | wc -l
+ls -d /sys/class/net/veth-red-host/queues/tx* | wc -l
 ```
 
 **Check Hardware capabilities:**
 ```bash
-ethtool -T veth-red-ovs
+ethtool -T veth-red-host
 ```

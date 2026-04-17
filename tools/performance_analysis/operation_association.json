@@ -1,0 +1,21 @@
+{
+  "associations": [
+    {
+      "client_operations": [
+        "[EDIT_CANDIDATE]",
+        "[COMMIT]"
+      ],
+      "server_operations": [
+        "[CB_CHANGE]"
+      ]
+    },
+    {
+      "client_operations": [
+        "[GET]"
+      ],
+      "server_operations": [
+        "[CB_OPER]"
+      ]
+    }
+  ]
+}
