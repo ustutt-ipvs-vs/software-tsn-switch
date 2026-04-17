@@ -16,7 +16,6 @@ import {
     TopologyGraph
 } from "./grpc/cnc";
 import {CncService} from "./grpc/CncService";
-import {MOCK_TOPOLOGY} from "./test-data/topology-data-mock";
 import {InterfaceSaveEvent} from "./models/dataTypes";
 import {forkJoin, from, interval, startWith, switchMap} from "rxjs";
 
@@ -122,6 +121,4 @@ export class App implements OnInit {
             adminGateStates: gclConfig.operGateStates,
         };
     }
-
-    protected readonly MOCK_TOPOLOGY = MOCK_TOPOLOGY;
 }
