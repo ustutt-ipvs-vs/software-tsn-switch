@@ -17,7 +17,7 @@ The workload consisted of gRPC requests instructing the CNC (Centralized Network
 ### Varied Parameters:
 The independent variable in this experiment was the Arrival Rate, measured in Requests Per Second (RPS). Instead of holding a constant load, the load generator systematically increased the arrival rate by 1 RPS every second. Specifically, the script fired 1 request during the first second, 2 requests during the second second, and continued this linear progression until a predefined ceiling (either 10 or 20 RPS) was reached.
 
-### Meas ured Metrics:
+### Measured Metrics:
 
 Mean and Peak Response Time (Latency): The complete round-trip time. This measures the entire lifecycle from the client dispatching the gRPC request, the CNC server acquiring necessary locks, the deployment of the configuration down to the physical switch via NETCONF, and the propagation of the final result back to the client.
 
