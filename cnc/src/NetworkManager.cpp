@@ -1,20 +1,20 @@
 #include "../include/NetworkManager.h"
 
+#include <InterfaceParser.h>
+#include <libyang/libyang.h>
 #include <spdlog/spdlog.h>
 
+#include <algorithm>
 #include <iostream>
 #include <sstream>  // Needed for XML construction
-#include <libyang/libyang.h>
-#include <algorithm>
 
 #include "../include/GclParser.h"
 #include "../include/GclXmlBuilder.h"
 #include "../include/Inventory.h"
 #include "../include/LldpParser.h"
 #include "../include/PtpParser.h"
-#include "spdlog/spdlog.h"
-#include <InterfaceParser.h>
 #include "PerformanceLogger.h"
+#include "spdlog/spdlog.h"
 
 namespace cnc {
 NetworkManager::NetworkManager(Topology& topology) : topology_(topology) {
@@ -27,7 +27,7 @@ NetworkManager::~NetworkManager() {
             std::lock_guard<std::mutex> lock(worker->queueMutex);
             worker->stop = true;
         }
-        worker->cv.notify_one(); // wake up the worker thread to exit
+        worker->cv.notify_one();  // wake up the worker thread to exit
         if (worker->workerThread.joinable()) {
             worker->workerThread.join();
         }
@@ -35,7 +35,8 @@ NetworkManager::~NetworkManager() {
     nodeWorkers_.clear();
 }
 
-bool NetworkManager::executeOnNodeWorker(const std::string& nodeName, std::function<void(std::shared_ptr<common::NetconfSession>)> task) {
+bool NetworkManager::executeOnNodeWorker(const std::string& nodeName,
+                                         std::function<void(std::shared_ptr<common::NetconfSession>)> task) {
     auto it = nodeWorkers_.find(nodeName);
     if (it == nodeWorkers_.end()) {
         spdlog::error("[Error] No worker found for node {}", nodeName);
@@ -60,17 +61,17 @@ bool NetworkManager::executeOnNodeWorker(const std::string& nodeName, std::funct
         worker->jobQueue.push([task, promise, worker]() {
             try {
                 task(worker->opsSession);
-                promise->set_value(); // Signal that the task is done
+                promise->set_value();  // Signal that the task is done
             } catch (...) {
                 promise->set_exception(std::current_exception());
             }
         });
     }
 
-    worker->cv.notify_one(); // Wake up the worker thread to process the task
+    worker->cv.notify_one();  // Wake up the worker thread to process the task
 
     try {
-        future.get(); // Wait for the task to complete and surface exceptions
+        future.get();  // Wait for the task to complete and surface exceptions
     } catch (const std::exception& e) {
         spdlog::error("[Worker {}] Task threw exception: {}", nodeName, e.what());
         return false;
@@ -103,7 +104,7 @@ bool NetworkManager::connectAllNodes(const InventoryMap& inventory) {
             worker->notifSession = notifSession;
 
             worker->workerThread = std::thread([worker]() {
-                while(true) {
+                while (true) {
                     std::function<void()> job;
                     {
                         std::unique_lock<std::mutex> lock(worker->queueMutex);
@@ -111,38 +112,41 @@ bool NetworkManager::connectAllNodes(const InventoryMap& inventory) {
                         worker->cv.wait(lock, [worker]() { return worker->stop || !worker->jobQueue.empty(); });
 
                         if (worker->stop && worker->jobQueue.empty()) {
-                            return; // Exit thread if stop is signaled and no jobs are left
+                            return;  // Exit thread if stop is signaled and no jobs are left
                         }
 
                         job = std::move(worker->jobQueue.front());
                         worker->jobQueue.pop();
                     }
-                    job(); // Execute the job
+                    job();  // Execute the job
                 }
             });
 
             // Setup lldp subscription on the notifSession (maybe move to a different place later)
-            worker->notifSession->subscribe("/ieee802-dot1ab-lldp:remote-table-change", [this, worker, hostName](struct lyd_node* rawData) { // for testing empty string (for production: /ieee802-dot1ab-lldp:lldp)
-                PERFORMANCE_LOGGING("[NetworkManager::subscribe]", "LLDP_PIPELINE");
-                if (rawData == nullptr) {
-                    spdlog::error("[Notification] Received null data for node {}", hostName);
-                    return;
-                }
-                // here lldp performance metric 
-                spdlog::info("[LLDP Event] Neighbor change detected on node {}. Fetching fresh data...", hostName);
+            worker->notifSession->subscribe(
+                "/ieee802-dot1ab-lldp:remote-table-change",
+                [this, worker, hostName](
+                    struct lyd_node* rawData) {  // for testing empty string (for production: /ieee802-dot1ab-lldp:lldp)
+                    PERFORMANCE_LOGGING("[NetworkManager::subscribe]", "LLDP_PIPELINE");
+                    if (rawData == nullptr) {
+                        spdlog::error("[Notification] Received null data for node {}", hostName);
+                        return;
+                    }
+                    // here lldp performance metric
+                    spdlog::info("[LLDP Event] Neighbor change detected on node {}. Fetching fresh data...", hostName);
 
-                // Debug log for raw notification data (TODO: remove in production)
-                //char *str_out = nullptr;
-                //lyd_print_mem(&str_out, rawData, LYD_XML, LYD_PRINT_SIBLINGS);
-                //if (str_out) {
-                //    spdlog::info("!!! NOTIFICATION EMPFANGEN !!!\n{}", str_out);
-                //    free(str_out);
-                //}
+                    // Debug log for raw notification data (TODO: remove in production)
+                    // char *str_out = nullptr;
+                    // lyd_print_mem(&str_out, rawData, LYD_XML, LYD_PRINT_SIBLINGS);
+                    // if (str_out) {
+                    //    spdlog::info("!!! NOTIFICATION EMPFANGEN !!!\n{}", str_out);
+                    //    free(str_out);
+                    //}
 
-                PERFORMANCE_LOGGING("[NetworkManager::fetchLldpDataForNode]", "LLDP_PIPELINE");
-                this->fetchLldpDataForNode(hostName);
-                PERFORMANCE_LOGGING("[NetworkManager::finished]", "LLDP_PIPELINE");
-            });
+                    PERFORMANCE_LOGGING("[NetworkManager::fetchLldpDataForNode]", "LLDP_PIPELINE");
+                    this->fetchLldpDataForNode(hostName);
+                    PERFORMANCE_LOGGING("[NetworkManager::finished]", "LLDP_PIPELINE");
+                });
 
             worker->notifSession->startNotificationListener();
 
@@ -223,9 +227,12 @@ bool NetworkManager::fetchPtpDataForNode(const std::string& nodeName) {
 }
 
 bool NetworkManager::fetchOperationGclForNode(const std::string& nodeName) {
-    PERFORMANCE_LOGGING("[NetworkManager::fetchOperationGclForNode]", "Start operational GCL fetch for node: " + nodeName);
+    PERFORMANCE_LOGGING("[NetworkManager::fetchOperationGclForNode]",
+                        "Start operational GCL fetch for node: " + nodeName);
     return executeOnNodeWorker(nodeName, [this, nodeName](std::shared_ptr<common::NetconfSession> session) {
-        struct lyd_node* gclNodeTree = session->getData("/ietf-interfaces:interfaces/interface/ieee802-dot1q-bridge:bridge-port/ieee802-dot1q-sched-bridge:gate-parameter-table");
+        struct lyd_node* gclNodeTree = session->getData(
+            "/ietf-interfaces:interfaces/interface/ieee802-dot1q-bridge:bridge-port/"
+            "ieee802-dot1q-sched-bridge:gate-parameter-table");
 
         if (gclNodeTree != nullptr) {
             CncNode_t* node = topology_.getNode(nodeName);
@@ -239,7 +246,8 @@ bool NetworkManager::fetchOperationGclForNode(const std::string& nodeName) {
             lyd_free_all(gclNodeTree);
         }
     });
-    PERFORMANCE_LOGGING("[NetworkManager::fetchOperationGclForNode]", "Stop operational GCL fetch for node: " + nodeName);
+    PERFORMANCE_LOGGING("[NetworkManager::fetchOperationGclForNode]",
+                        "Stop operational GCL fetch for node: " + nodeName);
 }
 
 void NetworkManager::fetchLldpData() {
@@ -311,7 +319,8 @@ void NetworkManager::discoverNetwork() {
 }
 
 bool NetworkManager::deployInterfaceConfig(const std::string& nodeName, const std::string& ifaceName) {
-    PERFORMANCE_LOGGING("[NetworkManager::deployInterfaceConfig]", "Start interface config deployment for interface " + ifaceName + " on node " + nodeName);
+    PERFORMANCE_LOGGING("[NetworkManager::deployInterfaceConfig]",
+                        "Start interface config deployment for interface " + ifaceName + " on node " + nodeName);
     const CncNode_t* targetNode = topology_.getNode(nodeName);
     if (!targetNode) return false;
 
@@ -325,12 +334,14 @@ bool NetworkManager::deployInterfaceConfig(const std::string& nodeName, const st
     spdlog::critical("!!! GENERATED CONFIG XML FOR INTERFACE {} !!!\n{}", ifaceName, configXml);
 
     // WICHTIG: Hier workerSession statt opsSession, wie in deiner Execute-Logik
-    bool executed = executeOnNodeWorker(nodeName, [&success, configXml, nodeName](std::shared_ptr<common::NetconfSession> workerSession) {
-        if (!workerSession->editData(configXml)) return;
-        if (!workerSession->commit()) return;
-        success = true;
-    });
-    PERFORMANCE_LOGGING("[NetworkManager::deployInterfaceConfig]", "Finished interface config deployment for interface " + ifaceName + " on node " + nodeName);
+    bool executed = executeOnNodeWorker(
+        nodeName, [&success, configXml, nodeName](std::shared_ptr<common::NetconfSession> workerSession) {
+            if (!workerSession->editData(configXml)) return;
+            if (!workerSession->commit()) return;
+            success = true;
+        });
+    PERFORMANCE_LOGGING("[NetworkManager::deployInterfaceConfig]",
+                        "Finished interface config deployment for interface " + ifaceName + " on node " + nodeName);
     return executed && success;
 }
 
@@ -354,11 +365,8 @@ bool NetworkManager::deployConfigToNode(const std::string& nodeName) {
     CncNode_t filteredNode = *targetNode;
     filteredNode.interfaces.erase(
         std::remove_if(filteredNode.interfaces.begin(), filteredNode.interfaces.end(),
-            [](const ietfInterface_t& iface) {
-                return !iface.bridgePort.gateParameterTable.configChange;
-            }),
-        filteredNode.interfaces.end()
-    );
+                       [](const ietfInterface_t& iface) { return !iface.bridgePort.gateParameterTable.configChange; }),
+        filteredNode.interfaces.end());
 
     // 3. Construct XML configuration from GCL
     std::string configXml = buildGclXml(filteredNode);
@@ -369,22 +377,24 @@ bool NetworkManager::deployConfigToNode(const std::string& nodeName) {
     bool success = false;
 
     // 4. Deploy configuration via NETCONF to candidate datastore
-    bool executed = executeOnNodeWorker(nodeName, [&success, configXml, nodeName](std::shared_ptr<common::NetconfSession> workerSession) {
-        // 4. Edit data in candidate datastore
-        if (!workerSession->editData(configXml)) {
-            spdlog::error("[Error] Failed to edit config for node {}", nodeName);
-            return;
-        }
+    bool executed = executeOnNodeWorker(
+        nodeName, [&success, configXml, nodeName](std::shared_ptr<common::NetconfSession> workerSession) {
+            // 4. Edit data in candidate datastore
+            if (!workerSession->editData(configXml)) {
+                spdlog::error("[Error] Failed to edit config for node {}", nodeName);
+                return;
+            }
 
-        // 6. Commit the configuration to running datastore
-        if (!workerSession->commit()) {
-            spdlog::error("[Error] Failed to commit config for node {}", nodeName);
-            return;
-        }
+            // 6. Commit the configuration to running datastore
+            if (!workerSession->commit()) {
+                spdlog::error("[Error] Failed to commit config for node {}", nodeName);
+                return;
+            }
 
-        PERFORMANCE_LOGGING("[NetworkManager::deployConfigToNode]", "Successfully deployed config for node: " + nodeName);
-        success = true;
-    });
+            PERFORMANCE_LOGGING("[NetworkManager::deployConfigToNode]",
+                                "Successfully deployed config for node: " + nodeName);
+            success = true;
+        });
 
     // happens if queue was full or commit failed to execute
     if (!executed) {

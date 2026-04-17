@@ -1,11 +1,11 @@
 #pragma once
 
-#include <cstdint>
-#include <string>
-#include <map>
-#include <thread>
 #include <atomic>
+#include <cstdint>
 #include <functional>
+#include <map>
+#include <string>
+#include <thread>
 // Forward declarations
 // Netconf session and RPC structures
 struct nc_session;
@@ -20,7 +20,7 @@ namespace common {
  * data and applying configuration changes via candidate datastore edit/commit workflows.
  */
 class NetconfSession {
-private:
+   private:
     // Pointer to the underlying NETCONF session
     struct nc_session* session_ = nullptr;
 
@@ -28,7 +28,7 @@ private:
     std::thread listenerThread_;
     std::atomic<bool> listening_{false};
 
-public:
+   public:
     // Constructor and Destructor
     NetconfSession();
     ~NetconfSession();

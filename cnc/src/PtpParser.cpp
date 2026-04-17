@@ -1,5 +1,4 @@
 #include "../include/PtpParser.h"
-#include "PerformanceLogger.h"
 
 #include <libyang/libyang.h>
 #include <spdlog/spdlog.h>
@@ -7,6 +6,8 @@
 #include <cstring>
 #include <iostream>
 #include <string>
+
+#include "PerformanceLogger.h"
 
 namespace cnc {
 // Helper function to extract string value from XPath

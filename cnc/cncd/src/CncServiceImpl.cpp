@@ -1,9 +1,11 @@
 #include "CncServiceImpl.h"
-#include "JsonImporter.h"
-#include "spdlog/spdlog.h"
+
 #include <filesystem>
 #include <stdexcept>
+
+#include "JsonImporter.h"
 #include "PerformanceLogger.h"
+#include "spdlog/spdlog.h"
 
 CncServiceImpl::CncServiceImpl(const std::string& inventoryFilePath) {
     spdlog::info("Initializing CncServiceImpl with inventory file: {}", inventoryFilePath);
@@ -44,8 +46,8 @@ CncServiceImpl::~CncServiceImpl() {
         std::lock_guard<std::mutex> lock(timerMutex);
         stopTimer = true;
     }
-    
-    timerCV.notify_all(); 
+
+    timerCV.notify_all();
 
     if (ptpTimerThread.joinable()) {
         ptpTimerThread.join();
@@ -55,15 +57,15 @@ CncServiceImpl::~CncServiceImpl() {
 void CncServiceImpl::ptpBackgroundTask() {
     while (!stopTimer) {
         std::unique_lock<std::mutex> cvLock(timerMutex);
-        
+
         // sleep for 15 minutes or until notified to stop
         if (timerCV.wait_for(cvLock, std::chrono::minutes(15), [this] { return stopTimer.load(); })) {
-            break; // Der Server fährt runter, brich die Schleife ab!
+            break;  // Der Server fährt runter, brich die Schleife ab!
         }
-        cvLock.unlock(); // unlock before doing the work
-        
+        cvLock.unlock();  // unlock before doing the work
+
         spdlog::info("[Background] 15 minutes passed. Fetching fresh PTP data...");
-        
+
         // IMPORTANT: create write lock
         std::unique_lock<std::shared_mutex> writeLock(topologyMutex);
         networkManager->fetchPtpData();
@@ -73,7 +75,7 @@ void CncServiceImpl::ptpBackgroundTask() {
 // Helper function to find a node by hostname in the topology
 CncNode_t* CncServiceImpl::FindNode(const std::string& hostName) {
     if (hostName.empty()) return nullptr;
-    return topology.getNode(hostName); // Nutzt deine schnelle Map-Suche
+    return topology.getNode(hostName);  // Nutzt deine schnelle Map-Suche
 }
 
 // Helper function to map internal Ptp port data to protobuf message
@@ -89,8 +91,8 @@ void CncServiceImpl::MapLldpPort(const LldpPort_t& port, cnc::rpc::LldpPort* pro
     protoPort->set_name(port.name);
     protoPort->set_dest_mac_address(port.destMacAddress);
     protoPort->set_admin_status(port.adminStatus);
-    
-    for(const auto& neighbor : port.neighbors) {
+
+    for (const auto& neighbor : port.neighbors) {
         auto* protoNeighbor = protoPort->add_neighbors();
         protoNeighbor->set_chassis_id(neighbor.chassisId);
         protoNeighbor->set_port_id(neighbor.portId);
@@ -109,34 +111,56 @@ void CncServiceImpl::MapInterface(const ietfInterface_t& iface, cnc::rpc::IetfIn
     protoIface->set_num_tx_queues(iface.numTxQueues);
     protoIface->set_num_active_tx_queues(iface.numActiveTxQueues);
     protoIface->set_speed(iface.speed);
-    
+
     protoIface->set_has_phys_addr(iface.hasPhysAddr);
     if (iface.hasPhysAddr) {
         protoIface->set_phys_address(std::string(iface.physAddress.begin(), iface.physAddress.end()));
     }
 
     switch (iface.type) {
-        case IfType::ETHERNET: protoIface->set_type(cnc::rpc::IF_TYPE_ETHERNET); break;
-        case IfType::BRIDGE:   protoIface->set_type(cnc::rpc::IF_TYPE_BRIDGE); break;
-        case IfType::LAG:      protoIface->set_type(cnc::rpc::IF_TYPE_LAG); break;
-        case IfType::LOOPBACK: protoIface->set_type(cnc::rpc::IF_TYPE_LOOPBACK); break;
+        case IfType::ETHERNET:
+            protoIface->set_type(cnc::rpc::IF_TYPE_ETHERNET);
+            break;
+        case IfType::BRIDGE:
+            protoIface->set_type(cnc::rpc::IF_TYPE_BRIDGE);
+            break;
+        case IfType::LAG:
+            protoIface->set_type(cnc::rpc::IF_TYPE_LAG);
+            break;
+        case IfType::LOOPBACK:
+            protoIface->set_type(cnc::rpc::IF_TYPE_LOOPBACK);
+            break;
     }
 
     switch (iface.operStatus) {
-        case OperStatus::UP:               protoIface->set_oper_status(cnc::rpc::OPER_STATUS_UP); break;
-        case OperStatus::DOWN:             protoIface->set_oper_status(cnc::rpc::OPER_STATUS_DOWN); break;
-        case OperStatus::TESTING:          protoIface->set_oper_status(cnc::rpc::OPER_STATUS_TESTING); break;
-        case OperStatus::DORMANT:          protoIface->set_oper_status(cnc::rpc::OPER_STATUS_DORMANT); break;
-        case OperStatus::NOT_PRESENT:      protoIface->set_oper_status(cnc::rpc::OPER_STATUS_NOT_PRESENT); break;
-        case OperStatus::LOWER_LAYER_DOWN: protoIface->set_oper_status(cnc::rpc::OPER_STATUS_LOWER_LAYER_DOWN); break;
-        default:                           protoIface->set_oper_status(cnc::rpc::OPER_STATUS_UNKNOWN); break;
+        case OperStatus::UP:
+            protoIface->set_oper_status(cnc::rpc::OPER_STATUS_UP);
+            break;
+        case OperStatus::DOWN:
+            protoIface->set_oper_status(cnc::rpc::OPER_STATUS_DOWN);
+            break;
+        case OperStatus::TESTING:
+            protoIface->set_oper_status(cnc::rpc::OPER_STATUS_TESTING);
+            break;
+        case OperStatus::DORMANT:
+            protoIface->set_oper_status(cnc::rpc::OPER_STATUS_DORMANT);
+            break;
+        case OperStatus::NOT_PRESENT:
+            protoIface->set_oper_status(cnc::rpc::OPER_STATUS_NOT_PRESENT);
+            break;
+        case OperStatus::LOWER_LAYER_DOWN:
+            protoIface->set_oper_status(cnc::rpc::OPER_STATUS_LOWER_LAYER_DOWN);
+            break;
+        default:
+            protoIface->set_oper_status(cnc::rpc::OPER_STATUS_UNKNOWN);
+            break;
     }
 
     // Bridge Port Mapping
     auto* protoBridge = protoIface->mutable_bridge_port();
     protoBridge->set_bridge_name(iface.bridgePort.bridgeName);
     protoBridge->set_master_index(iface.bridgePort.masterIndex);
-    
+
     // GCL Mapping
     const auto& internalGcl = iface.bridgePort.gateParameterTable;
     auto* protoGcl = protoBridge->mutable_gate_parameter_table();
@@ -145,7 +169,7 @@ void CncServiceImpl::MapInterface(const ietfInterface_t& iface, cnc::rpc::IetfIn
 
     if (internalGcl.operDataSet) {
         protoGcl->set_oper_gate_states(internalGcl.operGateStates);
-        
+
         protoGcl->mutable_oper_cycle_time()->set_numerator(internalGcl.operCycleTime.numerator);
         protoGcl->mutable_oper_cycle_time()->set_denominator(internalGcl.operCycleTime.denominator);
 
@@ -205,26 +229,28 @@ void CncServiceImpl::MapPtpNode(const PtpNode_t& ptp, cnc::rpc::PtpNode* protoPt
 
 void CncServiceImpl::MapLldpNode(const LldpNode_t& lldp, cnc::rpc::LldpNode* protoLldp) {
     protoLldp->set_message_tx_interval(lldp.messageTxInterval);
-    
+
     auto* localSys = protoLldp->mutable_local_system_data();
     localSys->set_system_name(lldp.localSystemData.systemName);
     localSys->set_chassis_id(lldp.localSystemData.chassisId);
-    
+
     // Usage of port helper function for lldp
     for (const auto& port : lldp.ports) {
         MapLldpPort(port, protoLldp->add_ports());
     }
 }
 
-// 1. return the entire network topology (nodes + interfaces + LLDP/PTP data) in one call (with refreshed data from the network)
-grpc::Status CncServiceImpl::GetNetworkState(grpc::ServerContext* context, const cnc::rpc::EmptyRequest* request, cnc::rpc::Topology*response ) {
+// 1. return the entire network topology (nodes + interfaces + LLDP/PTP data) in one call (with refreshed data from the
+// network)
+grpc::Status CncServiceImpl::GetNetworkState(grpc::ServerContext* context, const cnc::rpc::EmptyRequest* request,
+                                             cnc::rpc::Topology* response) {
     PERFORMANCE_LOGGING("[CncServiceImpl::GetNetworkState]", "Start full topology fetch");
-    
+
     // create write lock
     std::unique_lock<std::shared_mutex> writeLock(topologyMutex);
 
     // Getting fresh data from the network before responding
-    networkManager->discoverNetwork(); 
+    networkManager->discoverNetwork();
     for (const auto& internalNode : topology.nodes) {
         auto* protoNode = response->add_nodes();
         protoNode->set_id(internalNode.id);
@@ -245,57 +271,63 @@ grpc::Status CncServiceImpl::GetNetworkState(grpc::ServerContext* context, const
 }
 
 // 2. global feature data (LLDP/PTP) across all nodes/interfaces
-grpc::Status CncServiceImpl::GetAllPtpData(grpc::ServerContext* context, const cnc::rpc::EmptyRequest* request, cnc::rpc::AllPtpDataResponse* response) {
+grpc::Status CncServiceImpl::GetAllPtpData(grpc::ServerContext* context, const cnc::rpc::EmptyRequest* request,
+                                           cnc::rpc::AllPtpDataResponse* response) {
     // create read lock
     std::shared_lock<std::shared_mutex> readLock(topologyMutex);
 
     for (const auto& internalNode : topology.nodes) {
         auto* protoNodePtp = response->add_nodes();
         protoNodePtp->set_host_name(internalNode.hostName);
-        
+
         MapPtpNode(internalNode.ptpAllData, protoNodePtp->mutable_ptp_data());
     }
     return grpc::Status::OK;
 }
 
-grpc::Status CncServiceImpl::GetAllLldpData(grpc::ServerContext* context, const cnc::rpc::EmptyRequest* request, cnc::rpc::AllLldpDataResponse* response) {
+grpc::Status CncServiceImpl::GetAllLldpData(grpc::ServerContext* context, const cnc::rpc::EmptyRequest* request,
+                                            cnc::rpc::AllLldpDataResponse* response) {
     // create read lock
     std::shared_lock<std::shared_mutex> readLock(topologyMutex);
 
     for (const auto& internalNode : topology.nodes) {
         auto* protoNodeLldp = response->add_nodes();
         protoNodeLldp->set_host_name(internalNode.hostName);
-        
+
         MapLldpNode(internalNode.lldpAllData, protoNodeLldp->mutable_lldp_data());
     }
     return grpc::Status::OK;
 }
 
 // 3. node-specific data (LLDP/PTP) for a given node identified by hostname
-grpc::Status CncServiceImpl::GetNodePtpData(grpc::ServerContext* context, const cnc::rpc::NodeRequest* request, cnc::rpc::PtpNode* response) {
+grpc::Status CncServiceImpl::GetNodePtpData(grpc::ServerContext* context, const cnc::rpc::NodeRequest* request,
+                                            cnc::rpc::PtpNode* response) {
     // create read lock
     std::shared_lock<std::shared_mutex> readLock(topologyMutex);
 
     CncNode_t* node = FindNode(request->host_name());
     if (!node) return grpc::Status(grpc::StatusCode::NOT_FOUND, "Node not found");
-    
+
     MapPtpNode(node->ptpAllData, response);
     return grpc::Status::OK;
 }
 
-grpc::Status CncServiceImpl::GetNodeLldpData(grpc::ServerContext* context, const cnc::rpc::NodeRequest* request, cnc::rpc::LldpNode* response) {
+grpc::Status CncServiceImpl::GetNodeLldpData(grpc::ServerContext* context, const cnc::rpc::NodeRequest* request,
+                                             cnc::rpc::LldpNode* response) {
     // create read lock
     std::shared_lock<std::shared_mutex> readLock(topologyMutex);
-    
+
     CncNode_t* node = FindNode(request->host_name());
     if (!node) return grpc::Status(grpc::StatusCode::NOT_FOUND, "Node not found");
-    
+
     MapLldpNode(node->lldpAllData, response);
     return grpc::Status::OK;
 }
 
 // 4. interface-specific data (LLDP/PTP) for a given interface identified by node hostname + interface name
-grpc::Status CncServiceImpl::GetInterfacePtpData(grpc::ServerContext* context, const cnc::rpc::InterfaceRequest* request, cnc::rpc::PtpPort* response) {
+grpc::Status CncServiceImpl::GetInterfacePtpData(grpc::ServerContext* context,
+                                                 const cnc::rpc::InterfaceRequest* request,
+                                                 cnc::rpc::PtpPort* response) {
     // create read lock
     std::shared_lock<std::shared_mutex> readLock(topologyMutex);
     CncNode_t* node = FindNode(request->host_name());
@@ -310,7 +342,9 @@ grpc::Status CncServiceImpl::GetInterfacePtpData(grpc::ServerContext* context, c
     return grpc::Status(grpc::StatusCode::NOT_FOUND, "PTP Interface not found");
 }
 
-grpc::Status CncServiceImpl::GetInterfaceLldpData(grpc::ServerContext* context, const cnc::rpc::InterfaceRequest* request, cnc::rpc::LldpPort* response) {
+grpc::Status CncServiceImpl::GetInterfaceLldpData(grpc::ServerContext* context,
+                                                  const cnc::rpc::InterfaceRequest* request,
+                                                  cnc::rpc::LldpPort* response) {
     // create read lock
     std::shared_lock<std::shared_mutex> readLock(topologyMutex);
 
@@ -327,7 +361,8 @@ grpc::Status CncServiceImpl::GetInterfaceLldpData(grpc::ServerContext* context, 
 }
 
 // 5. gcl-data for a given interface identified by node hostname + interface name
-grpc::Status CncServiceImpl::GetInterfaceGcl(grpc::ServerContext* context, const cnc::rpc::InterfaceRequest* request, cnc::rpc::GclConfig* response) {
+grpc::Status CncServiceImpl::GetInterfaceGcl(grpc::ServerContext* context, const cnc::rpc::InterfaceRequest* request,
+                                             cnc::rpc::GclConfig* response) {
     // create read lock
     std::shared_lock<std::shared_mutex> readLock(topologyMutex);
 
@@ -339,7 +374,7 @@ grpc::Status CncServiceImpl::GetInterfaceGcl(grpc::ServerContext* context, const
             const auto& gcl = iface.bridgePort.gateParameterTable;
             response->set_oper_data_set(gcl.operDataSet);
             response->set_admin_data_set(gcl.adminDataSet);
-            
+
             // Map Oper List
             if (gcl.operDataSet) {
                 response->set_oper_gate_states(gcl.operGateStates);
@@ -367,7 +402,9 @@ grpc::Status CncServiceImpl::GetInterfaceGcl(grpc::ServerContext* context, const
     return grpc::Status(grpc::StatusCode::NOT_FOUND, "Interface not found for GCL data");
 }
 
-grpc::Status CncServiceImpl::GetInterfaceAdminGcl(grpc::ServerContext* context, const cnc::rpc::InterfaceRequest* request, cnc::rpc::AdminGclResponse* response) {
+grpc::Status CncServiceImpl::GetInterfaceAdminGcl(grpc::ServerContext* context,
+                                                  const cnc::rpc::InterfaceRequest* request,
+                                                  cnc::rpc::AdminGclResponse* response) {
     // create read lock
     std::shared_lock<std::shared_mutex> readLock(topologyMutex);
 
@@ -377,16 +414,17 @@ grpc::Status CncServiceImpl::GetInterfaceAdminGcl(grpc::ServerContext* context, 
     for (const auto& iface : node->interfaces) {
         if (iface.name == request->interface_name()) {
             const auto& gcl = iface.bridgePort.gateParameterTable;
-            
-            if (!gcl.adminDataSet) return grpc::Status(grpc::StatusCode::NOT_FOUND, "No Admin GCL data set for this interface");
+
+            if (!gcl.adminDataSet)
+                return grpc::Status(grpc::StatusCode::NOT_FOUND, "No Admin GCL data set for this interface");
 
             response->set_gate_enabled(gcl.gateEnabled);
             response->set_admin_gate_states(gcl.adminGateStates);
             response->set_admin_cycle_time_extension_ns(gcl.adminCycleTimeExtensionNs);
-            
+
             response->mutable_admin_cycle_time()->set_numerator(gcl.adminCycleTime.numerator);
             response->mutable_admin_cycle_time()->set_denominator(gcl.adminCycleTime.denominator);
-            
+
             response->mutable_admin_base_time()->set_seconds(gcl.adminBaseTime.seconds);
             response->mutable_admin_base_time()->set_nanoseconds(gcl.adminBaseTime.nanoseconds);
 
@@ -402,7 +440,9 @@ grpc::Status CncServiceImpl::GetInterfaceAdminGcl(grpc::ServerContext* context, 
     return grpc::Status(grpc::StatusCode::NOT_FOUND, "Interface not found");
 }
 
-grpc::Status CncServiceImpl::GetInterfaceOperGcl(grpc::ServerContext* context, const cnc::rpc::InterfaceRequest* request, cnc::rpc::OperGclResponse* response) {
+grpc::Status CncServiceImpl::GetInterfaceOperGcl(grpc::ServerContext* context,
+                                                 const cnc::rpc::InterfaceRequest* request,
+                                                 cnc::rpc::OperGclResponse* response) {
     // create read lock
     std::shared_lock<std::shared_mutex> readLock(topologyMutex);
 
@@ -412,15 +452,16 @@ grpc::Status CncServiceImpl::GetInterfaceOperGcl(grpc::ServerContext* context, c
     for (const auto& iface : node->interfaces) {
         if (iface.name == request->interface_name()) {
             const auto& gcl = iface.bridgePort.gateParameterTable;
-            
-            if (!gcl.operDataSet) return grpc::Status(grpc::StatusCode::NOT_FOUND, "No Oper GCL data set for this interface");
+
+            if (!gcl.operDataSet)
+                return grpc::Status(grpc::StatusCode::NOT_FOUND, "No Oper GCL data set for this interface");
 
             response->set_oper_gate_states(gcl.operGateStates);
             response->set_oper_cycle_time_extension_ns(gcl.operCycleTimeExtensionNs);
-            
+
             response->mutable_oper_cycle_time()->set_numerator(gcl.operCycleTime.numerator);
             response->mutable_oper_cycle_time()->set_denominator(gcl.operCycleTime.denominator);
-            
+
             response->mutable_oper_base_time()->set_seconds(gcl.operBaseTime.seconds);
             response->mutable_oper_base_time()->set_nanoseconds(gcl.operBaseTime.nanoseconds);
 
@@ -439,7 +480,8 @@ grpc::Status CncServiceImpl::GetInterfaceOperGcl(grpc::ServerContext* context, c
 grpc::Status CncServiceImpl::SetNodeSchedule(grpc::ServerContext* context,
                                              const cnc::rpc::SetNodeScheduleRequest* request,
                                              cnc::rpc::SetNodeScheduleResponse* response) {
-    PERFORMANCE_LOGGING("[CncServiceImpl::SetNodeSchedule]", "Start setting node schedule for node: " + request->host_name());
+    PERFORMANCE_LOGGING("[CncServiceImpl::SetNodeSchedule]",
+                        "Start setting node schedule for node: " + request->host_name());
 
     // --- DEBUG CHECK ---
     spdlog::critical("!!! REQUEST RECEIVED !!! Total interfaces in payload: {}", request->interfaces_size());
@@ -454,7 +496,9 @@ grpc::Status CncServiceImpl::SetNodeSchedule(grpc::ServerContext* context,
 
     // 1. write lock
     // std::unique_lock<std::shared_mutex> writeLock(topologyMutex);
-    std::shared_lock<std::shared_mutex> topoReadLock(topologyMutex); // allows multithreading else we would block all other requests while deploying the config, which can take a while
+    std::shared_lock<std::shared_mutex> topoReadLock(
+        topologyMutex);  // allows multithreading else we would block all other requests while deploying the config,
+                         // which can take a while
 
     CncNode_t* internalNode = FindNode(hostName);
     if (!internalNode) {
@@ -537,7 +581,8 @@ grpc::Status CncServiceImpl::SetNodeSchedule(grpc::ServerContext* context,
 
     PERFORMANCE_LOGGING("[CncServiceImpl::SetNodeSchedule]", "Finished deploying config to node: " + hostName);
 
-    // 4. Zur Verifikation frische Daten holen (ist safe, weil wir das writeLock haben!) --> TODO: eben nicht muss gefixt werden weil wir nur nen mutex auf einen node haben
+    // 4. Zur Verifikation frische Daten holen (ist safe, weil wir das writeLock haben!) --> TODO: eben nicht muss
+    // gefixt werden weil wir nur nen mutex auf einen node haben
     spdlog::info("[gRPC] Fetching operational GCL for verification...");
     networkManager->fetchOperationGcl();
 
@@ -549,15 +594,17 @@ grpc::Status CncServiceImpl::SetNodeSchedule(grpc::ServerContext* context,
 
     response->set_overall_success(true);
     spdlog::info("[gRPC] SetNodeSchedule: Node '{}' deployed successfully.", hostName);
-    PERFORMANCE_LOGGING("[CncServiceImpl::SetNodeSchedule]", "Finished setting node schedule (with verification) for node: " + hostName);
+    PERFORMANCE_LOGGING("[CncServiceImpl::SetNodeSchedule]",
+                        "Finished setting node schedule (with verification) for node: " + hostName);
     return grpc::Status::OK;
 }
-
 
 grpc::Status CncServiceImpl::SetInterfaceSchedule(grpc::ServerContext* context,
                                                   const cnc::rpc::SetInterfaceScheduleRequest* request,
                                                   cnc::rpc::IetfInterface* response) {
-    PERFORMANCE_LOGGING("[CncServiceImpl::SetInterfaceSchedule]", "Start setting interface schedule for interface " + request->interface_name() + " on node " + request->host_name());
+    PERFORMANCE_LOGGING("[CncServiceImpl::SetInterfaceSchedule]", "Start setting interface schedule for interface " +
+                                                                      request->interface_name() + " on node " +
+                                                                      request->host_name());
     const std::string& hostName = request->host_name();
     const std::string& ifName = request->interface_name();
     spdlog::info("[gRPC] SetInterfaceSchedule called for interface {} on node {}", ifName, hostName);
@@ -616,13 +663,14 @@ grpc::Status CncServiceImpl::SetInterfaceSchedule(grpc::ServerContext* context,
     networkManager->fetchOperationGcl();
     MapInterface(*it, response);
 
-    PERFORMANCE_LOGGING("[CncServiceImpl::SetInterfaceSchedule]", "Finished setting interface schedule (with verification) for interface " + ifName + " on node " + hostName);
+    PERFORMANCE_LOGGING(
+        "[CncServiceImpl::SetInterfaceSchedule]",
+        "Finished setting interface schedule (with verification) for interface " + ifName + " on node " + hostName);
     return grpc::Status::OK;
 }
 
-grpc::Status CncServiceImpl::GetTopologyGraph(grpc::ServerContext* context,
-                                               const cnc::rpc::EmptyRequest* request,
-                                               cnc::rpc::TopologyGraph* response) {
+grpc::Status CncServiceImpl::GetTopologyGraph(grpc::ServerContext* context, const cnc::rpc::EmptyRequest* request,
+                                              cnc::rpc::TopologyGraph* response) {
     std::shared_lock<std::shared_mutex> readLock(topologyMutex);
 
     std::set<std::string> knownNodes;
@@ -642,7 +690,6 @@ grpc::Status CncServiceImpl::GetTopologyGraph(grpc::ServerContext* context,
 
         for (const auto& lldpPort : internalNode.lldpAllData.ports) {
             for (const auto& neighbor : lldpPort.neighbors) {
-
                 // system_name as identifier
                 if (neighbor.systemName.empty()) continue;
                 const std::string& remoteHost = neighbor.systemName;
@@ -656,9 +703,8 @@ grpc::Status CncServiceImpl::GetTopologyGraph(grpc::ServerContext* context,
                     knownNodes.insert(remoteHost);
                 }
 
-                auto edgeKey = (localHost < remoteHost)
-                    ? std::make_pair(localHost, remoteHost)
-                    : std::make_pair(remoteHost, localHost);
+                auto edgeKey = (localHost < remoteHost) ? std::make_pair(localHost, remoteHost)
+                                                        : std::make_pair(remoteHost, localHost);
 
                 if (seenEdges.count(edgeKey)) continue;
                 seenEdges.insert(edgeKey);
@@ -673,7 +719,7 @@ grpc::Status CncServiceImpl::GetTopologyGraph(grpc::ServerContext* context,
         }
     }
 
-    spdlog::info("[gRPC] GetTopologyGraph: {} nodes ({} non-foreign), {} edges.",
-                 response->nodes_size(), topology.nodes.size(), response->edges_size());
+    spdlog::info("[gRPC] GetTopologyGraph: {} nodes ({} non-foreign), {} edges.", response->nodes_size(),
+                 topology.nodes.size(), response->edges_size());
     return grpc::Status::OK;
 }

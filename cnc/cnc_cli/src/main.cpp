@@ -1,14 +1,15 @@
+#include <google/protobuf/util/json_util.h>
+
 #include <argparse/argparse.hpp>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <map>
-#include <string>
 #include <optional>
-#include <google/protobuf/util/json_util.h>
+#include <string>
 
-#include "cnc.grpc.pb.h"
 #include "../include/CncGrpcClient.h"
+#include "cnc.grpc.pb.h"
 
 enum class GapMode : std::uint8_t { Hold, Zero, Deny };
 
@@ -101,7 +102,8 @@ int parseAndExec(int argc, char* argv[]) {  // NOLINT(modernize-avoid-c-arrays)
         return 1;
     }
 
-    // define gRPC client here so it can be used in both subcommands, but only gets initialized if one of the subcommands is actually used
+    // define gRPC client here so it can be used in both subcommands, but only gets initialized if one of the
+    // subcommands is actually used
     CncGrpcClient grpcClient("unix:///tmp/cnc_socket");
 
     if (program.is_subcommand_used(setSchedCommand)) {
@@ -135,8 +137,7 @@ int parseAndExec(int argc, char* argv[]) {  // NOLINT(modernize-avoid-c-arrays)
         }
 
         // read content into a string
-        std::string jsonContent((std::istreambuf_iterator<char>(*inputPtr)),
-                                 std::istreambuf_iterator<char>());
+        std::string jsonContent((std::istreambuf_iterator<char>(*inputPtr)), std::istreambuf_iterator<char>());
         if (jsonContent.empty()) {
             std::cerr << "Error: Input is empty.\n";
             return 1;
@@ -162,7 +163,7 @@ int parseAndExec(int argc, char* argv[]) {  // NOLINT(modernize-avoid-c-arrays)
             std::cerr << "Error deploying schedule.\n";
             return 1;
         }
-        
+
         // TODO: grpc client call
     } else if (program.is_subcommand_used(getCommand)) {
         // "get" subcommand
@@ -201,17 +202,13 @@ int parseAndExec(int argc, char* argv[]) {  // NOLINT(modernize-avoid-c-arrays)
                 return 1;
             }
             std::cout << grpcClient.getTopology(asJson) << "\n";
-        } 
-        else if (category == "lldp") {
+        } else if (category == "lldp") {
             std::cout << grpcClient.getLldp(selectAll, targetList, asJson) << "\n";
-        } 
-        else if (category == "gptp") {
+        } else if (category == "gptp") {
             std::cout << grpcClient.getPtp(selectAll, targetList, asJson) << "\n";
-        } 
-        else if (category == "schedule") {
+        } else if (category == "schedule") {
             std::cout << grpcClient.getSchedule(selectAll, targetList, asJson) << "\n";
-        }
-        else if (category == "graph") {
+        } else if (category == "graph") {
             if (!selectAll) {
                 std::cerr << "Error: 'graph' currently only supports the --all flag.\n";
                 return 1;
@@ -234,6 +231,5 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    
     return 0;
 }

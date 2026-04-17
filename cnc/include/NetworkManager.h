@@ -1,16 +1,17 @@
 #pragma once
 
-#include <map>
-#include <memory>
-#include <string>
-#include <vector>
-#include <queue>
-#include <thread>
-#include <mutex>
+#include <algorithm>
 #include <condition_variable>
 #include <functional>
 #include <future>
-#include <algorithm>
+#include <map>
+#include <memory>
+#include <mutex>
+#include <queue>
+#include <string>
+#include <thread>
+#include <vector>
+
 #include "CncTypes.h"
 #include "Inventory.h"
 #include "NetconfSession.h"
@@ -28,7 +29,7 @@ struct NodeWorker {
     std::condition_variable cv;
     bool stop = false;
 
-    const size_t MAX_QUEUE_SIZE = 10; // Load shredder: Max 10 pending jobs per node
+    const size_t MAX_QUEUE_SIZE = 10;  // Load shredder: Max 10 pending jobs per node
 };
 
 /**
@@ -72,7 +73,7 @@ class NetworkManager {
 
     /**
      * @brief Fetches interface data from all connected nodes and updates the topology.
-      * Reads interface data via /ietf-interfaces:interfaces/interface via Netconf <get>.
+     * Reads interface data via /ietf-interfaces:interfaces/interface via Netconf <get>.
      */
     void fetchInterfaces();
 
@@ -149,7 +150,8 @@ class NetworkManager {
     // std::map<std::string, std::shared_ptr<common::NetconfSession>> sessions_;
     std::map<std::string, std::shared_ptr<NodeWorker>> nodeWorkers_;
 
-    bool executeOnNodeWorker(const std::string& nodeName, std::function<void(std::shared_ptr<common::NetconfSession>)> task);
+    bool executeOnNodeWorker(const std::string& nodeName,
+                             std::function<void(std::shared_ptr<common::NetconfSession>)> task);
 
     /**
      * @brief Builds the XML configuration for GCL based on the node's TSN parameters.

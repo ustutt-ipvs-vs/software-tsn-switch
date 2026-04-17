@@ -1,6 +1,7 @@
 #include "NetconfSession.h"
-#include "spdlog/spdlog.h"
+
 #include "PerformanceLogger.h"
+#include "spdlog/spdlog.h"
 
 // Not needed anymore since defined in CMakeLists.txt
 /*#ifndef NC_ENABLED_SSH_TlS
@@ -98,17 +99,17 @@ bool NetconfSession::isConnected() const {
     return session_ != nullptr;
 }
 
-bool NetconfSession::subscribe(const std::string &xpath, std::function<void(struct lyd_node*)> callback) {
+bool NetconfSession::subscribe(const std::string &xpath, std::function<void(struct lyd_node *)> callback) {
     if (session_ == nullptr) {
         spdlog::error("[NetconfSession] Not connected.");
         return false;
     }
 
     // Safety if no XPath provided, subscribe to all notifications (not recommended in production)
-    const char* filter = xpath.empty() ? nullptr : xpath.c_str();
+    const char *filter = xpath.empty() ? nullptr : xpath.c_str();
 
     // 1. Build subscription RPC
-    struct nc_rpc* rpc = nc_rpc_subscribe(nullptr, filter, nullptr, nullptr, NC_PARAMTYPE_CONST);
+    struct nc_rpc *rpc = nc_rpc_subscribe(nullptr, filter, nullptr, nullptr, NC_PARAMTYPE_CONST);
     if (rpc == nullptr) {
         spdlog::error("[NetconfSession] Failed to create subscription RPC.");
         return false;
@@ -152,12 +153,12 @@ void NetconfSession::startNotificationListener() {
         spdlog::warn("[NetconfSession] Notification listener is already running.");
         return;
     }
-    
+
     listening_ = true;
 
     listenerThread_ = std::thread([this]() {
         spdlog::info("[NetconfSession] Notification listener thread started.");
-        
+
         while (listening_) {
             struct lyd_node *envp = nullptr;
             struct lyd_node *op = nullptr;
@@ -168,7 +169,7 @@ void NetconfSession::startNotificationListener() {
                 spdlog::info("[NetconfSession] Received notification.");
 
                 // Got a packet
-                for (const auto& [xpath, callback] : subscriptions_) {
+                for (const auto &[xpath, callback] : subscriptions_) {
                     callback(op);
                 }
 
@@ -180,8 +181,8 @@ void NetconfSession::startNotificationListener() {
                 }
             } else if (status == NC_MSG_ERROR) {
                 spdlog::error("[NetconfSession] Error while receiving notification.");
-                listening_ = false; // Stop listener on error
-            } 
+                listening_ = false;  // Stop listener on error
+            }
         }
     });
 }
@@ -199,7 +200,7 @@ void NetconfSession::stopNotificationListener() {
     }
 }
 
-struct lyd_node* NetconfSession::getData(const std::string &xpath) {
+struct lyd_node *NetconfSession::getData(const std::string &xpath) {
     PERFORMANCE_LOGGING("[NetconfSession::getData]", "Start data fetch with XPath: " + xpath);
     if (session_ == nullptr) {
         spdlog::error("[NetconfSession] Not connected.");
@@ -246,8 +247,8 @@ struct lyd_node* NetconfSession::getData(const std::string &xpath) {
             lyd_print_mem(&str_out, op, LYD_XML, LYD_PRINT_SIBLINGS);
 
             if (str_out != nullptr) {
-                //result_xml = std::string(str_out); //here something broke in merge --> fix!
-                //spdlog::info("[NetconfSession] Received data:\n{}", str_out); // Debug log for raw xml data
+                // result_xml = std::string(str_out); //here something broke in merge --> fix!
+                // spdlog::info("[NetconfSession] Received data:\n{}", str_out); // Debug log for raw xml data
                 free(str_out);
             }
         } else {
@@ -281,7 +282,8 @@ struct lyd_node* NetconfSession::getData(const std::string &xpath) {
 }
 
 bool NetconfSession::editData(const std::string &configXml) {
-    PERFORMANCE_LOGGING("[NetconfSession::editData]", "Start edit-config with XML length: " + std::to_string(configXml.size()));
+    PERFORMANCE_LOGGING("[NetconfSession::editData]",
+                        "Start edit-config with XML length: " + std::to_string(configXml.size()));
     if (session_ == nullptr) {
         spdlog::error("[NetconfSession] Not connected.");
         return false;
@@ -321,7 +323,8 @@ bool NetconfSession::editData(const std::string &configXml) {
         // Edit-config successful
         success = true;
         spdlog::info("[NetconfSession] edit-config successful.");
-        PERFORMANCE_LOGGING("[NetconfSession::editData]", "Finished edit-config with XML length: " + std::to_string(configXml.size()));
+        PERFORMANCE_LOGGING("[NetconfSession::editData]",
+                            "Finished edit-config with XML length: " + std::to_string(configXml.size()));
     } else if (msgtype == NC_MSG_ERROR) {
         spdlog::error("[NetconfSession] Server replied with ERROR to edit-config.");
     }

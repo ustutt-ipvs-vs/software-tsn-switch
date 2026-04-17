@@ -35,7 +35,7 @@ std::string GclXmlBuilder::buildXmlForNode(const CncNode_t& node) {
     return ss.str();
 }
 
-std::string GclXmlBuilder::buildXmlForInterface(const ietfInterface_t &iface) {
+std::string GclXmlBuilder::buildXmlForInterface(const ietfInterface_t& iface) {
     std::stringstream ss;
     ss << "<interfaces xmlns=\"" << NS_IETF_IF << "\">";
     appendInterfaceXml(ss, iface);

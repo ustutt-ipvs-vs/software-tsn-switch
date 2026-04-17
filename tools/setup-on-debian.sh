@@ -8,6 +8,7 @@ SCRIPT_DIR=$(cd -- "$(dirname -- "$0")" && pwd)
 apt-get update && \
 apt install -y build-essential libpcre2-dev libssl-dev libssh-dev \
     libcurl4-openssl-dev systemd-dev libsystemd-dev liblldpctl-dev \
+    libgrpc++-dev libprotobuf-dev protobuf-compiler-grpc \
     libspdlog-dev chrony git curl cmake clang-format clang-tidy python3 \
     python3-pip doxygen graphviz
 
@@ -92,4 +93,5 @@ sysrepocfg --copy-from running --datastore startup
 
 ## Build project
 cd $SCRIPT_DIR/.. && \
-cmake -S . -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON && make --directory=build
+cmake -S . -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=Release && \
+make --directory=build
