@@ -1,5 +1,3 @@
-# Software TSN Switch
-
 This project implements a software TSN switch for Linux.
 
 The implementation integrates existing mechanisms from the mainstream Linux kernel to implement the switch data plane, in particular, TAPRIO QDiscs and vSwitches. 
@@ -8,11 +6,11 @@ The main contribution is a control plane implementation (`tsnctrld`) to configur
 
 A simple Centralized Network Controller (CNC) is also included, which can be used for simple configuration tasks and testing (for a comprehensive CNC implementation, have a look at other projects focusing on the CNC like OpenCNC).  
 
-## Getting started
-For end-users: [User Documentation](http://enpro-switch-64df46.gitlab-pages-vs.informatik.uni-stuttgart.de/docs-user)  
-For developers: [Developer Documentation](http://enpro-switch-64df46.gitlab-pages-vs.informatik.uni-stuttgart.de/docs-dev)
+# Getting started
 
-## Project Structure
+User and developer documentation is available [here](https://ustutt-ipvs-vs.github.io/software-tsn-switch/). 
+
+# Project Structure
 
 The repository is organized as follows:
 
@@ -37,8 +35,9 @@ The repository is organized as follows:
 * **`doc/`:**
     Project documentation files for end-users (`user/`) and developers (`dev/`).
 
-## Building
-Please view the corresponding guide in the [developer documentation](http://enpro-switch-64df46.gitlab-pages-vs.informatik.uni-stuttgart.de/docs-dev/howto-build-check.html)!
+# Building
+
+Please follow the corresponding guide in the [developer documentation](https://ustutt-ipvs-vs.github.io/software-tsn-switch/docs-dev/howto-build-check.html).
 
 ## Acknowledgements
 
