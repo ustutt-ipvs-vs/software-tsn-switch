@@ -1,15 +1,12 @@
-# Software-based TSN Switch & Controller
+# Software TSN Switch
 
-A TSN network (IEEE 802.1Q) is a real-time network where you can configure each switch in the network to forward incoming Ethernet frames based on a precise schedule.
-This causes the network to become deterministic:
-With an appropriate schedule you can guarantee that your high-priority frames will always arrive on time and without being dropped.
+This project implements a software TSN switch for Linux.
 
-This project allows you to use a Debian computer as a TSN switch, allowing you to connect Docker containers and virtual machines to have them take part in the TSN network.
-Our two primary software components are:
+The implementation integrates existing mechanisms from the mainstream Linux kernel to implement the switch data plane, in particular, TAPRIO QDiscs and vSwitches. 
 
-- A daemon (`tsnctrld`) that turns your Debian computer into a TSN switch:
-  It makes the device's forwarding schedules configurable from afar via NETCONF and ensures precise clock synchronization with neighboring devices.
-- A Centralized Network Control (CNC) unit that accepts full-network schedules as an input and distributes & applies them to all the TSN switches in your network using NETCONF.
+The main contribution is a control plane implementation (`tsnctrld`) to configure the data plane (TAPRIO) using standard protocols (NETCONF) and YANG models as specified by IEEE, based on proven NETCONF/YANG libraries. 
+
+A simple Centralized Network Controller (CNC) is also included, which can be used for simple configuration tasks and testing (for a comprehensive CNC implementation, have a look at other projects focusing on the CNC like OpenCNC).  
 
 ## Getting started
 For end-users: [User Documentation](http://enpro-switch-64df46.gitlab-pages-vs.informatik.uni-stuttgart.de/docs-user)  
@@ -17,7 +14,7 @@ For developers: [Developer Documentation](http://enpro-switch-64df46.gitlab-page
 
 ## Project Structure
 
-The repository is organized as a monorepo containing the following components:
+The repository is organized as follows:
 
 * **`cnc/` (Centralized Network Controller):**
     The central management daemon. It manages the network topology, calculates schedules (GCLs), and distributes configurations via NETCONF to the switches.
@@ -40,5 +37,15 @@ The repository is organized as a monorepo containing the following components:
 * **`doc/`:**
     Project documentation files for end-users (`user/`) and developers (`dev/`).
 
-## Building & Checking
+## Building
 Please view the corresponding guide in the [developer documentation](http://enpro-switch-64df46.gitlab-pages-vs.informatik.uni-stuttgart.de/docs-dev/howto-build-check.html)!
+
+## Acknowledgements
+
+Major contributions have been made by a student software project at University of Stuttgart with the following major contributors:
+
+* Rico Haas
+* Axel Körner
+* Jannik Schoger
+* Roman Vintonyak
+
