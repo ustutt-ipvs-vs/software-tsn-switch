@@ -24,16 +24,16 @@ The repository is organized as follows:
     A visual layer on top of the CNC and the TSN Control Daemon. It allows you to inspect network topology, view per-node data, and edit GCL schedules through a browser-based UI.
 
 * **`common/`:**
-    Shared C++ libraries, helper functions, and data structures used by both the CNC and the agent.
+    shared C++ libraries, helper functions, and data structures used by both the switch and CNC.
 
 * **`yang/`:**
-    The Single-Source-of-Truth for all used YANG models (IEEE 802.1Qbv, LLDP) serving as interface definitions.
+    all used YANG models (IEEE 802.1Qbv, LLDP) serving as interface definitions.
 
 * **`tools/`:**
-    Various scripts for setting up dependencies, setting up test environments, and to perform automated formatting.
+    various scripts for setting up dependencies, test environments, and for automated formatting.
 
 * **`doc/`:**
-    Project documentation files for end-users (`user/`) and developers (`dev/`).
+    Project documentation files for users (`user/`) and developers (`dev/`).
 
 # Building
 
