@@ -2,7 +2,7 @@ This project implements a software TSN switch for Linux.
 
 The implementation integrates existing mechanisms from the mainstream Linux kernel to implement the switch data plane, in particular, TAPRIO QDiscs and vSwitches. 
 
-The main contribution is a control plane implementation (`tsnctrld`) to configure the data plane (TAPRIO) using standard protocols (NETCONF) and YANG models as specified by IEEE, based on proven NETCONF/YANG libraries. 
+The main contribution is a control plane implementation (TSN Control Daemon `tsnctrld`) to configure the data plane (TAPRIO) using standard protocols (NETCONF) and YANG models as specified by IEEE, based on proven NETCONF/YANG libraries. 
 
 A simple Centralized Network Controller (CNC) is also included, which can be used for simple configuration tasks and testing (for a comprehensive CNC implementation, have a look at other projects focusing on the CNC like OpenCNC).  
 
@@ -14,14 +14,14 @@ User and developer documentation is available [here](https://ustutt-ipvs-vs.gith
 
 The repository is organized as follows:
 
-* **`cnc/` (Centralized Network Controller):**
-    The central management daemon. It manages the network topology, calculates schedules (GCLs), and distributes configurations via NETCONF to the switches.
-
 * **`tsnctrld/` (TSN Control Daemon):**
-    The local agent on the Linux host. It acts as a NETCONF server, applies GCL configurations via Netlink in the kernel (TAPRIO), and monitors LLDP neighborhoods.
+    the local component on the Linux host acting as a NETCONF server, applying Gate Control List configurations via Netlink in the kernel (TAPRIO), and monitoring LLDP neighborhoods.
+
+* **`cnc/` (Centralized Network Controller):**
+    the central management daemon managing the network topology, calculating schedules (Gate Control Lists), and distributing configurations via NETCONF to the switches.
 
 * **`cnc-web-interface/`:**
-    A visual layer on top of the CNC and the TSN Control Daemon. It allows you to inspect network topology, view per-node data, and edit GCL schedules through a browser-based UI.
+    a visual layer on top of the CNC and the TSN Control Daemon supporting inspection of network topology, viewing per-node data, and editing Gate Control List schedules through a browser-based UI.
 
 * **`common/`:**
     shared C++ libraries, helper functions, and data structures used by both the switch and CNC.
